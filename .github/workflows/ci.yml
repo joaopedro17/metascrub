@@ -78,9 +78,23 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
+  licenses:
+    name: Third-party licenses
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - run: cargo install cargo-about --locked --version 0.9.3 --features cli
+      - run: cargo about generate --fail --manifest-path crates/metascrub-cli/Cargo.toml about.hbs -o THIRD-PARTY-LICENSES.md
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: third-party-licenses
+          path: THIRD-PARTY-LICENSES.md
+          if-no-files-found: error
+
   build:
     name: Build (${{ matrix.target }})
-    needs: version
+    needs: [version, licenses]
     strategy:
       # Let every platform finish, so a failure only needs that one job re-run.
       fail-fast: false
@@ -104,9 +118,12 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y musl-tools
       - run: rustup target add ${{ matrix.target }}
       - run: cargo build --release --locked --target ${{ matrix.target }} -p metascrub-cli
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: third-party-licenses
+          path: "${{ env.ARCHIVE }}"
       - name: Package
         run: |
-          mkdir "$ARCHIVE"
           cp README.md LICENSE-MIT LICENSE-APACHE "$ARCHIVE"/
           if [[ "${{ matrix.target }}" == *windows* ]]; then
             cp "target/${{ matrix.target }}/release/metascrub.exe" "$ARCHIVE"/
@@ -131,6 +148,7 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: dist
+          pattern: metascrub-*
           merge-multiple: true
       - name: Checksums
         working-directory: dist
@@ -144,7 +162,7 @@ jobs:
   # publish the draft again to rerun everything.
   unpublish:
     name: Turn the release back into a draft
-    needs: [test, dependencies, version, build, release]
+    needs: [test, dependencies, version, licenses, build, release]
     if: failure() && github.event_name == 'release'
     runs-on: ubuntu-latest
     permissions:

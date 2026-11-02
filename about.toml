@@ -1,0 +1,15 @@
+# cargo-about: lists the licenses of the crates built into the release
+# binaries, for THIRD-PARTY-LICENSES.md in each release archive.
+# Keep `accepted` in step with the allow list in deny.toml.
+accepted = ["MIT", "Apache-2.0", "Unicode-3.0", "BSD-2-Clause"]
+ignore-build-dependencies = true
+ignore-dev-dependencies = true
+# Only the platforms release binaries are built for.
+targets = [
+    "x86_64-unknown-linux-musl",
+    "aarch64-unknown-linux-musl",
+    "x86_64-pc-windows-msvc",
+    "aarch64-pc-windows-msvc",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+]
