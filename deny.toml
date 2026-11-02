@@ -1,0 +1,29 @@
+# cargo-deny: dependency policy checked in CI.
+# https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+all-features = true
+
+# Known vulnerabilities and unmaintained crates (RustSec advisory database).
+[advisories]
+yanked = "deny"
+
+# Only licenses compatible with MIT OR Apache-2.0 distribution.
+# Add to this list deliberately, one dependency at a time.
+[licenses]
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Unicode-3.0",
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+# Dependencies come from crates.io only.
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

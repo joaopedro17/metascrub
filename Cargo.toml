@@ -1,0 +1,32 @@
+[workspace]
+resolver = "3"
+members = ["crates/metascrub-core", "crates/metascrub-cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/joaopedro17/metascrub"
+authors = ["The MetaScrub Contributors"]
+
+# Exact versions on purpose: several crates we depend on are young and
+# maintained by individuals, so upgrades are reviewed one at a time.
+[workspace.dependencies]
+metascrub-core = { path = "crates/metascrub-core", version = "=0.1.0" }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+
+[workspace.lints.rust]
+# `deny` rather than `forbid` so the one module that needs OS calls
+# (Windows alternate data streams, v0.5) can opt out locally.
+unsafe_code = "deny"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+# Parsers read untrusted files: malformed input must return an error, never panic.
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+indexing_slicing = "warn"
