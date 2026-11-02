@@ -1,0 +1,18 @@
+# Third-party licenses
+
+MetaScrub is built with the following open-source crates. Their licenses are reproduced below.
+
+{{#each licenses}}
+## {{{name}}}
+
+Used by:
+
+{{#each used_by}}
+- {{crate.name}} {{crate.version}}
+{{/each}}
+
+```
+{{{text}}}
+```
+
+{{/each}}

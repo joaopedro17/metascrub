@@ -3,10 +3,14 @@ name: CI
 on:
   push:
     branches: [main, develop]
-    tags: ["v*"]
   pull_request:
     branches: [main, develop]
+  # Publishing a release on GitHub (with a new tag such as v0.2.0) builds
+  # the binaries and attaches them to it.
+  release:
+    types: [published]
 
+# Actions are pinned to commits, not tags: a tag can be moved to other code.
 permissions:
   contents: read
 
@@ -22,10 +26,10 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       # rustup installs the toolchain pinned in rust-toolchain.toml.
       - run: rustup show active-toolchain || rustup toolchain install
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
       # exiftool is the independent check that cleaned files have no metadata left.
@@ -43,21 +47,21 @@ jobs:
     name: Dependency policy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       # Licenses, advisories (RustSec), banned and duplicate crates, sources.
-      - uses: EmbarkStudios/cargo-deny-action@v2
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
 
-  # Release jobs: only when a version tag (e.g. v0.1.0) is pushed.
+  # Release jobs: only when a release is published on GitHub.
   # Merging into main never publishes anything by itself.
   version:
     name: Check version
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'release'
     needs: [test, dependencies]
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.check.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
       - id: check
@@ -74,9 +78,23 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
+  licenses:
+    name: Third-party licenses
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - run: cargo install cargo-about --locked --version 0.9.3 --features cli
+      - run: cargo about generate --fail --manifest-path crates/metascrub-cli/Cargo.toml about.hbs -o THIRD-PARTY-LICENSES.md
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: third-party-licenses
+          path: THIRD-PARTY-LICENSES.md
+          if-no-files-found: error
+
   build:
     name: Build (${{ matrix.target }})
-    needs: version
+    needs: [version, licenses]
     strategy:
       # Let every platform finish, so a failure only needs that one job re-run.
       fail-fast: false
@@ -95,14 +113,17 @@ jobs:
     env:
       ARCHIVE: metascrub-v${{ needs.version.outputs.version }}-${{ matrix.target }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - if: contains(matrix.target, 'musl')
         run: sudo apt-get update && sudo apt-get install -y musl-tools
       - run: rustup target add ${{ matrix.target }}
       - run: cargo build --release --locked --target ${{ matrix.target }} -p metascrub-cli
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: third-party-licenses
+          path: "${{ env.ARCHIVE }}"
       - name: Package
         run: |
-          mkdir "$ARCHIVE"
           cp README.md LICENSE-MIT LICENSE-APACHE "$ARCHIVE"/
           if [[ "${{ matrix.target }}" == *windows* ]]; then
             cp "target/${{ matrix.target }}/release/metascrub.exe" "$ARCHIVE"/
@@ -111,33 +132,42 @@ jobs:
             cp "target/${{ matrix.target }}/release/metascrub" "$ARCHIVE"/
             tar czf "$ARCHIVE.tar.gz" "$ARCHIVE"
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ env.ARCHIVE }}
           path: ${{ env.ARCHIVE }}.*
           if-no-files-found: error
 
   release:
-    name: Publish release
+    name: Attach binaries
     needs: [version, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: dist
+          pattern: metascrub-*
           merge-multiple: true
       - name: Checksums
         working-directory: dist
         run: sha256sum * > SHA256SUMS
-      - name: Create GitHub release
+      - name: Upload to the release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.version.outputs.version }}
-        run: |
-          gh release create "v$VERSION" dist/* \
-            --repo "$GITHUB_REPOSITORY" \
-            --verify-tag \
-            --title "MetaScrub v$VERSION" \
-            --generate-notes
+        run: gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+
+  # A release without binaries shouldn't stay public. Fix the cause, then
+  # publish the draft again to rerun everything.
+  unpublish:
+    name: Turn the release back into a draft
+    needs: [test, dependencies, version, licenses, build, release]
+    if: failure() && github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$GITHUB_REF_NAME" --draft=true --repo "$GITHUB_REPOSITORY"
