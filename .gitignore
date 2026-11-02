@@ -1,0 +1,8 @@
+# Rust build output
+/target/
+
+# Windows "downloaded from" streams that appear as files when copied into WSL
+*:Zone.Identifier
+
+# Local planning documents (not published)
+/docs/
