@@ -3,9 +3,12 @@ name: CI
 on:
   push:
     branches: [main, develop]
-    tags: ["v*"]
   pull_request:
     branches: [main, develop]
+  # Publishing a release on GitHub (with a new tag such as v0.2.0) builds
+  # the binaries and attaches them to it.
+  release:
+    types: [published]
 
 # Actions are pinned to commits, not tags: a tag can be moved to other code.
 permissions:
@@ -48,11 +51,11 @@ jobs:
       # Licenses, advisories (RustSec), banned and duplicate crates, sources.
       - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
 
-  # Release jobs: only when a version tag (e.g. v0.1.0) is pushed.
+  # Release jobs: only when a release is published on GitHub.
   # Merging into main never publishes anything by itself.
   version:
     name: Check version
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'release'
     needs: [test, dependencies]
     runs-on: ubuntu-latest
     outputs:
@@ -119,7 +122,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    name: Publish release
+    name: Attach binaries
     needs: [version, build]
     runs-on: ubuntu-latest
     permissions:
@@ -132,13 +135,21 @@ jobs:
       - name: Checksums
         working-directory: dist
         run: sha256sum * > SHA256SUMS
-      - name: Create GitHub release
+      - name: Upload to the release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.version.outputs.version }}
-        run: |
-          gh release create "v$VERSION" dist/* \
-            --repo "$GITHUB_REPOSITORY" \
-            --verify-tag \
-            --title "MetaScrub v$VERSION" \
-            --generate-notes
+        run: gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+
+  # A release without binaries shouldn't stay public. Fix the cause, then
+  # publish the draft again to rerun everything.
+  unpublish:
+    name: Turn the release back into a draft
+    needs: [test, dependencies, version, build, release]
+    if: failure() && github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$GITHUB_REF_NAME" --draft=true --repo "$GITHUB_REPOSITORY"
