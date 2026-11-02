@@ -15,14 +15,16 @@ use flate2::Compression;
 use flate2::write::ZlibEncoder;
 use image::codecs::jpeg::JpegEncoder;
 use image::codecs::png::PngEncoder;
+use image::codecs::webp::WebPEncoder;
 use image::{ImageEncoder, Rgb, RgbImage};
 
 fn main() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/generated");
     let jpeg_dir = root.join("jpeg");
     let png_dir = root.join("png");
+    let webp_dir = root.join("webp");
     let other_dir = root.join("other");
-    for dir in [&jpeg_dir, &png_dir, &other_dir] {
+    for dir in [&jpeg_dir, &png_dir, &webp_dir, &other_dir] {
         fs::create_dir_all(dir).unwrap();
     }
 
@@ -180,9 +182,71 @@ fn main() {
     bad[last] ^= 0xFF;
     write(&png_dir, "bad-checksum.png", &bad);
 
+    // WebP
+    let image = encode_webp(64, 48);
+    write(
+        &webp_dir,
+        "clean.webp",
+        &riff(std::slice::from_ref(&image), b""),
+    );
+    let camera = riff(
+        &[
+            vp8x(0x08 | 0x04, 64, 48),
+            image.clone(),
+            riff_chunk(b"EXIF", &camera_tiff(None)),
+            riff_chunk(b"XMP ", XMP.as_bytes()),
+            riff_chunk(b"prVt", b"private vendor data"),
+        ],
+        b"",
+    );
+    write(&webp_dir, "camera.webp", &camera);
+    write(
+        &webp_dir,
+        "truncated.webp",
+        &camera[..camera.len() * 7 / 10],
+    );
+    write(
+        &webp_dir,
+        "icc.webp",
+        &riff(
+            &[
+                vp8x(0x20, 64, 48),
+                riff_chunk(b"ICCP", &icc_profile("sRGB IEC61966-2.1", SRGB, false)),
+                image.clone(),
+            ],
+            b"",
+        ),
+    );
+    let frame = |x: u8| {
+        let mut data = vec![x, 0, 0, 0, 0, 0];
+        data.extend([31, 0, 0, 23, 0, 0]); // 32×24
+        data.extend([100, 0, 0, 0]); // 100 ms, no blending
+        data.extend(riff_chunk(b"VP8L", &vp8l_data(&encode_webp(32, 24))));
+        data.extend(riff_chunk(b"prVt", b"frame note"));
+        riff_chunk(b"ANMF", &data)
+    };
+    write(
+        &webp_dir,
+        "animated.webp",
+        &riff(
+            &[
+                vp8x(0x02 | 0x04, 64, 48),
+                riff_chunk(b"ANIM", &[0, 0, 0, 0, 0, 0]),
+                frame(0),
+                frame(16),
+                riff_chunk(b"XMP ", XMP.as_bytes()),
+            ],
+            b"",
+        ),
+    );
+    write(
+        &webp_dir,
+        "trailing.webp",
+        &riff(&[image], b"appended after the image"),
+    );
+
     // Other
     write(&other_dir, "notes.txt", b"Not an image.\n");
-    write(&other_dir, "image.webp", b"RIFF\x0c\0\0\0WEBPVP8 \0\0\0\0");
 }
 
 fn gradient(width: u32, height: u32) -> RgbImage {
@@ -210,6 +274,53 @@ fn encode_png(width: u32, height: u32) -> Vec<u8> {
             image::ExtendedColorType::Rgb8,
         )
         .unwrap();
+    out
+}
+
+/// A lossless WebP, as its `VP8L` chunk.
+fn encode_webp(width: u32, height: u32) -> Vec<u8> {
+    let image = gradient(width, height);
+    let mut out = Vec::new();
+    WebPEncoder::new_lossless(&mut out)
+        .write_image(
+            image.as_raw(),
+            width,
+            height,
+            image::ExtendedColorType::Rgb8,
+        )
+        .unwrap();
+    // RIFF header (12 bytes), then the only chunk.
+    out[12..].to_vec()
+}
+
+fn vp8l_data(chunk: &[u8]) -> Vec<u8> {
+    let size = u32::from_le_bytes(chunk[4..8].try_into().unwrap()) as usize;
+    chunk[8..8 + size].to_vec()
+}
+
+fn riff_chunk(kind: &[u8; 4], data: &[u8]) -> Vec<u8> {
+    let mut out = kind.to_vec();
+    out.extend(u32::try_from(data.len()).unwrap().to_le_bytes());
+    out.extend(data);
+    if data.len() % 2 == 1 {
+        out.push(0);
+    }
+    out
+}
+
+fn vp8x(flags: u8, width: u32, height: u32) -> Vec<u8> {
+    let mut data = vec![flags, 0, 0, 0];
+    data.extend(&(width - 1).to_le_bytes()[..3]);
+    data.extend(&(height - 1).to_le_bytes()[..3]);
+    riff_chunk(b"VP8X", &data)
+}
+
+fn riff(chunks: &[Vec<u8>], trailing: &[u8]) -> Vec<u8> {
+    let body = [b"WEBP".to_vec(), chunks.concat()].concat();
+    let mut out = b"RIFF".to_vec();
+    out.extend(u32::try_from(body.len()).unwrap().to_le_bytes());
+    out.extend(body);
+    out.extend(trailing);
     out
 }
 

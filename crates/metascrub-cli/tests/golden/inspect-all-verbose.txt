@@ -1,4 +1,4 @@
-$ metascrub inspect -v --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/image.webp fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png
+$ metascrub inspect -v --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 fixtures/generated/jpeg/camera.jpg (JPEG image)
@@ -71,8 +71,6 @@ fixtures/generated/jpeg/xmp-iptc.jpg (JPEG image)
   Low risk
     • Technical details about the camera or encoding: 1 field — will be removed [XMP]
 
-fixtures/generated/other/image.webp skipped: WebP image files aren't supported yet
-
 fixtures/generated/other/notes.txt skipped: MetaScrub can't read this type of file
 
 fixtures/generated/png/bad-checksum.png failed: the file is damaged or not what it claims to be
@@ -130,4 +128,59 @@ fixtures/generated/png/trailing.png (PNG image)
   High risk
     • Hidden data after the end of the image (such as a Motion Photo video): 24 bytes — will be removed [After end of image]
 
-15 files inspected, 10 with hidden metadata, 2 skipped, 2 failed
+fixtures/generated/webp/animated.webp (WebP image)
+  High risk
+    • Location where it was created: Paris — will be removed [WebP > XMP  > photoshop:City]
+    • Location where it was created: 48,51.504N — will be removed [WebP > XMP  > exif:GPSLatitude]
+    • A person's name (author, artist or owner): Jane Doe — will be removed [WebP > XMP  > dc:creator]
+    • A file path from the computer that made it: C:\Users\jane\Pictures\holiday.psd — will be removed [WebP > XMP  > stRef:filePath]
+  Medium risk
+    • Metadata MetaScrub doesn't recognize: 10 bytes — will be removed [WebP > ANMF > prVt]
+    • Metadata MetaScrub doesn't recognize: 10 bytes — will be removed [WebP > ANMF > prVt]
+    • Software or app used: PhotoTool 2.1 — will be removed [WebP > XMP  > xmp:CreatorTool]
+    • A unique ID that can link copies of this file: xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03 — will be removed [WebP > XMP  > xmpMM:DocumentID]
+    • Metadata MetaScrub doesn't recognize: 1 field — will be removed [WebP > XMP ]
+  Low risk
+    • Technical details about the camera or encoding: 1 field — will be removed [WebP > XMP ]
+
+fixtures/generated/webp/camera.webp (WebP image)
+  High risk
+    • A person's name (author, artist or owner): Jane Doe — will be removed [WebP > EXIF > Artist]
+    • A person's name (author, artist or owner): Copyright Jane Doe — will be removed [WebP > EXIF > Copyright]
+    • Serial number of the camera or device: SN-0042-7781 — will be removed [WebP > EXIF > BodySerialNumber]
+    • Location where it was created: 48.85840, 2.29450 — will be removed [WebP > EXIF > GPS]
+    • Location where it was created: Paris — will be removed [WebP > XMP  > photoshop:City]
+    • Location where it was created: 48,51.504N — will be removed [WebP > XMP  > exif:GPSLatitude]
+    • A person's name (author, artist or owner): Jane Doe — will be removed [WebP > XMP  > dc:creator]
+    • A file path from the computer that made it: C:\Users\jane\Pictures\holiday.psd — will be removed [WebP > XMP  > stRef:filePath]
+  Medium risk
+    • Make and model of the camera or phone: Fictional Camera Co. — will be removed [WebP > EXIF > Make]
+    • Make and model of the camera or phone: FC-100 — will be removed [WebP > EXIF > Model]
+    • Software or app used: PhotoTool 2.1 — will be removed [WebP > EXIF > Software]
+    • Date and time: 2026:03:14 09:26:53 — will be removed [WebP > EXIF > DateTime]
+    • Date and time: 2026:03:14 09:26:53 — will be removed [WebP > EXIF > DateTimeOriginal]
+    • Make and model of the camera or phone: FC 24-70mm — will be removed [WebP > EXIF > LensModel]
+    • Software or app used: PhotoTool 2.1 — will be removed [WebP > XMP  > xmp:CreatorTool]
+    • A unique ID that can link copies of this file: xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03 — will be removed [WebP > XMP  > xmpMM:DocumentID]
+    • Metadata MetaScrub doesn't recognize: 1 field — will be removed [WebP > XMP ]
+    • Metadata MetaScrub doesn't recognize: 19 bytes — will be removed [WebP > prVt]
+  Low risk
+    • Rotation setting: rotated 180° — kept: needed to display correctly [WebP > EXIF > Orientation]
+    • Technical details about the camera or encoding: 2 fields — will be removed [WebP > EXIF]
+    • Technical details about the camera or encoding: 1 field — will be removed [WebP > XMP ]
+
+fixtures/generated/webp/clean.webp (WebP image)
+  No hidden metadata found.
+
+fixtures/generated/webp/icc.webp (WebP image)
+  Low risk
+    • Color profile: sRGB IEC61966-2.1 — kept: a standard profile that reveals nothing [WebP > ICCP]
+
+fixtures/generated/webp/trailing.webp (WebP image)
+  High risk
+    • Hidden data after the end of the image (such as a Motion Photo video): 24 bytes — will be removed [After end of image]
+
+fixtures/generated/webp/truncated.webp failed: the file is damaged or not what it claims to be
+  malformed file: unexpected end of data
+
+20 files inspected, 13 with hidden metadata, 1 skipped, 3 failed

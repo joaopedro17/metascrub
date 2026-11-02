@@ -53,6 +53,10 @@ impl<'a> Cursor<'a> {
     pub(crate) fn u32_be(&mut self) -> Result<u32, FormatError> {
         Ok(u32::from_be_bytes(self.array()?))
     }
+
+    pub(crate) fn u32_le(&mut self) -> Result<u32, FormatError> {
+        Ok(u32::from_le_bytes(self.array()?))
+    }
 }
 
 /// Splits at the first NUL byte, dropping it.
