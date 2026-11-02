@@ -1,16 +1,18 @@
 //! File formats: detection by content, and the interface every format implements.
 
+mod archive;
 mod bytes;
 mod exif;
 mod icc;
 mod iptc;
 mod jpeg;
+mod office;
 mod png;
 mod webp;
 mod xmp;
 
 use std::fmt;
-use std::io::{self, Read, Seek, Write};
+use std::io::{self, Read, Seek, SeekFrom, Write};
 
 use crate::limits::{MAX_IMAGE_BYTES, MAX_INFLATED_BYTES};
 use crate::model::{Disposition, Finding, FindingKind, FormatId, KeepReason, Location, Value};
@@ -39,9 +41,18 @@ pub trait FormatHandler: Send + Sync {
 /// How many leading bytes [`sniff`] needs.
 pub const SNIFF_LEN: usize = 12;
 
-/// Detects the format from the file's first bytes. The extension is never trusted.
+const ZIP_SIGNATURES: &[&[u8]] = &[b"PK\x03\x04", b"PK\x05\x06"];
+const COMPOUND_SIGNATURE: &[u8] = &[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
+
+/// Detects the format from the file's first bytes. The extension is never
+/// trusted. ZIP files are reported as [`FormatId::Zip`]; [`detect`] also
+/// tells Office files apart.
 pub fn sniff(head: &[u8]) -> Option<FormatId> {
-    if head.starts_with(&[0xFF, 0xD8, 0xFF]) {
+    if ZIP_SIGNATURES.iter().any(|s| head.starts_with(s)) {
+        Some(FormatId::Zip)
+    } else if head.starts_with(COMPOUND_SIGNATURE) {
+        Some(FormatId::Compound)
+    } else if head.starts_with(&[0xFF, 0xD8, 0xFF]) {
         Some(FormatId::Jpeg)
     } else if head.starts_with(png::SIGNATURE) {
         Some(FormatId::Png)
@@ -52,12 +63,25 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
     }
 }
 
+/// Like [`sniff`], but looks inside ZIP files to recognize Word, Excel and
+/// PowerPoint documents. Leaves `input` at the start.
+pub fn detect(head: &[u8], input: &mut dyn ReadSeek) -> Result<Option<FormatId>, FormatError> {
+    let format = match sniff(head) {
+        Some(FormatId::Zip) => Some(office::identify(input)?),
+        other => other,
+    };
+    input.seek(SeekFrom::Start(0))?;
+    Ok(format)
+}
+
 /// `None` for formats that are detected but not supported yet.
 pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
     match format {
         FormatId::Jpeg => Some(&jpeg::Jpeg),
         FormatId::Png => Some(&png::Png),
         FormatId::Webp => Some(&webp::Webp),
+        FormatId::Docx | FormatId::Xlsx | FormatId::Pptx => Some(&office::Office),
+        FormatId::Zip | FormatId::Compound => None,
     }
 }
 
@@ -67,6 +91,15 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::Jpeg => &["jpg", "jpeg", "jpe", "jfif"],
         FormatId::Png => &["png"],
         FormatId::Webp => &["webp"],
+        FormatId::Docx => &["docx", "docm", "dotx", "dotm"],
+        FormatId::Xlsx => &["xlsx", "xlsm", "xltx", "xltm", "xlam"],
+        FormatId::Pptx => &["pptx", "pptm", "potx", "potm", "ppsx", "ppsm", "ppam"],
+        FormatId::Zip => &["zip"],
+        // Password-protected Office files keep their usual extension.
+        FormatId::Compound => &[
+            "doc", "dot", "xls", "xlt", "ppt", "pot", "pps", "docx", "docm", "xlsx", "xlsm",
+            "pptx", "pptm",
+        ],
     }
 }
 
@@ -75,7 +108,7 @@ pub fn inspect_bytes(
     data: &[u8],
     options: &Options,
 ) -> Result<(Option<FormatId>, Vec<Finding>), FormatError> {
-    let Some(format) = sniff(data) else {
+    let Some(format) = detect(data, &mut io::Cursor::new(data))? else {
         return Ok((None, Vec::new()));
     };
     let findings = match handler(format) {
@@ -93,7 +126,7 @@ pub struct Cleaned {
 
 /// Detects and cleans a file held in memory. `None` for unsupported formats.
 pub fn clean_bytes(data: &[u8], options: &Options) -> Result<Option<Cleaned>, FormatError> {
-    let Some(handler) = sniff(data).and_then(handler) else {
+    let Some(handler) = detect(data, &mut io::Cursor::new(data))?.and_then(handler) else {
         return Ok(None);
     };
     let mut output = Vec::new();
@@ -224,6 +257,8 @@ mod tests {
         assert_eq!(sniff(b"\x89PNG\r\n\x1a\n\0\0\0\x0d"), Some(FormatId::Png));
         assert_eq!(sniff(b"RIFF\x10\0\0\0WEBPVP8 "), Some(FormatId::Webp));
         assert_eq!(sniff(b"RIFF\x10\0\0\0WAVEfmt "), None);
+        assert_eq!(sniff(b"PK\x03\x04\x14\0"), Some(FormatId::Zip));
+        assert_eq!(sniff(COMPOUND_SIGNATURE), Some(FormatId::Compound));
         assert_eq!(sniff(b"hello"), None);
         assert_eq!(sniff(&[]), None);
     }

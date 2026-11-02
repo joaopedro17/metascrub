@@ -37,6 +37,10 @@ pub enum FindingKind {
     EmbeddedFile,
     HiddenContent,
     Description,
+    /// A company or organization (Office "Company").
+    Organization,
+    /// Extra properties any program or person can add (Office custom properties).
+    CustomProperty,
     DeviceModel,
     Software,
     Timestamp,
@@ -66,6 +70,8 @@ impl FindingKind {
             | Self::HiddenContent => Risk::High,
 
             Self::Description
+            | Self::Organization
+            | Self::CustomProperty
             | Self::DeviceModel
             | Self::Software
             | Self::Timestamp
@@ -96,6 +102,14 @@ impl Location {
     }
 
     /// A location one level deeper than this one.
+    /// This location as seen from the file that contains it:
+    /// `EXIF > GPS` within `word/media/image1.jpeg`.
+    pub fn within(&self, outer: impl Into<String>) -> Self {
+        let mut parts = vec![outer.into()];
+        parts.extend(self.0.iter().cloned());
+        Self(parts)
+    }
+
     pub fn child(&self, part: impl Into<String>) -> Self {
         let mut parts = self.0.clone();
         parts.push(part.into());
@@ -192,6 +206,12 @@ impl Finding {
         }
     }
 
+    /// The same finding, located inside the file `outer` (for embedded files).
+    pub fn within(mut self, outer: impl Into<String>) -> Self {
+        self.location = self.location.within(outer);
+        self
+    }
+
     pub fn with_value(mut self, value: Value) -> Self {
         self.value = Some(value);
         self
@@ -206,6 +226,17 @@ pub enum FormatId {
     Jpeg,
     Png,
     Webp,
+    /// Word document (also `.docm`, `.dotx`, `.dotm`).
+    Docx,
+    /// Excel workbook (also `.xlsm`, `.xltx`, `.xltm`, `.xlam`).
+    Xlsx,
+    /// PowerPoint presentation (also `.pptm`, `.ppsx`, `.potx`, …).
+    Pptx,
+    /// Any other ZIP file.
+    Zip,
+    /// An OLE compound file: an old-format Office file (`.doc`, `.xls`,
+    /// `.ppt`) or a password-protected Office file.
+    Compound,
 }
 
 /// What happened to one file.
@@ -343,6 +374,8 @@ mod tests {
         assert_eq!(FindingKind::TrailingData.risk(), Risk::High);
         assert_eq!(FindingKind::DeviceModel.risk(), Risk::Medium);
         assert_eq!(FindingKind::DocumentId.risk(), Risk::Medium);
+        assert_eq!(FindingKind::Organization.risk(), Risk::Medium);
+        assert_eq!(FindingKind::CustomProperty.risk(), Risk::Medium);
         assert_eq!(FindingKind::ColorProfile.risk(), Risk::Low);
         assert_eq!(FindingKind::ExtensionMismatch.risk(), Risk::Low);
     }

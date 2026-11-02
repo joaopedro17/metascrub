@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 
 use metascrub_core::Options;
 use metascrub_core::format::{Cleaned, clean_bytes, inspect_bytes};
+use metascrub_core::model::FormatId;
 
 /// Every fixture that a cleaner accepts, with its contents.
 fn cleanable_fixtures() -> Vec<(PathBuf, Vec<u8>)> {
@@ -114,6 +115,13 @@ fn cleaning_reports_what_inspect_reports() {
 #[test]
 fn cleaning_never_changes_the_pixels() {
     for (path, data) in cleanable_fixtures() {
+        let (format, _) = inspect_bytes(&data, &Options::default()).unwrap();
+        if !matches!(
+            format,
+            Some(FormatId::Jpeg | FormatId::Png | FormatId::Webp)
+        ) {
+            continue;
+        }
         let cleaned = clean(&data, &Options::default()).data;
         let before = image::load_from_memory(&data)
             .unwrap_or_else(|e| panic!("{}: {e}", path.display()))

@@ -1,4 +1,4 @@
-$ metascrub verify fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub verify fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 fixtures/generated/jpeg/camera.jpg (JPEG image) still contains hidden metadata
@@ -8,11 +8,11 @@ fixtures/generated/jpeg/camera.jpg (JPEG image) still contains hidden metadata
     • Location where it was created — will be removed
     • A small preview image (may show the original before cropping or edits) — will be removed
   Medium risk
-    • Make and model of the camera or phone — will be removed
+    • Make and model of a device (camera, phone, printer) — will be removed
     • Software or app used — will be removed
     • Date and time — will be removed
   Low risk
-    • Technical details about the camera or encoding — will be removed
+    • Technical details (encoding, settings, statistics) — will be removed
 
 fixtures/generated/jpeg/clean.jpg (JPEG image) no hidden metadata left
 
@@ -54,7 +54,51 @@ fixtures/generated/jpeg/xmp-iptc.jpg (JPEG image) still contains hidden metadata
     • Metadata MetaScrub doesn't recognize — will be removed
     • A title, caption or keywords — will be removed
   Low risk
-    • Technical details about the camera or encoding — will be removed
+    • Technical details (encoding, settings, statistics) — will be removed
+
+fixtures/generated/office/budget.xlsx (Excel workbook) still contains hidden metadata
+  High risk
+    • A person's name (author, artist or owner) — will be removed
+    • A file path from the computer that made it — will be removed
+  Medium risk
+    • Date and time — will be removed
+    • A title, caption or keywords — will be removed
+    • Software or app used — will be removed
+    • A company or organization name — will be removed
+    • Make and model of a device (camera, phone, printer) — will be removed
+    • A unique ID that can link copies of this file — will be removed
+  Low risk
+    • Technical details (encoding, settings, statistics) — will be removed
+
+fixtures/generated/office/clean.docx (Word document) still contains hidden metadata
+  Medium risk
+    • A unique ID that can link copies of this file — will be removed
+
+fixtures/generated/office/comments.docx failed: the file uses a feature MetaScrub can't handle safely, so it was left alone
+
+fixtures/generated/office/report.docx (Word document) still contains hidden metadata
+  High risk
+    • A file path from the computer that made it — will be removed
+    • A person's name (author, artist or owner) — will be removed
+    • A small preview image (may show the original before cropping or edits) — will be removed
+    • Serial number of the camera or device — will be removed
+    • Location where it was created — will be removed
+  Medium risk
+    • Date and time — will be removed
+    • A title, caption or keywords — will be removed
+    • Software or app used — will be removed
+    • A company or organization name — will be removed
+    • A custom property (extra details added by a program or person) — will be removed
+    • A unique ID that can link copies of this file — will be removed
+    • Make and model of a device (camera, phone, printer) — will be removed
+  Low risk
+    • Technical details (encoding, settings, statistics) — will be removed
+
+fixtures/generated/office/tracked-changes.docx failed: the file uses a feature MetaScrub can't handle safely, so it was left alone
+
+fixtures/generated/other/archive.zip skipped: ZIP archive files aren't supported yet
+
+fixtures/generated/other/legacy.doc skipped: old-format (.doc, .xls, .ppt) and password-protected Office files aren't supported
 
 fixtures/generated/other/notes.txt skipped: MetaScrub can't read this type of file
 
@@ -68,12 +112,12 @@ fixtures/generated/png/exif.png (PNG image) still contains hidden metadata
     • Serial number of the camera or device — will be removed
     • Location where it was created — will be removed
   Medium risk
-    • Make and model of the camera or phone — will be removed
+    • Make and model of a device (camera, phone, printer) — will be removed
     • Software or app used — will be removed
     • Date and time — will be removed
     • A title, caption or keywords — will be removed
   Low risk
-    • Technical details about the camera or encoding — will be removed
+    • Technical details (encoding, settings, statistics) — will be removed
 
 fixtures/generated/png/icc.png (PNG image) no hidden metadata left
 
@@ -89,7 +133,7 @@ fixtures/generated/png/text-chunks.png (PNG image) still contains hidden metadat
     • A unique ID that can link copies of this file — will be removed
     • Metadata MetaScrub doesn't recognize — will be removed
   Low risk
-    • Technical details about the camera or encoding — will be removed
+    • Technical details (encoding, settings, statistics) — will be removed
 
 fixtures/generated/png/trailing.png (PNG image) still contains hidden metadata
   High risk
@@ -105,7 +149,7 @@ fixtures/generated/webp/animated.webp (WebP image) still contains hidden metadat
     • Software or app used — will be removed
     • A unique ID that can link copies of this file — will be removed
   Low risk
-    • Technical details about the camera or encoding — will be removed
+    • Technical details (encoding, settings, statistics) — will be removed
 
 fixtures/generated/webp/camera.webp (WebP image) still contains hidden metadata
   High risk
@@ -114,13 +158,13 @@ fixtures/generated/webp/camera.webp (WebP image) still contains hidden metadata
     • Location where it was created — will be removed
     • A file path from the computer that made it — will be removed
   Medium risk
-    • Make and model of the camera or phone — will be removed
+    • Make and model of a device (camera, phone, printer) — will be removed
     • Software or app used — will be removed
     • Date and time — will be removed
     • A unique ID that can link copies of this file — will be removed
     • Metadata MetaScrub doesn't recognize — will be removed
   Low risk
-    • Technical details about the camera or encoding — will be removed
+    • Technical details (encoding, settings, statistics) — will be removed
 
 fixtures/generated/webp/clean.webp (WebP image) no hidden metadata left
 
@@ -132,5 +176,5 @@ fixtures/generated/webp/trailing.webp (WebP image) still contains hidden metadat
 
 fixtures/generated/webp/truncated.webp failed: the file is damaged or not what it claims to be
 
-7 files verified clean, 13 still with hidden metadata, 1 skipped, 3 failed
+7 files verified clean, 16 still with hidden metadata, 3 skipped, 5 failed
 Values are hidden so this report is safe to share. Use --show-values to see them.

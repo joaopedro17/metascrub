@@ -1,4 +1,4 @@
-$ metascrub inspect -v --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub inspect -v --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 fixtures/generated/jpeg/camera.jpg (JPEG image)
@@ -9,15 +9,15 @@ fixtures/generated/jpeg/camera.jpg (JPEG image)
     • Location where it was created: 48.85840, 2.29450 — will be removed [EXIF > GPS]
     • A small preview image (may show the original before cropping or edits): 648 bytes — will be removed [EXIF > Thumbnail]
   Medium risk
-    • Make and model of the camera or phone: Fictional Camera Co. — will be removed [EXIF > Make]
-    • Make and model of the camera or phone: FC-100 — will be removed [EXIF > Model]
+    • Make and model of a device (camera, phone, printer): Fictional Camera Co. — will be removed [EXIF > Make]
+    • Make and model of a device (camera, phone, printer): FC-100 — will be removed [EXIF > Model]
     • Software or app used: PhotoTool 2.1 — will be removed [EXIF > Software]
     • Date and time: 2026:03:14 09:26:53 — will be removed [EXIF > DateTime]
     • Date and time: 2026:03:14 09:26:53 — will be removed [EXIF > DateTimeOriginal]
-    • Make and model of the camera or phone: FC 24-70mm — will be removed [EXIF > LensModel]
+    • Make and model of a device (camera, phone, printer): FC 24-70mm — will be removed [EXIF > LensModel]
   Low risk
     • Rotation setting: rotated 90° clockwise — kept: needed to display correctly [EXIF > Orientation]
-    • Technical details about the camera or encoding: 2 fields — will be removed [EXIF]
+    • Technical details (encoding, settings, statistics): 2 fields — will be removed [EXIF]
 
 fixtures/generated/jpeg/clean.jpg (JPEG image)
   No hidden metadata found.
@@ -69,7 +69,89 @@ fixtures/generated/jpeg/xmp-iptc.jpg (JPEG image)
     • A title, caption or keywords: Our first day in Paris — will be removed [Photoshop > IPTC > Caption-Abstract]
     • A title, caption or keywords: holiday, family — will be removed [Photoshop > IPTC > Keywords]
   Low risk
-    • Technical details about the camera or encoding: 1 field — will be removed [XMP]
+    • Technical details (encoding, settings, statistics): 1 field — will be removed [XMP]
+
+fixtures/generated/office/budget.xlsx (Excel workbook)
+  High risk
+    • A person's name (author, artist or owner): Jane Doe — will be removed [docProps/core.xml > creator]
+    • A person's name (author, artist or owner): John Roe — will be removed [docProps/core.xml > lastModifiedBy]
+    • A file path from the computer that made it: C:\Users\jane.doe\OneDrive - Fictional Ltd\Finance\ — will be removed [xl/workbook.xml > absPath]
+  Medium risk
+    • Date and time: 2026-03-14 09:26:52 — will be removed [ZIP > File dates]
+    • A title, caption or keywords: Q1 report — draft — will be removed [docProps/core.xml > title]
+    • A title, caption or keywords: Finance — will be removed [docProps/core.xml > subject]
+    • A title, caption or keywords: confidential, acme — will be removed [docProps/core.xml > keywords]
+    • A title, caption or keywords: Numbers still to be checked with Acme. — will be removed [docProps/core.xml > description]
+    • Date and time: 2026-03-13T17:02:00Z — will be removed [docProps/core.xml > lastPrinted]
+    • Date and time: 2026-03-10T08:15:00Z — will be removed [docProps/core.xml > created]
+    • Date and time: 2026-03-14T09:26:00Z — will be removed [docProps/core.xml > modified]
+    • Software or app used: Microsoft Excel — will be removed [docProps/app.xml > Application]
+    • A company or organization name: Fictional Ltd — will be removed [docProps/app.xml > Company]
+    • Software or app used: 16.0300 — will be removed [docProps/app.xml > AppVersion]
+    • Make and model of a device (camera, phone, printer): 220 bytes — will be removed [xl/printerSettings/printerSettings1.bin]
+    • A unique ID that can link copies of this file: 13_ncr:1_{8C2D6F1A-0E4B-4F7A-9D3C-5B1E2A7F9C40} — will be removed [xl/workbook.xml > revisionPtr]
+  Low risk
+    • Technical details (encoding, settings, statistics): 7 — will be removed [docProps/core.xml > revision]
+    • Technical details (encoding, settings, statistics): 1 field — will be removed [docProps/app.xml]
+
+fixtures/generated/office/clean.docx (Word document)
+  Medium risk
+    • A unique ID that can link copies of this file: 5 fields — will be removed [word/document.xml > rsid]
+
+fixtures/generated/office/comments.docx failed: the file uses a feature MetaScrub can't handle safely, so it was left alone
+  unsupported feature: Office documents with comments aren't supported yet
+
+fixtures/generated/office/report.docx (Word document)
+  High risk
+    • A file path from the computer that made it: file:///C:\Users\jane.doe\AppData\Roaming\Microsoft\Templates\Report.dotx — will be removed [word/_rels/settings.xml.rels > attachedTemplate]
+    • A person's name (author, artist or owner): Jane Doe — will be removed [docProps/core.xml > creator]
+    • A person's name (author, artist or owner): John Roe — will be removed [docProps/core.xml > lastModifiedBy]
+    • A person's name (author, artist or owner): Richard Miles — will be removed [docProps/app.xml > Manager]
+    • A small preview image (may show the original before cropping or edits): 648 bytes — will be removed [docProps/thumbnail.jpeg]
+    • A person's name (author, artist or owner): Jane Doe — will be removed [word/people.xml]
+    • A person's name (author, artist or owner): Jane Doe — will be removed [word/media/image1.jpeg > EXIF > Artist]
+    • A person's name (author, artist or owner): Copyright Jane Doe — will be removed [word/media/image1.jpeg > EXIF > Copyright]
+    • Serial number of the camera or device: SN-0042-7781 — will be removed [word/media/image1.jpeg > EXIF > BodySerialNumber]
+    • Location where it was created: 48.85840, 2.29450 — will be removed [word/media/image1.jpeg > EXIF > GPS]
+    • A small preview image (may show the original before cropping or edits): 648 bytes — will be removed [word/media/image1.jpeg > EXIF > Thumbnail]
+  Medium risk
+    • Date and time: 2026-03-14 09:26:52 — will be removed [ZIP > File dates]
+    • A title, caption or keywords: Q1 report — draft — will be removed [docProps/core.xml > title]
+    • A title, caption or keywords: Finance — will be removed [docProps/core.xml > subject]
+    • A title, caption or keywords: confidential, acme — will be removed [docProps/core.xml > keywords]
+    • A title, caption or keywords: Numbers still to be checked with Acme. — will be removed [docProps/core.xml > description]
+    • Date and time: 2026-03-13T17:02:00Z — will be removed [docProps/core.xml > lastPrinted]
+    • Date and time: 2026-03-10T08:15:00Z — will be removed [docProps/core.xml > created]
+    • Date and time: 2026-03-14T09:26:00Z — will be removed [docProps/core.xml > modified]
+    • Software or app used: Report.dotx — will be removed [docProps/app.xml > Template]
+    • Software or app used: Microsoft Office Word — will be removed [docProps/app.xml > Application]
+    • A company or organization name: Fictional Ltd — will be removed [docProps/app.xml > Company]
+    • Software or app used: 16.0000 — will be removed [docProps/app.xml > AppVersion]
+    • A custom property (extra details added by a program or person): Acme Corporation — will be removed [docProps/custom.xml > Client]
+    • A custom property (extra details added by a program or person): Falcon — will be removed [docProps/custom.xml > Project]
+    • A custom property (extra details added by a program or person): 164 bytes — will be removed [customXml/item1.xml]
+    • A unique ID that can link copies of this file: 5 fields — will be removed [word/document.xml > rsid]
+    • A custom property (extra details added by a program or person): 1 field — will be removed [word/settings.xml > docVars]
+    • A unique ID that can link copies of this file: 3 fields — will be removed [word/settings.xml > rsids]
+    • A unique ID that can link copies of this file: {3F2504E0-4F89-11D3-9A0C-0305E82C3301} — will be removed [word/settings.xml > docId]
+    • Make and model of a device (camera, phone, printer): Fictional Camera Co. — will be removed [word/media/image1.jpeg > EXIF > Make]
+    • Make and model of a device (camera, phone, printer): FC-100 — will be removed [word/media/image1.jpeg > EXIF > Model]
+    • Software or app used: PhotoTool 2.1 — will be removed [word/media/image1.jpeg > EXIF > Software]
+    • Date and time: 2026:03:14 09:26:53 — will be removed [word/media/image1.jpeg > EXIF > DateTime]
+    • Date and time: 2026:03:14 09:26:53 — will be removed [word/media/image1.jpeg > EXIF > DateTimeOriginal]
+    • Make and model of a device (camera, phone, printer): FC 24-70mm — will be removed [word/media/image1.jpeg > EXIF > LensModel]
+  Low risk
+    • Technical details (encoding, settings, statistics): 7 — will be removed [docProps/core.xml > revision]
+    • Technical details (encoding, settings, statistics): 4 fields — will be removed [docProps/app.xml]
+    • Rotation setting: rotated 90° clockwise — kept: needed to display correctly [word/media/image1.jpeg > EXIF > Orientation]
+    • Technical details (encoding, settings, statistics): 2 fields — will be removed [word/media/image1.jpeg > EXIF]
+
+fixtures/generated/office/tracked-changes.docx failed: the file uses a feature MetaScrub can't handle safely, so it was left alone
+  unsupported feature: Office documents with tracked changes aren't supported yet
+
+fixtures/generated/other/archive.zip skipped: ZIP archive files aren't supported yet
+
+fixtures/generated/other/legacy.doc skipped: old-format (.doc, .xls, .ppt) and password-protected Office files aren't supported
 
 fixtures/generated/other/notes.txt skipped: MetaScrub can't read this type of file
 
@@ -88,17 +170,17 @@ fixtures/generated/png/exif.png (PNG image)
     • A person's name (author, artist or owner): Jane Doe — will be removed [PNG > tEXt > Raw profile type iptc > By-line]
     • Location where it was created: Paris — will be removed [PNG > tEXt > Raw profile type iptc > City]
   Medium risk
-    • Make and model of the camera or phone: Fictional Camera Co. — will be removed [PNG > eXIf > Make]
-    • Make and model of the camera or phone: FC-100 — will be removed [PNG > eXIf > Model]
+    • Make and model of a device (camera, phone, printer): Fictional Camera Co. — will be removed [PNG > eXIf > Make]
+    • Make and model of a device (camera, phone, printer): FC-100 — will be removed [PNG > eXIf > Model]
     • Software or app used: PhotoTool 2.1 — will be removed [PNG > eXIf > Software]
     • Date and time: 2026:03:14 09:26:53 — will be removed [PNG > eXIf > DateTime]
     • Date and time: 2026:03:14 09:26:53 — will be removed [PNG > eXIf > DateTimeOriginal]
-    • Make and model of the camera or phone: FC 24-70mm — will be removed [PNG > eXIf > LensModel]
+    • Make and model of a device (camera, phone, printer): FC 24-70mm — will be removed [PNG > eXIf > LensModel]
     • A title, caption or keywords: Our first day in Paris — will be removed [PNG > tEXt > Raw profile type iptc > Caption-Abstract]
     • A title, caption or keywords: holiday, family — will be removed [PNG > tEXt > Raw profile type iptc > Keywords]
   Low risk
     • Rotation setting: rotated 180° — kept: needed to display correctly [PNG > eXIf > Orientation]
-    • Technical details about the camera or encoding: 2 fields — will be removed [PNG > eXIf]
+    • Technical details (encoding, settings, statistics): 2 fields — will be removed [PNG > eXIf]
 
 fixtures/generated/png/icc.png (PNG image)
   Low risk
@@ -121,8 +203,8 @@ fixtures/generated/png/text-chunks.png (PNG image)
     • Date and time: 2026-03-14 08:26:53 UTC — will be removed [PNG > tIME]
     • Metadata MetaScrub doesn't recognize: 19 bytes — will be removed [PNG > prVt]
   Low risk
-    • Technical details about the camera or encoding: 1 field — will be removed [PNG > iTXt > XML:com.adobe.xmp]
-    • Technical details about the camera or encoding: 1 field — will be removed [PNG]
+    • Technical details (encoding, settings, statistics): 1 field — will be removed [PNG > iTXt > XML:com.adobe.xmp]
+    • Technical details (encoding, settings, statistics): 1 field — will be removed [PNG]
 
 fixtures/generated/png/trailing.png (PNG image)
   High risk
@@ -141,7 +223,7 @@ fixtures/generated/webp/animated.webp (WebP image)
     • A unique ID that can link copies of this file: xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03 — will be removed [WebP > XMP  > xmpMM:DocumentID]
     • Metadata MetaScrub doesn't recognize: 1 field — will be removed [WebP > XMP ]
   Low risk
-    • Technical details about the camera or encoding: 1 field — will be removed [WebP > XMP ]
+    • Technical details (encoding, settings, statistics): 1 field — will be removed [WebP > XMP ]
 
 fixtures/generated/webp/camera.webp (WebP image)
   High risk
@@ -154,20 +236,20 @@ fixtures/generated/webp/camera.webp (WebP image)
     • A person's name (author, artist or owner): Jane Doe — will be removed [WebP > XMP  > dc:creator]
     • A file path from the computer that made it: C:\Users\jane\Pictures\holiday.psd — will be removed [WebP > XMP  > stRef:filePath]
   Medium risk
-    • Make and model of the camera or phone: Fictional Camera Co. — will be removed [WebP > EXIF > Make]
-    • Make and model of the camera or phone: FC-100 — will be removed [WebP > EXIF > Model]
+    • Make and model of a device (camera, phone, printer): Fictional Camera Co. — will be removed [WebP > EXIF > Make]
+    • Make and model of a device (camera, phone, printer): FC-100 — will be removed [WebP > EXIF > Model]
     • Software or app used: PhotoTool 2.1 — will be removed [WebP > EXIF > Software]
     • Date and time: 2026:03:14 09:26:53 — will be removed [WebP > EXIF > DateTime]
     • Date and time: 2026:03:14 09:26:53 — will be removed [WebP > EXIF > DateTimeOriginal]
-    • Make and model of the camera or phone: FC 24-70mm — will be removed [WebP > EXIF > LensModel]
+    • Make and model of a device (camera, phone, printer): FC 24-70mm — will be removed [WebP > EXIF > LensModel]
     • Software or app used: PhotoTool 2.1 — will be removed [WebP > XMP  > xmp:CreatorTool]
     • A unique ID that can link copies of this file: xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03 — will be removed [WebP > XMP  > xmpMM:DocumentID]
     • Metadata MetaScrub doesn't recognize: 1 field — will be removed [WebP > XMP ]
     • Metadata MetaScrub doesn't recognize: 19 bytes — will be removed [WebP > prVt]
   Low risk
     • Rotation setting: rotated 180° — kept: needed to display correctly [WebP > EXIF > Orientation]
-    • Technical details about the camera or encoding: 2 fields — will be removed [WebP > EXIF]
-    • Technical details about the camera or encoding: 1 field — will be removed [WebP > XMP ]
+    • Technical details (encoding, settings, statistics): 2 fields — will be removed [WebP > EXIF]
+    • Technical details (encoding, settings, statistics): 1 field — will be removed [WebP > XMP ]
 
 fixtures/generated/webp/clean.webp (WebP image)
   No hidden metadata found.
@@ -183,4 +265,4 @@ fixtures/generated/webp/trailing.webp (WebP image)
 fixtures/generated/webp/truncated.webp failed: the file is damaged or not what it claims to be
   malformed file: unexpected end of data
 
-20 files inspected, 13 with hidden metadata, 1 skipped, 3 failed
+23 files inspected, 16 with hidden metadata, 3 skipped, 5 failed

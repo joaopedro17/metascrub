@@ -168,7 +168,7 @@ fn process_file(
         .take(SNIFF_LEN as u64)
         .read_to_end(&mut head)?;
     file.seek(SeekFrom::Start(0))?;
-    report.format = format::sniff(&head);
+    report.format = format::detect(&head, &mut file)?;
     let settings = output::Settings {
         permissions: metadata.permissions(),
         neutral_times: !request.options.keep_file_times,

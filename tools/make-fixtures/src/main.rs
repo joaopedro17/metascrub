@@ -7,6 +7,8 @@
 // A developer tool: failing loudly on a bug is the right behavior.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
+mod office;
+
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -23,8 +25,9 @@ fn main() {
     let jpeg_dir = root.join("jpeg");
     let png_dir = root.join("png");
     let webp_dir = root.join("webp");
+    let office_dir = root.join("office");
     let other_dir = root.join("other");
-    for dir in [&jpeg_dir, &png_dir, &webp_dir, &other_dir] {
+    for dir in [&jpeg_dir, &png_dir, &webp_dir, &office_dir, &other_dir] {
         fs::create_dir_all(dir).unwrap();
     }
 
@@ -189,7 +192,7 @@ fn main() {
         "clean.webp",
         &riff(std::slice::from_ref(&image), b""),
     );
-    let camera = riff(
+    let camera_webp = riff(
         &[
             vp8x(0x08 | 0x04, 64, 48),
             image.clone(),
@@ -199,11 +202,11 @@ fn main() {
         ],
         b"",
     );
-    write(&webp_dir, "camera.webp", &camera);
+    write(&webp_dir, "camera.webp", &camera_webp);
     write(
         &webp_dir,
         "truncated.webp",
-        &camera[..camera.len() * 7 / 10],
+        &camera_webp[..camera_webp.len() * 7 / 10],
     );
     write(
         &webp_dir,
@@ -245,8 +248,29 @@ fn main() {
         &riff(&[image], b"appended after the image"),
     );
 
+    // Office
+    let office = office::files(&camera, &thumbnail);
+    write(&office_dir, "clean.docx", &office.clean_docx);
+    write(&office_dir, "report.docx", &office.report_docx);
+    write(
+        &office_dir,
+        "tracked-changes.docx",
+        &office.tracked_changes_docx,
+    );
+    write(&office_dir, "comments.docx", &office.comments_docx);
+    write(&office_dir, "budget.xlsx", &office.budget_xlsx);
+
     // Other
     write(&other_dir, "notes.txt", b"Not an image.\n");
+    write(
+        &other_dir,
+        "archive.zip",
+        &office::zip(&[("notes.txt".into(), b"Not an image.\n".to_vec())], true),
+    );
+    // Only the signature of an OLE compound file: enough to be recognized.
+    let mut legacy = vec![0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
+    legacy.resize(512, 0);
+    write(&other_dir, "legacy.doc", &legacy);
 }
 
 fn gradient(width: u32, height: u32) -> RgbImage {
