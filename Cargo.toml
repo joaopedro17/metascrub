@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["crates/metascrub-core", "crates/metascrub-cli", "tools/make-fixtures"]
+exclude = ["fuzz"]
 
 [workspace.package]
 version = "0.1.0"
