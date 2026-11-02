@@ -1,5 +1,7 @@
 //! Every sentence a user reads. The core only returns codes.
 
+use std::path::Path;
+
 use metascrub_core::model::{
     Disposition, FailureKind, Finding, FindingKind, FormatId, KeepReason, SkipReason, Value,
 };
@@ -118,8 +120,31 @@ fn size(bytes: u64) -> String {
     }
 }
 
+/// Text from a file (values, names, paths) can contain control characters or
+/// bidirectional overrides that would rewrite the terminal or disguise the
+/// report. They are shown as `�` instead.
+pub fn sanitize(text: &str) -> String {
+    text.chars()
+        .map(|c| {
+            if c.is_control() || is_bidi_control(c) {
+                char::REPLACEMENT_CHARACTER
+            } else {
+                c
+            }
+        })
+        .collect()
+}
+
+fn is_bidi_control(c: char) -> bool {
+    matches!(c, '\u{200E}' | '\u{200F}' | '\u{202A}'..='\u{202E}' | '\u{2066}'..='\u{2069}')
+}
+
+pub fn path(path: &Path) -> String {
+    sanitize(&path.display().to_string())
+}
+
 fn truncate(text: &str) -> String {
-    let single_line = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let single_line = sanitize(&text.split_whitespace().collect::<Vec<_>>().join(" "));
     if single_line.chars().count() <= MAX_VALUE_CHARS {
         return single_line;
     }
@@ -171,6 +196,16 @@ mod tests {
         assert_eq!(size(512), "512 bytes");
         assert_eq!(size(12_345), "12.3 KB");
         assert_eq!(size(3_400_000), "3.4 MB");
+    }
+
+    #[test]
+    fn control_characters_cannot_reach_the_terminal() {
+        assert_eq!(
+            sanitize("\u{1b}]0;title\u{7}\u{1b}[2Jtext"),
+            "\u{FFFD}]0;title\u{FFFD}\u{FFFD}[2Jtext"
+        );
+        assert_eq!(sanitize("photo\u{202E}gpj.exe"), "photo\u{FFFD}gpj.exe");
+        assert_eq!(sanitize("café ✓"), "café ✓");
     }
 
     #[test]

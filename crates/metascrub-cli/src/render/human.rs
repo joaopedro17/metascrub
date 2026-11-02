@@ -38,9 +38,9 @@ pub fn render(report: &RunReport, settings: &Settings, out: &mut dyn Write) -> i
 }
 
 fn render_file(file: &FileReport, settings: &Settings, out: &mut dyn Write) -> io::Result<()> {
-    let path = file.path.display();
+    let path = messages::path(&file.path);
     let arrow = match &file.output {
-        Some(output) if output != &file.path => format!(" → {}", output.display()),
+        Some(output) if output != &file.path => format!(" → {}", messages::path(output)),
         _ => String::new(),
     };
     let kind = file.format.map(messages::format).unwrap_or("file");
@@ -59,7 +59,7 @@ fn render_file(file: &FileReport, settings: &Settings, out: &mut dyn Write) -> i
                 "{BOLD}{path}{BOLD:#} {ERROR}failed: {message}{ERROR:#}"
             )?;
             if settings.verbosity == Verbosity::Verbose {
-                writeln!(out, "  {DIM}{}{DIM:#}", failure.detail)?;
+                writeln!(out, "  {DIM}{}{DIM:#}", messages::sanitize(&failure.detail))?;
             }
             Ok(())
         }
@@ -147,7 +147,11 @@ fn render_findings(
                 messages::disposition(line.disposition, tense)
             )?;
             if let Some(location) = line.location {
-                write!(out, " {DIM}[{location}]{DIM:#}")?;
+                write!(
+                    out,
+                    " {DIM}[{}]{DIM:#}",
+                    messages::sanitize(&location.to_string())
+                )?;
             }
             writeln!(out)?;
         }

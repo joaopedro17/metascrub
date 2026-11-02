@@ -1,6 +1,6 @@
 pub mod human;
 pub mod json;
-mod messages;
+pub mod messages;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Verbosity {

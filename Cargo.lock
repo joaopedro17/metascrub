@@ -265,6 +265,7 @@ dependencies = [
  "anstream",
  "anstyle",
  "clap",
+ "flate2",
  "metascrub-core",
  "serde_json",
  "tempfile",

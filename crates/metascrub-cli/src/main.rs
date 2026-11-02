@@ -109,7 +109,7 @@ fn reject_folders(paths: &[PathBuf]) {
                 ErrorKind::InvalidValue,
                 format!(
                     "'{}' is a folder. Folders aren't supported yet; pass the files inside it instead.",
-                    folder.display()
+                    render::messages::path(folder)
                 ),
             )
             .exit();
