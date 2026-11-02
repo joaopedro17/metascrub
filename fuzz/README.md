@@ -7,10 +7,10 @@ rustup toolchain install nightly
 cargo +nightly install cargo-fuzz --locked
 ```
 
-Run a target from this folder (here for 10 minutes, seeded with the fixtures):
+Run a target, here for 10 minutes:
 
 ```bash
-cargo +nightly fuzz run jpeg corpus/jpeg ../fixtures/generated/jpeg -- -max_total_time=600
+just fuzz jpeg 600
 ```
 
 | Target | What it reaches |
