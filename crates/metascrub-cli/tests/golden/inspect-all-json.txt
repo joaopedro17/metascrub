@@ -1,4 +1,4 @@
-$ metascrub inspect --json --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/image.webp fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png
+$ metascrub inspect --json --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 {
@@ -613,16 +613,6 @@ exit: 1
     },
     {
       "findings": [],
-      "format": "webp",
-      "outcome": {
-        "detail": "unsupported_format",
-        "status": "skipped"
-      },
-      "output": null,
-      "path": "fixtures/generated/other/image.webp"
-    },
-    {
-      "findings": [],
       "format": null,
       "outcome": {
         "detail": "unsupported_format",
@@ -1227,6 +1217,592 @@ exit: 1
       },
       "output": null,
       "path": "fixtures/generated/png/trailing.png"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "WebP",
+            "ANMF",
+            "prVt"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 10
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "WebP",
+            "ANMF",
+            "prVt"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 10
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "WebP",
+            "XMP ",
+            "xmp:CreatorTool"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "WebP",
+            "XMP ",
+            "photoshop:City"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Paris"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "WebP",
+            "XMP ",
+            "exif:GPSLatitude"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "48,51.504N"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "WebP",
+            "XMP ",
+            "xmpMM:DocumentID"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "WebP",
+            "XMP ",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "WebP",
+            "XMP ",
+            "stRef:filePath"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "C:\\Users\\jane\\Pictures\\holiday.psd"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "WebP",
+            "XMP "
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "WebP",
+            "XMP "
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        }
+      ],
+      "format": "webp",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/webp/animated.webp"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "WebP",
+            "EXIF",
+            "Make"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Fictional Camera Co."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "WebP",
+            "EXIF",
+            "Model"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC-100"
+          }
+        },
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "required_to_render"
+          },
+          "kind": "orientation",
+          "location": [
+            "WebP",
+            "EXIF",
+            "Orientation"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 3
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "WebP",
+            "EXIF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "WebP",
+            "EXIF",
+            "DateTime"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "WebP",
+            "EXIF",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "WebP",
+            "EXIF",
+            "Copyright"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Copyright Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "WebP",
+            "EXIF",
+            "DateTimeOriginal"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "WebP",
+            "EXIF",
+            "BodySerialNumber"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "SN-0042-7781"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "WebP",
+            "EXIF",
+            "LensModel"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC 24-70mm"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "WebP",
+            "EXIF",
+            "GPS"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "coordinates",
+            "value": {
+              "latitude": 48.8584,
+              "longitude": 2.2944999999999998
+            }
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "WebP",
+            "EXIF"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 2
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "WebP",
+            "XMP ",
+            "xmp:CreatorTool"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "WebP",
+            "XMP ",
+            "photoshop:City"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Paris"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "WebP",
+            "XMP ",
+            "exif:GPSLatitude"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "48,51.504N"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "WebP",
+            "XMP ",
+            "xmpMM:DocumentID"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "WebP",
+            "XMP ",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "WebP",
+            "XMP ",
+            "stRef:filePath"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "C:\\Users\\jane\\Pictures\\holiday.psd"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "WebP",
+            "XMP "
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "WebP",
+            "XMP "
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "WebP",
+            "prVt"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 19
+          }
+        }
+      ],
+      "format": "webp",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/webp/camera.webp"
+    },
+    {
+      "findings": [],
+      "format": "webp",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/webp/clean.webp"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "standard_color_profile"
+          },
+          "kind": "color_profile",
+          "location": [
+            "WebP",
+            "ICCP"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "sRGB IEC61966-2.1"
+          }
+        }
+      ],
+      "format": "webp",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/webp/icc.webp"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "trailing_data",
+          "location": [
+            "After end of image"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 24
+          }
+        }
+      ],
+      "format": "webp",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/webp/trailing.webp"
+    },
+    {
+      "findings": [],
+      "format": "webp",
+      "outcome": {
+        "detail": {
+          "detail": "malformed file: unexpected end of data",
+          "kind": "malformed"
+        },
+        "status": "failed"
+      },
+      "output": null,
+      "path": "fixtures/generated/webp/truncated.webp"
     }
   ],
   "schema_version": 1,
@@ -1234,10 +1810,10 @@ exit: 1
     "cancelled": 0,
     "cleaned": 0,
     "copied": 0,
-    "failed": 2,
-    "inspected": 15,
+    "failed": 3,
+    "inspected": 20,
     "remaining_metadata": 0,
-    "skipped": 2,
+    "skipped": 1,
     "verified": 0
   },
   "values_shown": true

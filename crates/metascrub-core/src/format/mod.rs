@@ -6,6 +6,7 @@ mod icc;
 mod iptc;
 mod jpeg;
 mod png;
+mod webp;
 mod xmp;
 
 use std::fmt;
@@ -56,7 +57,7 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
     match format {
         FormatId::Jpeg => Some(&jpeg::Jpeg),
         FormatId::Png => Some(&png::Png),
-        FormatId::Webp => None,
+        FormatId::Webp => Some(&webp::Webp),
     }
 }
 

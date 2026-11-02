@@ -1,4 +1,4 @@
-$ metascrub inspect fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/image.webp fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png
+$ metascrub inspect fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 fixtures/generated/jpeg/camera.jpg (JPEG image)
@@ -62,8 +62,6 @@ fixtures/generated/jpeg/xmp-iptc.jpg (JPEG image)
   Low risk
     • Technical details about the camera or encoding — will be removed
 
-fixtures/generated/other/image.webp skipped: WebP image files aren't supported yet
-
 fixtures/generated/other/notes.txt skipped: MetaScrub can't read this type of file
 
 fixtures/generated/png/bad-checksum.png failed: the file is damaged or not what it claims to be
@@ -107,5 +105,46 @@ fixtures/generated/png/trailing.png (PNG image)
   High risk
     • Hidden data after the end of the image (such as a Motion Photo video) — will be removed
 
-15 files inspected, 10 with hidden metadata, 2 skipped, 2 failed
+fixtures/generated/webp/animated.webp (WebP image)
+  High risk
+    • Location where it was created — will be removed
+    • A person's name (author, artist or owner) — will be removed
+    • A file path from the computer that made it — will be removed
+  Medium risk
+    • Metadata MetaScrub doesn't recognize — will be removed
+    • Software or app used — will be removed
+    • A unique ID that can link copies of this file — will be removed
+  Low risk
+    • Technical details about the camera or encoding — will be removed
+
+fixtures/generated/webp/camera.webp (WebP image)
+  High risk
+    • A person's name (author, artist or owner) — will be removed
+    • Serial number of the camera or device — will be removed
+    • Location where it was created — will be removed
+    • A file path from the computer that made it — will be removed
+  Medium risk
+    • Make and model of the camera or phone — will be removed
+    • Software or app used — will be removed
+    • Date and time — will be removed
+    • A unique ID that can link copies of this file — will be removed
+    • Metadata MetaScrub doesn't recognize — will be removed
+  Low risk
+    • Rotation setting — kept: needed to display correctly
+    • Technical details about the camera or encoding — will be removed
+
+fixtures/generated/webp/clean.webp (WebP image)
+  No hidden metadata found.
+
+fixtures/generated/webp/icc.webp (WebP image)
+  Low risk
+    • Color profile — kept: a standard profile that reveals nothing
+
+fixtures/generated/webp/trailing.webp (WebP image)
+  High risk
+    • Hidden data after the end of the image (such as a Motion Photo video) — will be removed
+
+fixtures/generated/webp/truncated.webp failed: the file is damaged or not what it claims to be
+
+20 files inspected, 13 with hidden metadata, 1 skipped, 3 failed
 Values are hidden so this report is safe to share. Use --show-values to see them.

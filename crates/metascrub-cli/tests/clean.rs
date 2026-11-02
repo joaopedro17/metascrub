@@ -27,7 +27,7 @@ fn metascrub(args: &[&std::ffi::OsStr]) -> Output {
 
 fn clean_all_into(out: &Path) -> Vec<PathBuf> {
     let mut fixtures = Vec::new();
-    for dir in ["jpeg", "png"] {
+    for dir in ["jpeg", "png", "webp"] {
         for entry in fs::read_dir(fixture(dir)).unwrap() {
             fixtures.push(entry.unwrap().path());
         }
@@ -68,12 +68,19 @@ fn exiftool_tags(path: &Path) -> Option<BTreeSet<String>> {
 
 /// Tags exiftool may still see after cleaning, beyond those of the
 /// metadata-free base image: only what MetaScrub deliberately keeps.
+/// `[RIFF]` tags are the WebP canvas size, feature flags and animation
+/// settings, which the extended format needs.
 fn allowed_extras(name: &str) -> &'static [&'static str] {
     const ORIENTATION: &[&str] = &["[File]ExifByteOrder", "[IFD0]Orientation"];
     const ICC: &[&str] = &["[ICC-header]", "[ICC_Profile]", "[PNG]ProfileName"];
+    const WEBP_ORIENTATION: &[&str] = &["[RIFF]", "[File]ExifByteOrder", "[IFD0]Orientation"];
+    const WEBP_ICC: &[&str] = &["[RIFF]", "[ICC-header]", "[ICC_Profile]"];
     match name {
         "camera.jpg" | "exif.png" => ORIENTATION,
         "icc-standard.jpg" | "icc.png" => ICC,
+        "camera.webp" => WEBP_ORIENTATION,
+        "icc.webp" => WEBP_ICC,
+        _ if name.ends_with(".webp") => &["[RIFF]"],
         _ => &[],
     }
 }
@@ -85,6 +92,7 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
         return;
     };
     let base_png = exiftool_tags(&fixture("png/clean.png")).unwrap();
+    let base_webp = exiftool_tags(&fixture("webp/clean.webp")).unwrap();
     // Sanity check that the oracle sees what we planted.
     let original = exiftool_tags(&fixture("jpeg/camera.jpg")).unwrap();
     assert!(
@@ -98,7 +106,9 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
     for entry in fs::read_dir(out.path()).unwrap() {
         let path = entry.unwrap().path();
         let name = path.file_name().unwrap().to_string_lossy().into_owned();
-        let base = if name.ends_with(".png") && name != "jpeg-named.png" {
+        let base = if name.ends_with(".webp") {
+            &base_webp
+        } else if name.ends_with(".png") && name != "jpeg-named.png" {
             &base_png
         } else {
             &base_jpeg
@@ -112,7 +122,7 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
         assert!(extras.is_empty(), "{name}: exiftool still finds {extras:?}");
         checked += 1;
     }
-    assert!(checked >= 12, "only {checked} files were cleaned");
+    assert!(checked >= 17, "only {checked} files were cleaned");
 }
 
 #[test]

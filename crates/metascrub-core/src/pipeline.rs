@@ -381,19 +381,6 @@ mod tests {
     }
 
     #[test]
-    fn detected_but_unsupported_formats_keep_their_format() {
-        let report = run_one(Request::new(
-            Command::Inspect,
-            vec![fixture("other/image.webp")],
-        ));
-        assert_eq!(report.format, Some(FormatId::Webp));
-        assert_eq!(
-            report.outcome,
-            Outcome::Skipped(SkipReason::UnsupportedFormat)
-        );
-    }
-
-    #[test]
     fn flags_extensions_that_do_not_match_the_content() {
         let finding = extension_mismatch(Path::new("photo.png"), FormatId::Jpeg).expect("mismatch");
         assert_eq!(finding.kind, FindingKind::ExtensionMismatch);

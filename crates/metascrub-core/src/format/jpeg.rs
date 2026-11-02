@@ -101,6 +101,9 @@ pub(super) fn parse(data: &[u8]) -> Result<Parsed<'_>, FormatError> {
             }
             // Markers without a payload.
             SOI | 0x01 | 0xD0..=0xD7 => {}
+            // `FF 00` is an escaped data byte, never a marker. Writing it back
+            // as a segment would make the next reader see image data instead.
+            0x00 => return Err(FormatError::malformed("invalid JPEG marker")),
             _ => {
                 let length = usize::from(cursor.u16_be()?);
                 let payload = length
@@ -443,6 +446,15 @@ mod tests {
         for len in 0..data.len() - 2 {
             assert!(parse(&data[..len]).is_err(), "length {len}");
         }
+    }
+
+    #[test]
+    fn escaped_data_byte_is_not_a_marker() {
+        let mut data = jpeg(&[], b"");
+        // After the scan, fill bytes then 00: found by fuzzing the cleaner.
+        let eoi = data.len() - 2;
+        data.splice(eoi..eoi, [0xFF, 0xFF, 0x00, 0x00, 0x02]);
+        assert!(parse(&data).is_err());
     }
 
     #[test]
