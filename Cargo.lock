@@ -398,7 +398,7 @@ checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
 
 [[package]]
 name = "make-fixtures"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "flate2",
  "image",
@@ -412,7 +412,7 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "metascrub-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anstream",
  "anstyle",
@@ -427,7 +427,7 @@ dependencies = [
 
 [[package]]
 name = "metascrub-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "flate2",
  "image",
