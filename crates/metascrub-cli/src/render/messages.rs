@@ -155,6 +155,9 @@ pub fn failure(kind: FailureKind) -> &'static str {
         FailureKind::Io => "couldn't read the file",
         FailureKind::Malformed => "the file is damaged or not what it claims to be",
         FailureKind::LimitExceeded => "the file exceeds MetaScrub's safety limits",
+        FailureKind::Unsupported => {
+            "the file uses a feature MetaScrub can't handle safely, so it was left alone"
+        }
         FailureKind::Cancelled => "cancelled before it finished",
     }
 }

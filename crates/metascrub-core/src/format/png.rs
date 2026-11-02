@@ -19,6 +19,8 @@ const RENDERING_CHUNKS: &[&[u8; 4]] = &[
     b"fcTL", b"fdAT", b"cICP", b"mDCV", b"cLLI",
 ];
 
+const CRITICAL_CHUNKS: &[&[u8; 4]] = &[b"IHDR", b"PLTE", b"IDAT", b"IEND"];
+
 const NEUTRAL_PROFILE_NAME: &[u8] = b"ICC profile";
 
 /// Standard but unnecessary for display; removed without being a privacy risk.
@@ -106,12 +108,14 @@ fn write_clean(parsed: &Parsed<'_>, findings: &[Finding], out: &mut dyn Write) -
     );
     let orientation = kept_orientation(findings, &Location::new(["PNG", "eXIf", "Orientation"]));
     let mut exif_written = false;
+    let mut icc_written = false;
 
     out.write_all(SIGNATURE)?;
     for chunk in &parsed.chunks {
         match &chunk.kind {
             kind if RENDERING_CHUNKS.contains(&kind) => write_chunk(out, kind, chunk.data)?,
-            b"iCCP" if keep_icc => {
+            b"iCCP" if keep_icc && !icc_written => {
+                icc_written = true;
                 // The profile name is free text chosen by whatever wrote the file.
                 let (_name, profile) = split_nul(chunk.data).unwrap_or_default();
                 let data = [NEUTRAL_PROFILE_NAME, b"\0", profile].concat();
@@ -167,6 +171,14 @@ pub(super) fn parse(data: &[u8]) -> Result<Parsed<'_>, FormatError> {
         let kind: [u8; 4] = kind
             .try_into()
             .map_err(|_| FormatError::malformed("short PNG chunk"))?;
+        // An uppercase first letter marks a chunk decoders can't skip; dropping
+        // one we don't understand could change the image.
+        if kind[0].is_ascii_uppercase() && !CRITICAL_CHUNKS.contains(&&kind) {
+            return Err(FormatError::Unsupported(format!(
+                "PNG chunk {}",
+                latin1(&kind)
+            )));
+        }
         chunks.push(Chunk { kind, data });
         if &kind == b"IEND" {
             return Ok(Parsed {
@@ -535,6 +547,32 @@ mod tests {
         );
         assert_eq!(findings[0].kind, FindingKind::PersonName);
         assert_eq!(findings[0].value, Some(Value::Text("Daniel".into())));
+    }
+
+    #[test]
+    fn unknown_critical_chunks_are_refused() {
+        let apple = png(&[chunk(b"CgBI", &[0x50, 0, 0x20, 6])], b"");
+        assert!(matches!(parse(&apple), Err(FormatError::Unsupported(_))));
+    }
+
+    #[test]
+    fn only_the_first_color_profile_is_written() {
+        let srgb = [
+            [0.4361, 0.2225, 0.0139],
+            [0.3851, 0.7169, 0.0971],
+            [0.1431, 0.0606, 0.7141],
+        ];
+        let profile = icc::tests::profile("sRGB", srgb, None);
+        let iccp = [b"a\0\0".as_slice(), &deflate(&profile)].concat();
+        let data = png(&[chunk(b"iCCP", &iccp), chunk(b"iCCP", b"broken\0\0")], b"");
+        let cleaned = clean(&data, &Options::default());
+        let profiles = parse(&cleaned)
+            .unwrap()
+            .chunks
+            .iter()
+            .filter(|c| &c.kind == b"iCCP")
+            .count();
+        assert_eq!(profiles, 1);
     }
 
     #[test]

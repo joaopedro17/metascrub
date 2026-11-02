@@ -6,6 +6,7 @@ use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
 use crate::format::{self, FormatError, FormatHandler, SNIFF_LEN};
+use crate::limits::MAX_IMAGE_BYTES;
 use crate::model::{
     Disposition, Failure, FailureKind, FileReport, Finding, FindingKind, FormatId, Location,
     Outcome, RunReport, SkipReason, Value,
@@ -108,6 +109,7 @@ fn process_file(
     }
 
     let mut file = File::open(path)?;
+    ensure_same_file(&metadata, &file)?;
     let mut head = Vec::with_capacity(SNIFF_LEN);
     Read::by_ref(&mut file)
         .take(SNIFF_LEN as u64)
@@ -149,7 +151,7 @@ fn process_file(
             Outcome::WouldClean
         }
         Command::Clean => {
-            let (output, findings) = clean(path, &mut file, handler, request, &settings)?;
+            let (output, findings) = clean(path, file, handler, request, &settings)?;
             report.output = Some(output);
             report.findings = findings;
             Outcome::Cleaned
@@ -163,14 +165,17 @@ fn process_file(
 
 fn clean(
     path: &Path,
-    file: &mut File,
+    mut file: File,
     handler: &dyn FormatHandler,
     request: &Request,
     settings: &output::Settings,
 ) -> Result<(PathBuf, Vec<Finding>), FormatError> {
+    // Closed before writing: Windows can't replace a file that is still open.
+    let input = format::read_limited(&mut file, MAX_IMAGE_BYTES)?;
+    drop(file);
     let mut findings = Vec::new();
     let write = |out: &mut dyn Write| {
-        findings = handler.clean(file, out, &request.options)?;
+        findings = handler.clean(&mut io::Cursor::new(&input), out, &request.options)?;
         Ok(())
     };
     let written = match &request.output {
@@ -214,6 +219,28 @@ fn unsupported(
     Ok(Outcome::Copied)
 }
 
+/// The path could be swapped (e.g. for a symlink) between the check and the
+/// open; make sure the file opened is the one that was checked.
+#[cfg(unix)]
+fn ensure_same_file(checked: &fs::Metadata, file: &File) -> Result<(), FormatError> {
+    use std::os::unix::fs::MetadataExt;
+    let opened = file.metadata()?;
+    if opened.dev() == checked.dev() && opened.ino() == checked.ino() {
+        Ok(())
+    } else {
+        Err(io::Error::other("the file changed while it was being opened").into())
+    }
+}
+
+#[cfg(not(unix))]
+fn ensure_same_file(_checked: &fs::Metadata, file: &File) -> Result<(), FormatError> {
+    if file.metadata()?.is_file() {
+        Ok(())
+    } else {
+        Err(io::Error::other("the file changed while it was being opened").into())
+    }
+}
+
 /// `photo.jpg` → `photo.clean.jpg`, `notes` → `notes.clean`.
 fn cleaned_name(path: &Path) -> PathBuf {
     let mut name: OsString = path.file_stem().unwrap_or_default().to_owned();
@@ -248,6 +275,7 @@ fn failure(error: FormatError) -> Failure {
     let kind = match error {
         FormatError::Io(_) => FailureKind::Io,
         FormatError::Malformed(_) => FailureKind::Malformed,
+        FormatError::Unsupported(_) => FailureKind::Unsupported,
         FormatError::TooLarge { .. } => FailureKind::LimitExceeded,
     };
     Failure {
@@ -293,6 +321,17 @@ mod tests {
         assert!(matches!(&outcomes[1], Outcome::Failed(f) if f.kind == FailureKind::Malformed));
         assert!(matches!(&outcomes[2], Outcome::Failed(f) if f.kind == FailureKind::Io));
         assert_eq!(outcomes[3], Outcome::Skipped(SkipReason::NotRegularFile));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn symbolic_links_are_not_followed() {
+        let dir = tempfile::tempdir().unwrap();
+        let link = dir.path().join("link.jpg");
+        std::os::unix::fs::symlink(fixture("jpeg/camera.jpg"), &link).unwrap();
+        let report = run_one(Request::new(Command::Clean, vec![link]));
+        assert_eq!(report.outcome, Outcome::Skipped(SkipReason::SymbolicLink));
+        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
     }
 
     #[test]

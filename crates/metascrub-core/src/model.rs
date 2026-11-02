@@ -270,6 +270,8 @@ pub enum FailureKind {
     Malformed,
     /// The file exceeds a safety limit (size, entry count, compression ratio, nesting).
     LimitExceeded,
+    /// The file uses a feature MetaScrub can't handle without risking breaking it.
+    Unsupported,
     /// The run was cancelled before this file finished.
     Cancelled,
 }

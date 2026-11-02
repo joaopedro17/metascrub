@@ -107,7 +107,11 @@ pub fn clean_bytes(data: &[u8], options: &Options) -> Result<Option<Cleaned>, Fo
 pub enum FormatError {
     Io(io::Error),
     Malformed(String),
-    TooLarge { limit: u64 },
+    /// A feature that can't be handled safely, so the file is left alone.
+    Unsupported(String),
+    TooLarge {
+        limit: u64,
+    },
 }
 
 impl FormatError {
@@ -121,6 +125,7 @@ impl fmt::Display for FormatError {
         match self {
             Self::Io(error) => error.fmt(f),
             Self::Malformed(detail) => write!(f, "malformed file: {detail}"),
+            Self::Unsupported(detail) => write!(f, "unsupported feature: {detail}"),
             Self::TooLarge { limit } => write!(f, "larger than the {limit}-byte limit"),
         }
     }
@@ -179,7 +184,7 @@ fn kept_orientation(findings: &[Finding], location: &Location) -> Option<u16> {
         })
 }
 
-fn read_limited(input: &mut dyn ReadSeek, limit: u64) -> Result<Vec<u8>, FormatError> {
+pub(crate) fn read_limited(input: &mut dyn Read, limit: u64) -> Result<Vec<u8>, FormatError> {
     let mut data = Vec::new();
     input.take(limit.saturating_add(1)).read_to_end(&mut data)?;
     if data.len() as u64 > limit {

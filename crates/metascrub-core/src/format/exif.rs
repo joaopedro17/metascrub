@@ -153,7 +153,8 @@ fn field_finding(field: &Field, name: &str, kind: FindingKind, location: &Locati
         name.to_owned()
     };
     let disposition = match kind {
-        FindingKind::Orientation if field.value.get_uint(0) != Some(1) => {
+        // 2–8 rotate or mirror; 1 is upright and anything else is invalid.
+        FindingKind::Orientation if matches!(field.value.get_uint(0), Some(2..=8)) => {
             Disposition::Keep(KeepReason::RequiredToRender)
         }
         _ => Disposition::Remove,
@@ -247,6 +248,25 @@ mod tests {
             findings[0].disposition,
             Disposition::Keep(KeepReason::RequiredToRender)
         );
+    }
+
+    #[test]
+    fn only_valid_rotations_are_kept() {
+        for (orientation, kept) in [
+            (1, false),
+            (2, true),
+            (6, true),
+            (8, true),
+            (0, false),
+            (9, false),
+        ] {
+            let findings = inspect(&orientation_only(orientation), &Location::new(["EXIF"]));
+            assert_eq!(
+                findings[0].disposition == Disposition::Keep(KeepReason::RequiredToRender),
+                kept,
+                "orientation {orientation}"
+            );
+        }
     }
 
     #[test]
