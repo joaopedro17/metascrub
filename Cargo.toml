@@ -14,6 +14,9 @@ authors = ["The MetaScrub Contributors"]
 # maintained by individuals, so upgrades are reviewed one at a time.
 [workspace.dependencies]
 metascrub-core = { path = "crates/metascrub-core", version = "=0.1.0" }
+anstream = "=1.0.0"
+anstyle = "=1.0.14"
+clap = { version = "=4.6.7", features = ["derive"] }
 flate2 = "=1.1.10"
 kamadak-exif = "=0.6.1"
 quick-xml = "=0.42.0"

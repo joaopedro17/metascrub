@@ -1,0 +1,156 @@
+//! Every sentence a user reads. The core only returns codes.
+
+use metascrub_core::model::{
+    Disposition, FailureKind, Finding, FindingKind, FormatId, KeepReason, SkipReason, Value,
+};
+
+const MAX_VALUE_CHARS: usize = 80;
+
+pub fn finding(kind: FindingKind) -> &'static str {
+    use FindingKind::*;
+    match kind {
+        GpsLocation => "Location where it was created",
+        PersonName => "A person's name (author, artist or owner)",
+        DeviceSerial => "Serial number of the camera or device",
+        FilePath => "A file path from the computer that made it",
+        DownloadUrl => "The web address it was downloaded from",
+        Thumbnail => "A small preview image (may show the original before cropping or edits)",
+        HiddenImage => "Extra hidden images (such as depth maps)",
+        TrailingData => "Hidden data after the end of the image (such as a Motion Photo video)",
+        TrackedChanges => "Tracked changes (may contain deleted text)",
+        Comment => "A comment",
+        EmbeddedFile => "Another file embedded inside it",
+        HiddenContent => "Hidden content",
+        Description => "A title, caption or keywords",
+        DeviceModel => "Make and model of the camera or phone",
+        Software => "Software or app used",
+        Timestamp => "Date and time",
+        DocumentId => "A unique ID that can link copies of this file",
+        UnknownMetadata => "Metadata MetaScrub doesn't recognize",
+        ColorProfile => "Color profile",
+        Orientation => "Rotation setting",
+        TechnicalInfo => "Technical details about the camera or encoding",
+        ExtensionMismatch => "The file name's extension doesn't match the real file type",
+        _ => "Other metadata",
+    }
+}
+
+pub fn disposition(disposition: Disposition) -> &'static str {
+    match disposition {
+        Disposition::Remove => "will be removed",
+        Disposition::Normalize => "will be reset to a neutral value",
+        Disposition::Keep(KeepReason::RequiredToRender) => "kept: needed to display correctly",
+        Disposition::Keep(KeepReason::StandardColorProfile) => {
+            "kept: a standard profile that reveals nothing"
+        }
+        Disposition::Keep(KeepReason::UserRequested) => "kept: you asked to keep it",
+        Disposition::Warn => "can't be fixed automatically",
+        Disposition::Blocks(_) => "needs your decision",
+    }
+}
+
+pub fn value(finding: &Finding) -> Option<String> {
+    let text = match finding.value.as_ref()? {
+        Value::Text(text) => text.clone(),
+        Value::Integer(n) => match finding.kind {
+            FindingKind::Orientation => orientation(*n).to_owned(),
+            FindingKind::TechnicalInfo | FindingKind::UnknownMetadata => {
+                format!("{n} field{}", if *n == 1 { "" } else { "s" })
+            }
+            _ => n.to_string(),
+        },
+        Value::Coordinates {
+            latitude,
+            longitude,
+        } => format!("{latitude:.5}, {longitude:.5}"),
+        Value::Bytes(len) => size(*len),
+    };
+    Some(truncate(&text))
+}
+
+fn orientation(value: i64) -> &'static str {
+    match value {
+        1 => "upright",
+        3 => "rotated 180°",
+        6 => "rotated 90° clockwise",
+        8 => "rotated 90° counterclockwise",
+        2 | 4 | 5 | 7 => "mirrored",
+        _ => "unknown",
+    }
+}
+
+fn size(bytes: u64) -> String {
+    const UNITS: [&str; 4] = ["bytes", "KB", "MB", "GB"];
+    let mut value = bytes as f64;
+    let mut unit = 0;
+    while value >= 1000.0 && unit < UNITS.len() - 1 {
+        value /= 1000.0;
+        unit += 1;
+    }
+    match (unit, UNITS.get(unit)) {
+        (0, _) => format!("{bytes} bytes"),
+        (_, Some(name)) => format!("{value:.1} {name}"),
+        _ => format!("{bytes} bytes"),
+    }
+}
+
+fn truncate(text: &str) -> String {
+    let single_line = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    if single_line.chars().count() <= MAX_VALUE_CHARS {
+        return single_line;
+    }
+    let mut short: String = single_line.chars().take(MAX_VALUE_CHARS - 1).collect();
+    short.push('…');
+    short
+}
+
+pub fn format(format: FormatId) -> &'static str {
+    match format {
+        FormatId::Jpeg => "JPEG image",
+        FormatId::Png => "PNG image",
+        FormatId::Webp => "WebP image",
+        _ => "file",
+    }
+}
+
+pub fn skip_reason(reason: SkipReason, format: Option<FormatId>) -> String {
+    match (reason, format) {
+        (SkipReason::UnsupportedFormat, Some(format)) => {
+            format!("{} files aren't supported yet", self::format(format))
+        }
+        (SkipReason::UnsupportedFormat, None) => "MetaScrub can't read this type of file".into(),
+        (SkipReason::NotRegularFile, _) => "not a regular file".into(),
+        (SkipReason::SymbolicLink, _) => "it's a shortcut (symbolic link), not followed".into(),
+        (SkipReason::AlreadyCleaned, _) => "looks already cleaned".into(),
+        (SkipReason::Encrypted, _) => "it's encrypted".into(),
+    }
+}
+
+pub fn failure(kind: FailureKind) -> &'static str {
+    match kind {
+        FailureKind::Io => "couldn't read the file",
+        FailureKind::Malformed => "the file is damaged or not what it claims to be",
+        FailureKind::LimitExceeded => "the file exceeds MetaScrub's safety limits",
+        FailureKind::Cancelled => "cancelled before it finished",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn formats_sizes_for_people() {
+        assert_eq!(size(512), "512 bytes");
+        assert_eq!(size(12_345), "12.3 KB");
+        assert_eq!(size(3_400_000), "3.4 MB");
+    }
+
+    #[test]
+    fn long_values_are_shortened_to_one_line() {
+        assert_eq!(truncate("two\nlines"), "two lines");
+        let long = "x".repeat(200);
+        assert_eq!(truncate(&long).chars().count(), MAX_VALUE_CHARS);
+        assert!(truncate(&long).ends_with('…'));
+    }
+}
