@@ -17,6 +17,10 @@ metascrub-core = { path = "crates/metascrub-core", version = "=0.1.0" }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"
 
+[profile.release]
+strip = true
+lto = "thin"
+
 [workspace.lints.rust]
 # `deny` rather than `forbid` so the one module that needs OS calls
 # (Windows alternate data streams, v0.5) can opt out locally.
