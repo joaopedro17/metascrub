@@ -2,6 +2,7 @@
 
 mod args;
 mod exit;
+mod progress;
 mod render;
 
 use std::io::{self, Write};
@@ -13,6 +14,7 @@ use metascrub_core::model::RunReport;
 use metascrub_core::{CancelToken, Command as CoreCommand, Options, OutputMode, Request};
 
 use args::{Cli, Command, KeepArgs, KeepItem, OutputArgs};
+use progress::Progress;
 use render::{Mode, Settings, Verbosity};
 
 fn main() -> ExitCode {
@@ -75,7 +77,11 @@ fn main() -> ExitCode {
         reject_folders(&request.paths);
     }
 
-    let report = metascrub_core::run(&request, &(), &CancelToken::new());
+    let progress = Progress::new(!cli.output.quiet);
+    let cancel = CancelToken::new();
+    stop_on_ctrl_c(&cancel, &progress);
+    let report = metascrub_core::run(&request, &progress, &cancel);
+    progress.finish();
     let settings = settings(mode, &cli.output);
     // A closed pipe (e.g. `| head`) is not an error worth reporting.
     let _ = print(&report, &settings, cli.output.json);
@@ -127,4 +133,20 @@ fn reject_folders(paths: &[PathBuf]) {
             )
             .exit();
     }
+}
+
+/// The first Ctrl+C lets the files in progress finish, so no output is left
+/// half-written. A second one stops at once and may leave a temporary
+/// `.metascrub-*.tmp` file behind.
+fn stop_on_ctrl_c(cancel: &CancelToken, progress: &Progress) {
+    let cancel = cancel.clone();
+    let progress = progress.clone();
+    // Without a handler, Ctrl+C still stops the program the usual way.
+    let _ = ctrlc::set_handler(move || {
+        if cancel.is_cancelled() {
+            std::process::exit(exit::INTERRUPTED.into());
+        }
+        cancel.cancel();
+        progress.notice("Stopping after the files in progress. Press Ctrl+C again to stop now.");
+    });
 }

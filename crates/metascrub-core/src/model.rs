@@ -297,7 +297,8 @@ impl RunReport {
     pub fn summary(&self) -> Summary {
         let mut summary = Summary::default();
         for file in &self.files {
-            match file.outcome {
+            match &file.outcome {
+                Outcome::Failed(f) if f.kind == FailureKind::Cancelled => summary.cancelled += 1,
                 Outcome::Inspected => summary.inspected += 1,
                 Outcome::Cleaned | Outcome::WouldClean => summary.cleaned += 1,
                 Outcome::Verified => summary.verified += 1,
@@ -321,6 +322,8 @@ pub struct Summary {
     pub copied: usize,
     pub skipped: usize,
     pub failed: usize,
+    /// Not processed because the run was stopped; not counted in `failed`.
+    pub cancelled: usize,
 }
 
 #[cfg(test)]
@@ -398,6 +401,10 @@ mod tests {
                     kind: FailureKind::Malformed,
                     detail: "truncated JPEG segment".into(),
                 })),
+                file(Outcome::Failed(Failure {
+                    kind: FailureKind::Cancelled,
+                    detail: String::new(),
+                })),
             ],
         };
         assert_eq!(
@@ -407,6 +414,7 @@ mod tests {
                 copied: 1,
                 skipped: 1,
                 failed: 2,
+                cancelled: 1,
                 ..Summary::default()
             }
         );

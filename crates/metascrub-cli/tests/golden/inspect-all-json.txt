@@ -1231,6 +1231,7 @@ exit: 1
   ],
   "schema_version": 1,
   "summary": {
+    "cancelled": 0,
     "cleaned": 0,
     "copied": 0,
     "failed": 2,
