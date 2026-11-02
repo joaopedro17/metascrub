@@ -19,5 +19,9 @@ clap.workspace = true
 metascrub-core.workspace = true
 serde_json.workspace = true
 
+[dev-dependencies]
+flate2.workspace = true
+tempfile.workspace = true
+
 [lints]
 workspace = true

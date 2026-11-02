@@ -9,16 +9,30 @@ mod png;
 mod xmp;
 
 use std::fmt;
-use std::io::{self, Read, Seek};
+use std::io::{self, Read, Seek, Write};
 
 use crate::limits::{MAX_IMAGE_BYTES, MAX_INFLATED_BYTES};
-use crate::model::{Finding, FormatId};
+use crate::model::{Disposition, Finding, FindingKind, FormatId, KeepReason, Location, Value};
+use crate::options::Options;
 
 pub trait ReadSeek: Read + Seek {}
 impl<T: Read + Seek> ReadSeek for T {}
 
 pub trait FormatHandler: Send + Sync {
-    fn inspect(&self, input: &mut dyn ReadSeek) -> Result<Vec<Finding>, FormatError>;
+    fn inspect(
+        &self,
+        input: &mut dyn ReadSeek,
+        options: &Options,
+    ) -> Result<Vec<Finding>, FormatError>;
+
+    /// Writes the cleaned file and returns the same findings `inspect` would,
+    /// so the report says exactly what was removed and what was kept.
+    fn clean(
+        &self,
+        input: &mut dyn ReadSeek,
+        output: &mut dyn Write,
+        options: &Options,
+    ) -> Result<Vec<Finding>, FormatError>;
 }
 
 /// How many leading bytes [`sniff`] needs.
@@ -56,22 +70,48 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
 }
 
 /// Detects and inspects a file held in memory.
-pub fn inspect_bytes(data: &[u8]) -> Result<(Option<FormatId>, Vec<Finding>), FormatError> {
+pub fn inspect_bytes(
+    data: &[u8],
+    options: &Options,
+) -> Result<(Option<FormatId>, Vec<Finding>), FormatError> {
     let Some(format) = sniff(data) else {
         return Ok((None, Vec::new()));
     };
     let findings = match handler(format) {
-        Some(handler) => handler.inspect(&mut io::Cursor::new(data))?,
+        Some(handler) => handler.inspect(&mut io::Cursor::new(data), options)?,
         None => Vec::new(),
     };
     Ok((Some(format), findings))
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Cleaned {
+    pub data: Vec<u8>,
+    pub findings: Vec<Finding>,
+}
+
+/// Detects and cleans a file held in memory. `None` for unsupported formats.
+pub fn clean_bytes(data: &[u8], options: &Options) -> Result<Option<Cleaned>, FormatError> {
+    let Some(handler) = sniff(data).and_then(handler) else {
+        return Ok(None);
+    };
+    let mut output = Vec::new();
+    let findings = handler.clean(&mut io::Cursor::new(data), &mut output, options)?;
+    Ok(Some(Cleaned {
+        data: output,
+        findings,
+    }))
 }
 
 #[derive(Debug)]
 pub enum FormatError {
     Io(io::Error),
     Malformed(String),
-    TooLarge { limit: u64 },
+    /// A feature that can't be handled safely, so the file is left alone.
+    Unsupported(String),
+    TooLarge {
+        limit: u64,
+    },
 }
 
 impl FormatError {
@@ -85,6 +125,7 @@ impl fmt::Display for FormatError {
         match self {
             Self::Io(error) => error.fmt(f),
             Self::Malformed(detail) => write!(f, "malformed file: {detail}"),
+            Self::Unsupported(detail) => write!(f, "unsupported feature: {detail}"),
             Self::TooLarge { limit } => write!(f, "larger than the {limit}-byte limit"),
         }
     }
@@ -98,7 +139,52 @@ impl From<io::Error> for FormatError {
     }
 }
 
-fn read_limited(input: &mut dyn ReadSeek, limit: u64) -> Result<Vec<u8>, FormatError> {
+/// For blocks that cleaning keeps or rebuilds, applies the user's choices.
+fn apply_options(findings: &mut [Finding], options: &Options) {
+    for finding in findings {
+        match (finding.kind, finding.disposition) {
+            (FindingKind::Orientation, Disposition::Keep(_)) if options.strip_orientation => {
+                finding.disposition = Disposition::Remove;
+            }
+            (FindingKind::ColorProfile, Disposition::Remove) if options.keep_color_profile => {
+                finding.disposition = Disposition::Keep(KeepReason::UserRequested);
+            }
+            _ => {}
+        }
+    }
+}
+
+/// For blocks that cleaning drops whole: nothing inside them survives.
+fn drop_all(findings: &mut [Finding]) {
+    for finding in findings {
+        if let Disposition::Keep(_) = finding.disposition {
+            finding.disposition = Disposition::Remove;
+        }
+    }
+}
+
+/// Whether the finding at `location` says the block is kept.
+fn is_kept(findings: &[Finding], kind: FindingKind, location: &Location) -> bool {
+    findings.iter().any(|f| {
+        f.kind == kind && &f.location == location && matches!(f.disposition, Disposition::Keep(_))
+    })
+}
+
+/// The orientation to rebuild, if the finding at `location` says it's kept.
+fn kept_orientation(findings: &[Finding], location: &Location) -> Option<u16> {
+    findings
+        .iter()
+        .find_map(|f| match (&f.value, f.disposition) {
+            (Some(Value::Integer(n)), Disposition::Keep(_))
+                if f.kind == FindingKind::Orientation && &f.location == location =>
+            {
+                u16::try_from(*n).ok()
+            }
+            _ => None,
+        })
+}
+
+pub(crate) fn read_limited(input: &mut dyn Read, limit: u64) -> Result<Vec<u8>, FormatError> {
     let mut data = Vec::new();
     input.take(limit.saturating_add(1)).read_to_end(&mut data)?;
     if data.len() as u64 > limit {

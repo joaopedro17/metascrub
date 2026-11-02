@@ -124,6 +124,20 @@ fn classify(tag: Tag) -> Option<(&'static str, FindingKind)> {
     Some(("", kind))
 }
 
+/// A TIFF structure holding only the Orientation tag: what cleaning keeps
+/// when an image would otherwise display rotated.
+pub(super) fn orientation_only(orientation: u16) -> Vec<u8> {
+    let mut tiff = b"MM\0\x2a\0\0\0\x08".to_vec();
+    tiff.extend(1u16.to_be_bytes()); // one entry
+    tiff.extend(0x0112u16.to_be_bytes()); // Orientation
+    tiff.extend(3u16.to_be_bytes()); // SHORT
+    tiff.extend(1u32.to_be_bytes()); // count
+    tiff.extend(orientation.to_be_bytes());
+    tiff.extend([0, 0]); // value padded to 4 bytes
+    tiff.extend(0u32.to_be_bytes()); // no next IFD
+    tiff
+}
+
 /// Pointers and layout fields that hold no information about the user.
 fn is_structural(tag: Tag) -> bool {
     matches!(
@@ -139,7 +153,8 @@ fn field_finding(field: &Field, name: &str, kind: FindingKind, location: &Locati
         name.to_owned()
     };
     let disposition = match kind {
-        FindingKind::Orientation if field.value.get_uint(0) != Some(1) => {
+        // 2–8 rotate or mirror; 1 is upright and anything else is invalid.
+        FindingKind::Orientation if matches!(field.value.get_uint(0), Some(2..=8)) => {
             Disposition::Keep(KeepReason::RequiredToRender)
         }
         _ => Disposition::Remove,
@@ -222,6 +237,37 @@ fn coordinates(fields: &[&Field]) -> Option<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn orientation_only_block_contains_nothing_else() {
+        let findings = inspect(&orientation_only(6), &Location::new(["EXIF"]));
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].kind, FindingKind::Orientation);
+        assert_eq!(findings[0].value, Some(Value::Integer(6)));
+        assert_eq!(
+            findings[0].disposition,
+            Disposition::Keep(KeepReason::RequiredToRender)
+        );
+    }
+
+    #[test]
+    fn only_valid_rotations_are_kept() {
+        for (orientation, kept) in [
+            (1, false),
+            (2, true),
+            (6, true),
+            (8, true),
+            (0, false),
+            (9, false),
+        ] {
+            let findings = inspect(&orientation_only(orientation), &Location::new(["EXIF"]));
+            assert_eq!(
+                findings[0].disposition == Disposition::Keep(KeepReason::RequiredToRender),
+                kept,
+                "orientation {orientation}"
+            );
+        }
+    }
 
     #[test]
     fn unreadable_exif_is_still_reported() {

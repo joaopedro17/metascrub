@@ -130,4 +130,4 @@ fixtures/generated/png/trailing.png (PNG image)
   High risk
     • Hidden data after the end of the image (such as a Motion Photo video): 24 bytes — will be removed [After end of image]
 
-15 files inspected, 11 with hidden metadata, 2 skipped, 2 failed
+15 files inspected, 10 with hidden metadata, 2 skipped, 2 failed

@@ -110,3 +110,13 @@ fn json_hides_values_by_default() {
 fn quiet_shows_only_problems_and_summary() {
     check("inspect-all-quiet", &["inspect", "-q"], true);
 }
+
+#[test]
+fn clean_dry_run_all_fixtures() {
+    check("clean-dry-run-all", &["clean", "--dry-run"], true);
+}
+
+#[test]
+fn verify_all_fixtures() {
+    check("verify-all", &["verify"], true);
+}

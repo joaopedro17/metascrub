@@ -28,7 +28,16 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      # exiftool is the independent check that cleaned files have no metadata left.
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libimage-exiftool-perl
+      - if: runner.os == 'macOS'
+        run: brew install exiftool
+      - if: runner.os == 'Windows'
+        run: choco install exiftool --no-progress -y
       - run: cargo test --workspace --locked
+        env:
+          METASCRUB_REQUIRE_EXIFTOOL: "1"
 
   dependencies:
     name: Dependency policy

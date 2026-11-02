@@ -6,14 +6,17 @@ use metascrub_core::model::RunReport;
 
 const SOME_FAILED: u8 = 1;
 const ALL_FAILED: u8 = 3;
+const METADATA_REMAINS: u8 = 4;
 
 pub fn exit_code(report: &RunReport) -> ExitCode {
-    let failed = report.summary().failed;
-    if failed == 0 {
-        ExitCode::SUCCESS
-    } else if failed == report.files.len() {
+    let summary = report.summary();
+    if summary.failed > 0 && summary.failed == report.files.len() {
         ExitCode::from(ALL_FAILED)
-    } else {
+    } else if summary.failed > 0 {
         ExitCode::from(SOME_FAILED)
+    } else if summary.remaining_metadata > 0 {
+        ExitCode::from(METADATA_REMAINS)
+    } else {
+        ExitCode::SUCCESS
     }
 }

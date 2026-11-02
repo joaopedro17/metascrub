@@ -1,8 +1,14 @@
 //! PNG: a signature followed by length-prefixed, CRC-checked chunks.
 
+use std::io::{self, Write};
+
 use super::bytes::{Cursor, latin1, split_nul};
-use super::{FormatError, FormatHandler, ReadSeek, exif, icc, inflate, iptc, read_image, xmp};
+use super::{
+    FormatError, FormatHandler, ReadSeek, apply_options, drop_all, exif, icc, inflate, iptc,
+    is_kept, kept_orientation, read_image, xmp,
+};
 use crate::model::{Disposition, Finding, FindingKind, Location, Value};
+use crate::options::Options;
 
 pub(super) const SIGNATURE: &[u8] = b"\x89PNG\r\n\x1a\n";
 
@@ -13,6 +19,10 @@ const RENDERING_CHUNKS: &[&[u8; 4]] = &[
     b"fcTL", b"fdAT", b"cICP", b"mDCV", b"cLLI",
 ];
 
+const CRITICAL_CHUNKS: &[&[u8; 4]] = &[b"IHDR", b"PLTE", b"IDAT", b"IEND"];
+
+const NEUTRAL_PROFILE_NAME: &[u8] = b"ICC profile";
+
 /// Standard but unnecessary for display; removed without being a privacy risk.
 const TECHNICAL_CHUNKS: &[&[u8; 4]] = &[b"bKGD", b"sBIT", b"hIST", b"sPLT"];
 
@@ -20,43 +30,116 @@ const TECHNICAL_CHUNKS: &[&[u8; 4]] = &[b"bKGD", b"sBIT", b"hIST", b"sPLT"];
 pub(super) struct Png;
 
 impl FormatHandler for Png {
-    fn inspect(&self, input: &mut dyn ReadSeek) -> Result<Vec<Finding>, FormatError> {
+    fn inspect(
+        &self,
+        input: &mut dyn ReadSeek,
+        options: &Options,
+    ) -> Result<Vec<Finding>, FormatError> {
+        let data = read_image(input)?;
+        Ok(inspect_chunks(&parse(&data)?, options))
+    }
+
+    fn clean(
+        &self,
+        input: &mut dyn ReadSeek,
+        output: &mut dyn Write,
+        options: &Options,
+    ) -> Result<Vec<Finding>, FormatError> {
         let data = read_image(input)?;
         let parsed = parse(&data)?;
-        let mut findings = Vec::new();
-        let mut technical = 0;
-        for chunk in &parsed.chunks {
-            if RENDERING_CHUNKS.contains(&&chunk.kind) {
-                continue;
-            }
-            if TECHNICAL_CHUNKS.contains(&&chunk.kind) {
-                technical += 1;
-                continue;
-            }
-            findings.extend(inspect_chunk(chunk));
-        }
-        if technical > 0 {
-            findings.push(
-                Finding::new(
-                    FindingKind::TechnicalInfo,
-                    Location::new(["PNG"]),
-                    Disposition::Remove,
-                )
-                .with_value(Value::Integer(technical)),
-            );
-        }
-        if !parsed.trailing.is_empty() {
-            findings.push(
-                Finding::new(
-                    FindingKind::TrailingData,
-                    Location::new(["After end of image"]),
-                    Disposition::Remove,
-                )
-                .with_value(Value::Bytes(parsed.trailing.len() as u64)),
-            );
-        }
+        let findings = inspect_chunks(&parsed, options);
+        write_clean(&parsed, &findings, output)?;
         Ok(findings)
     }
+}
+
+fn inspect_chunks(parsed: &Parsed<'_>, options: &Options) -> Vec<Finding> {
+    let mut findings = Vec::new();
+    let mut technical = 0;
+    let mut seen_exif = false;
+    for chunk in &parsed.chunks {
+        if RENDERING_CHUNKS.contains(&&chunk.kind) {
+            continue;
+        }
+        if TECHNICAL_CHUNKS.contains(&&chunk.kind) {
+            technical += 1;
+            continue;
+        }
+        let mut chunk_findings = inspect_chunk(chunk);
+        // Only the first eXIf and the iCCP chunk can survive cleaning.
+        match &chunk.kind {
+            b"eXIf" if !seen_exif => apply_options(&mut chunk_findings, options),
+            b"iCCP" => apply_options(&mut chunk_findings, options),
+            _ => drop_all(&mut chunk_findings),
+        }
+        seen_exif |= &chunk.kind == b"eXIf";
+        findings.extend(chunk_findings);
+    }
+    if technical > 0 {
+        findings.push(
+            Finding::new(
+                FindingKind::TechnicalInfo,
+                Location::new(["PNG"]),
+                Disposition::Remove,
+            )
+            .with_value(Value::Integer(technical)),
+        );
+    }
+    if !parsed.trailing.is_empty() {
+        findings.push(
+            Finding::new(
+                FindingKind::TrailingData,
+                Location::new(["After end of image"]),
+                Disposition::Remove,
+            )
+            .with_value(Value::Bytes(parsed.trailing.len() as u64)),
+        );
+    }
+    findings
+}
+
+/// Writes the chunks needed to display the image, plus what the findings say
+/// is kept. Data after `IEND` is dropped.
+fn write_clean(parsed: &Parsed<'_>, findings: &[Finding], out: &mut dyn Write) -> io::Result<()> {
+    let keep_icc = is_kept(
+        findings,
+        FindingKind::ColorProfile,
+        &Location::new(["PNG", "iCCP"]),
+    );
+    let orientation = kept_orientation(findings, &Location::new(["PNG", "eXIf", "Orientation"]));
+    let mut exif_written = false;
+    let mut icc_written = false;
+
+    out.write_all(SIGNATURE)?;
+    for chunk in &parsed.chunks {
+        match &chunk.kind {
+            kind if RENDERING_CHUNKS.contains(&kind) => write_chunk(out, kind, chunk.data)?,
+            b"iCCP" if keep_icc && !icc_written => {
+                icc_written = true;
+                // The profile name is free text chosen by whatever wrote the file.
+                let (_name, profile) = split_nul(chunk.data).unwrap_or_default();
+                let data = [NEUTRAL_PROFILE_NAME, b"\0", profile].concat();
+                write_chunk(out, b"iCCP", &data)?;
+            }
+            b"eXIf" if !exif_written => {
+                exif_written = true;
+                if let Some(orientation) = orientation {
+                    write_chunk(out, b"eXIf", &exif::orientation_only(orientation))?;
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+fn write_chunk(out: &mut dyn Write, kind: &[u8; 4], data: &[u8]) -> io::Result<()> {
+    let length = u32::try_from(data.len())
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "PNG chunk too long"))?;
+    let body = [kind.as_slice(), data].concat();
+    out.write_all(&length.to_be_bytes())?;
+    out.write_all(&body)?;
+    out.write_all(&crc32(&body).to_be_bytes())
 }
 
 #[derive(Debug)]
@@ -88,6 +171,14 @@ pub(super) fn parse(data: &[u8]) -> Result<Parsed<'_>, FormatError> {
         let kind: [u8; 4] = kind
             .try_into()
             .map_err(|_| FormatError::malformed("short PNG chunk"))?;
+        // An uppercase first letter marks a chunk decoders can't skip; dropping
+        // one we don't understand could change the image.
+        if kind[0].is_ascii_uppercase() && !CRITICAL_CHUNKS.contains(&&kind) {
+            return Err(FormatError::Unsupported(format!(
+                "PNG chunk {}",
+                latin1(&kind)
+            )));
+        }
         chunks.push(Chunk { kind, data });
         if &kind == b"IEND" {
             return Ok(Parsed {
@@ -306,7 +397,69 @@ mod tests {
     }
 
     fn inspect(data: &[u8]) -> Vec<Finding> {
-        Png.inspect(&mut std::io::Cursor::new(data)).unwrap()
+        Png.inspect(&mut io::Cursor::new(data), &Options::default())
+            .unwrap()
+    }
+
+    fn clean(data: &[u8], options: &Options) -> Vec<u8> {
+        let mut out = Vec::new();
+        Png.clean(&mut io::Cursor::new(data), &mut out, options)
+            .unwrap();
+        out
+    }
+
+    fn deflate(data: &[u8]) -> Vec<u8> {
+        use flate2::{Compression, write::ZlibEncoder};
+        let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(data).unwrap();
+        encoder.finish().unwrap()
+    }
+
+    #[test]
+    fn cleaning_keeps_only_rendering_chunks() {
+        let data = png(
+            &[
+                chunk(b"gAMA", &[0, 0, 0xB1, 0x8F]),
+                chunk(b"tEXt", b"Author\0Jane Doe"),
+                chunk(b"tIME", &[0x07, 0xEA, 11, 2, 14, 35, 12]),
+                chunk(b"prVt", b"vendor"),
+            ],
+            b"after the end",
+        );
+        let expected = png(&[chunk(b"gAMA", &[0, 0, 0xB1, 0x8F])], b"");
+        assert_eq!(clean(&data, &Options::default()), expected);
+    }
+
+    #[test]
+    fn cleaning_rebuilds_exif_with_only_the_orientation() {
+        let rotated = png(&[chunk(b"eXIf", &exif::orientation_only(8))], b"");
+        assert_eq!(clean(&rotated, &Options::default()), rotated);
+        let strip = Options {
+            strip_orientation: true,
+            ..Options::default()
+        };
+        assert_eq!(clean(&rotated, &strip), png(&[], b""));
+    }
+
+    #[test]
+    fn cleaning_keeps_standard_profiles() {
+        let srgb = [
+            [0.4361, 0.2225, 0.0139],
+            [0.3851, 0.7169, 0.0971],
+            [0.1431, 0.0606, 0.7141],
+        ];
+        let profile = icc::tests::profile("sRGB", srgb, None);
+        let iccp = |name: &[u8]| [name, b"\0\0", &deflate(&profile)].concat();
+        let standard = png(&[chunk(b"iCCP", &iccp(b"Jane's monitor"))], b"");
+        assert_eq!(
+            clean(&standard, &Options::default()),
+            png(&[chunk(b"iCCP", &iccp(b"ICC profile"))], b"")
+        );
+
+        let custom = icc::tests::profile("Monitor", srgb, Some(b"vcgt"));
+        let iccp = [b"Monitor\0\0".as_slice(), &deflate(&custom)].concat();
+        let custom = png(&[chunk(b"iCCP", &iccp)], b"");
+        assert_eq!(clean(&custom, &Options::default()), png(&[], b""));
     }
 
     #[test]
@@ -394,6 +547,32 @@ mod tests {
         );
         assert_eq!(findings[0].kind, FindingKind::PersonName);
         assert_eq!(findings[0].value, Some(Value::Text("Daniel".into())));
+    }
+
+    #[test]
+    fn unknown_critical_chunks_are_refused() {
+        let apple = png(&[chunk(b"CgBI", &[0x50, 0, 0x20, 6])], b"");
+        assert!(matches!(parse(&apple), Err(FormatError::Unsupported(_))));
+    }
+
+    #[test]
+    fn only_the_first_color_profile_is_written() {
+        let srgb = [
+            [0.4361, 0.2225, 0.0139],
+            [0.3851, 0.7169, 0.0971],
+            [0.1431, 0.0606, 0.7141],
+        ];
+        let profile = icc::tests::profile("sRGB", srgb, None);
+        let iccp = [b"a\0\0".as_slice(), &deflate(&profile)].concat();
+        let data = png(&[chunk(b"iCCP", &iccp), chunk(b"iCCP", b"broken\0\0")], b"");
+        let cleaned = clean(&data, &Options::default());
+        let profiles = parse(&cleaned)
+            .unwrap()
+            .chunks
+            .iter()
+            .filter(|c| &c.kind == b"iCCP")
+            .count();
+        assert_eq!(profiles, 1);
     }
 
     #[test]

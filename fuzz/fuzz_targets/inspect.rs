@@ -3,5 +3,5 @@
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {
-    let _ = metascrub_core::format::inspect_bytes(data);
+    let _ = metascrub_core::format::inspect_bytes(data, &Default::default());
 });

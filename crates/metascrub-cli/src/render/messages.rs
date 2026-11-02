@@ -1,5 +1,7 @@
 //! Every sentence a user reads. The core only returns codes.
 
+use std::path::Path;
+
 use metascrub_core::model::{
     Disposition, FailureKind, Finding, FindingKind, FormatId, KeepReason, SkipReason, Value,
 };
@@ -35,19 +37,43 @@ pub fn finding(kind: FindingKind) -> &'static str {
     }
 }
 
-pub fn disposition(disposition: Disposition) -> &'static str {
-    match disposition {
-        Disposition::Remove => "will be removed",
-        Disposition::Normalize => "will be reset to a neutral value",
-        Disposition::Keep(KeepReason::RequiredToRender) => "kept: needed to display correctly",
-        Disposition::Keep(KeepReason::StandardColorProfile) => {
+/// When the action happens, relative to the command being run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Tense {
+    /// `inspect` and `verify`: what `clean` would do.
+    Future,
+    /// `clean --dry-run`.
+    Conditional,
+    /// `clean`.
+    Past,
+}
+
+pub fn disposition(disposition: Disposition, tense: Tense) -> &'static str {
+    match (disposition, tense) {
+        (Disposition::Remove, Tense::Future) => "will be removed",
+        (Disposition::Remove, Tense::Conditional) => "would be removed",
+        (Disposition::Remove, Tense::Past) => "removed",
+        (Disposition::Normalize, Tense::Future) => "will be reset to a neutral value",
+        (Disposition::Normalize, Tense::Conditional) => "would be reset to a neutral value",
+        (Disposition::Normalize, Tense::Past) => "reset to a neutral value",
+        (Disposition::Keep(KeepReason::RequiredToRender), _) => "kept: needed to display correctly",
+        (Disposition::Keep(KeepReason::StandardColorProfile), _) => {
             "kept: a standard profile that reveals nothing"
         }
-        Disposition::Keep(KeepReason::UserRequested) => "kept: you asked to keep it",
-        Disposition::Warn => "can't be fixed automatically",
-        Disposition::Blocks(_) => "needs your decision",
+        (Disposition::Keep(KeepReason::UserRequested), _) => "kept: you asked to keep it",
+        (Disposition::Warn, _) => "can't be fixed automatically",
+        (Disposition::Blocks(_), _) => "needs your decision",
     }
 }
+
+pub const COPIED: &str = "copied without cleaning: MetaScrub can't read this type of file, \
+                          so it may still contain hidden information";
+pub const WOULD_COPY: &str = "would be copied without cleaning: MetaScrub can't read this type \
+                              of file, so it may still contain hidden information";
+pub const VERIFIED: &str = "no hidden metadata left";
+pub const REMAINING: &str = "still contains hidden metadata";
+pub const LIMITATIONS: &str = "MetaScrub removes hidden metadata only. It can't remove what's \
+                               visible in a file (faces, places, text), and it doesn't make you anonymous.";
 
 pub fn value(finding: &Finding) -> Option<String> {
     let text = match finding.value.as_ref()? {
@@ -94,8 +120,31 @@ fn size(bytes: u64) -> String {
     }
 }
 
+/// Text from a file (values, names, paths) can contain control characters or
+/// bidirectional overrides that would rewrite the terminal or disguise the
+/// report. They are shown as `�` instead.
+pub fn sanitize(text: &str) -> String {
+    text.chars()
+        .map(|c| {
+            if c.is_control() || is_bidi_control(c) {
+                char::REPLACEMENT_CHARACTER
+            } else {
+                c
+            }
+        })
+        .collect()
+}
+
+fn is_bidi_control(c: char) -> bool {
+    matches!(c, '\u{200E}' | '\u{200F}' | '\u{202A}'..='\u{202E}' | '\u{2066}'..='\u{2069}')
+}
+
+pub fn path(path: &Path) -> String {
+    sanitize(&path.display().to_string())
+}
+
 fn truncate(text: &str) -> String {
-    let single_line = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let single_line = sanitize(&text.split_whitespace().collect::<Vec<_>>().join(" "));
     if single_line.chars().count() <= MAX_VALUE_CHARS {
         return single_line;
     }
@@ -131,6 +180,9 @@ pub fn failure(kind: FailureKind) -> &'static str {
         FailureKind::Io => "couldn't read the file",
         FailureKind::Malformed => "the file is damaged or not what it claims to be",
         FailureKind::LimitExceeded => "the file exceeds MetaScrub's safety limits",
+        FailureKind::Unsupported => {
+            "the file uses a feature MetaScrub can't handle safely, so it was left alone"
+        }
         FailureKind::Cancelled => "cancelled before it finished",
     }
 }
@@ -144,6 +196,16 @@ mod tests {
         assert_eq!(size(512), "512 bytes");
         assert_eq!(size(12_345), "12.3 KB");
         assert_eq!(size(3_400_000), "3.4 MB");
+    }
+
+    #[test]
+    fn control_characters_cannot_reach_the_terminal() {
+        assert_eq!(
+            sanitize("\u{1b}]0;title\u{7}\u{1b}[2Jtext"),
+            "\u{FFFD}]0;title\u{FFFD}\u{FFFD}[2Jtext"
+        );
+        assert_eq!(sanitize("photo\u{202E}gpj.exe"), "photo\u{FFFD}gpj.exe");
+        assert_eq!(sanitize("café ✓"), "café ✓");
     }
 
     #[test]

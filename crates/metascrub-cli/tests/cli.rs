@@ -1,4 +1,4 @@
-#![allow(clippy::unwrap_used)] // In tests, a panic is a test failure.
+#![allow(clippy::unwrap_used, clippy::indexing_slicing)] // In tests, a panic is a test failure.
 
 use std::path::Path;
 use std::process::{Command, Output};
@@ -55,4 +55,49 @@ fn inspect_never_modifies_files() {
     let before = std::fs::read(&path).unwrap();
     metascrub(&["inspect", "fixtures/generated/jpeg/camera.jpg"]);
     assert_eq!(std::fs::read(&path).unwrap(), before);
+}
+
+/// A PNG whose Author value tries to set the terminal title and clear the screen.
+fn hostile_png() -> Vec<u8> {
+    let base = std::fs::read(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/generated/png/clean.png"),
+    )
+    .unwrap();
+    let body = b"tEXtAuthor\0\x1b]0;pwned\x07\x1b[2J\x1b[31mfake";
+    let mut crc = flate2::Crc::new();
+    crc.update(body);
+    let mut chunk = ((body.len() - 4) as u32).to_be_bytes().to_vec();
+    chunk.extend(body);
+    chunk.extend(crc.sum().to_be_bytes());
+    [&base[..33], &chunk, &base[33..]].concat()
+}
+
+#[test]
+fn file_contents_cannot_send_terminal_control_sequences() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut names = vec!["hostile.png".to_owned()];
+    // File names can carry them too (not allowed on Windows).
+    if cfg!(unix) {
+        names.push("a\x1b[2Jb.png".to_owned());
+    }
+    for name in names {
+        let path = dir.path().join(&name);
+        std::fs::write(&path, hostile_png()).unwrap();
+        // Force colors as if writing to a real terminal, so nothing is stripped for us.
+        let output = Command::new(env!("CARGO_BIN_EXE_metascrub"))
+            .args(["inspect", "-v", "--show-values"])
+            .arg(&path)
+            .env_remove("NO_COLOR")
+            .env("CLICOLOR_FORCE", "1")
+            .output()
+            .unwrap();
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(stdout.contains("fake"), "{stdout}");
+        assert!(!stdout.contains("\x1b]0;"), "{name}: title sequence leaked");
+        assert!(
+            !stdout.contains("\x1b[2J"),
+            "{name}: clear-screen sequence leaked"
+        );
+        assert!(!stdout.contains('\x07'), "{name}: bell leaked");
+    }
 }

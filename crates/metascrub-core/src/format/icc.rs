@@ -40,7 +40,7 @@ const STANDARD_PRIMARIES: [[Xyz; 3]; 3] = [
 
 const DISPLAY_TAGS: &[&[u8; 4]] = &[
     b"desc", b"cprt", b"wtpt", b"bkpt", b"rXYZ", b"gXYZ", b"bXYZ", b"rTRC", b"gTRC", b"bTRC",
-    b"chad", b"chrm", b"lumi", b"meas", b"tech", b"view", b"dmnd", b"dmdd",
+    b"chad", b"chrm", b"lumi", b"meas", b"tech", b"view", b"vued", b"dmnd", b"dmdd",
 ];
 
 pub(super) fn inspect(data: &[u8], location: Location) -> Finding {
@@ -238,6 +238,16 @@ pub(crate) mod tests {
             );
             assert_eq!(finding.value, Some(Value::Text("anything".into())));
         }
+    }
+
+    #[test]
+    fn keeps_the_common_srgb_profile_with_viewing_conditions() {
+        // sRGB IEC61966-2.1 as shipped by Windows and most cameras has `vued`.
+        let data = profile("sRGB IEC61966-2.1", STANDARD_PRIMARIES[0], Some(b"vued"));
+        assert_eq!(
+            inspect(&data, Location::new(["ICC"])).disposition,
+            Disposition::Keep(KeepReason::StandardColorProfile)
+        );
     }
 
     #[test]

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -24,7 +24,59 @@ pub enum Command {
     Inspect {
         #[arg(required = true, value_name = "FILE")]
         paths: Vec<PathBuf>,
+
+        #[command(flatten)]
+        keep: KeepArgs,
     },
+    /// Remove hidden metadata. Writes `name.clean.ext` next to each file
+    /// unless --output or --in-place is given; originals are never changed by default.
+    Clean {
+        #[arg(required = true, value_name = "FILE")]
+        paths: Vec<PathBuf>,
+
+        /// Write cleaned files into this folder instead (created if missing).
+        /// Files MetaScrub can't read are copied there too, so the folder is complete.
+        #[arg(short, long, value_name = "DIR", conflicts_with = "in_place")]
+        output: Option<PathBuf>,
+
+        /// Overwrite the original files.
+        #[arg(long)]
+        in_place: bool,
+
+        /// Show what would be removed without writing anything.
+        #[arg(long)]
+        dry_run: bool,
+
+        #[command(flatten)]
+        keep: KeepArgs,
+    },
+    /// Check that files contain no hidden metadata that cleaning would remove.
+    Verify {
+        #[arg(required = true, value_name = "FILE")]
+        paths: Vec<PathBuf>,
+
+        #[command(flatten)]
+        keep: KeepArgs,
+    },
+}
+
+#[derive(Debug, Args)]
+pub struct KeepArgs {
+    /// Keep something cleaning would otherwise remove. Can be repeated.
+    #[arg(long, value_enum, value_name = "ITEM")]
+    pub keep: Vec<KeepItem>,
+
+    /// Remove the rotation setting too (the image may then display sideways).
+    #[arg(long)]
+    pub strip_orientation: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum KeepItem {
+    /// Any color profile, not only standard ones (sRGB, Display P3, Adobe RGB).
+    ColorProfile,
+    /// The current date on output files, instead of 1980-01-01.
+    FileTimes,
 }
 
 #[derive(Debug, Args)]

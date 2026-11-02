@@ -34,5 +34,5 @@ fuzz_target!(|data: &[u8]| {
         &chunk(b"IEND", &[]),
     ]
     .concat();
-    let _ = metascrub_core::format::inspect_bytes(&input);
+    let _ = metascrub_core::format::inspect_bytes(&input, &Default::default());
 });

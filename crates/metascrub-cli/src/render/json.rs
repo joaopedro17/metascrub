@@ -5,14 +5,15 @@ use std::path::Path;
 use metascrub_core::model::{FileReport, RunReport};
 use serde_json::{Value, json};
 
-use super::Settings;
+use super::{Mode, Settings};
 
 const SCHEMA_VERSION: u32 = 1;
 
-pub fn render(report: &RunReport, command: &str, settings: &Settings) -> Value {
+pub fn render(report: &RunReport, settings: &Settings) -> Value {
     json!({
         "schema_version": SCHEMA_VERSION,
-        "command": command,
+        "command": settings.mode.name(),
+        "dry_run": matches!(settings.mode, Mode::Clean { dry_run: true }),
         "values_shown": settings.show_values,
         "files": report.files.iter().map(|f| file(f, settings)).collect::<Vec<_>>(),
         "summary": report.summary(),
