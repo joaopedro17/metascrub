@@ -9,15 +9,15 @@ fixtures/generated/jpeg/camera.jpg (JPEG image)
     • Location where it was created: 48.85840, 2.29450 — will be removed [EXIF > GPS]
     • A small preview image (may show the original before cropping or edits): 648 bytes — will be removed [EXIF > Thumbnail]
   Medium risk
-    • Make and model of the camera or phone: Fictional Camera Co. — will be removed [EXIF > Make]
-    • Make and model of the camera or phone: FC-100 — will be removed [EXIF > Model]
+    • Make and model of a device (camera, phone, printer): Fictional Camera Co. — will be removed [EXIF > Make]
+    • Make and model of a device (camera, phone, printer): FC-100 — will be removed [EXIF > Model]
     • Software or app used: PhotoTool 2.1 — will be removed [EXIF > Software]
     • Date and time: 2026:03:14 09:26:53 — will be removed [EXIF > DateTime]
     • Date and time: 2026:03:14 09:26:53 — will be removed [EXIF > DateTimeOriginal]
-    • Make and model of the camera or phone: FC 24-70mm — will be removed [EXIF > LensModel]
+    • Make and model of a device (camera, phone, printer): FC 24-70mm — will be removed [EXIF > LensModel]
   Low risk
     • Rotation setting: rotated 90° clockwise — kept: needed to display correctly [EXIF > Orientation]
-    • Technical details about the camera or encoding: 2 fields — will be removed [EXIF]
+    • Technical details (encoding, settings, statistics): 2 fields — will be removed [EXIF]
 
 fixtures/generated/jpeg/clean.jpg (JPEG image)
   No hidden metadata found.
@@ -69,7 +69,7 @@ fixtures/generated/jpeg/xmp-iptc.jpg (JPEG image)
     • A title, caption or keywords: Our first day in Paris — will be removed [Photoshop > IPTC > Caption-Abstract]
     • A title, caption or keywords: holiday, family — will be removed [Photoshop > IPTC > Keywords]
   Low risk
-    • Technical details about the camera or encoding: 1 field — will be removed [XMP]
+    • Technical details (encoding, settings, statistics): 1 field — will be removed [XMP]
 
 fixtures/generated/other/notes.txt skipped: MetaScrub can't read this type of file
 
@@ -88,17 +88,17 @@ fixtures/generated/png/exif.png (PNG image)
     • A person's name (author, artist or owner): Jane Doe — will be removed [PNG > tEXt > Raw profile type iptc > By-line]
     • Location where it was created: Paris — will be removed [PNG > tEXt > Raw profile type iptc > City]
   Medium risk
-    • Make and model of the camera or phone: Fictional Camera Co. — will be removed [PNG > eXIf > Make]
-    • Make and model of the camera or phone: FC-100 — will be removed [PNG > eXIf > Model]
+    • Make and model of a device (camera, phone, printer): Fictional Camera Co. — will be removed [PNG > eXIf > Make]
+    • Make and model of a device (camera, phone, printer): FC-100 — will be removed [PNG > eXIf > Model]
     • Software or app used: PhotoTool 2.1 — will be removed [PNG > eXIf > Software]
     • Date and time: 2026:03:14 09:26:53 — will be removed [PNG > eXIf > DateTime]
     • Date and time: 2026:03:14 09:26:53 — will be removed [PNG > eXIf > DateTimeOriginal]
-    • Make and model of the camera or phone: FC 24-70mm — will be removed [PNG > eXIf > LensModel]
+    • Make and model of a device (camera, phone, printer): FC 24-70mm — will be removed [PNG > eXIf > LensModel]
     • A title, caption or keywords: Our first day in Paris — will be removed [PNG > tEXt > Raw profile type iptc > Caption-Abstract]
     • A title, caption or keywords: holiday, family — will be removed [PNG > tEXt > Raw profile type iptc > Keywords]
   Low risk
     • Rotation setting: rotated 180° — kept: needed to display correctly [PNG > eXIf > Orientation]
-    • Technical details about the camera or encoding: 2 fields — will be removed [PNG > eXIf]
+    • Technical details (encoding, settings, statistics): 2 fields — will be removed [PNG > eXIf]
 
 fixtures/generated/png/icc.png (PNG image)
   Low risk
@@ -121,8 +121,8 @@ fixtures/generated/png/text-chunks.png (PNG image)
     • Date and time: 2026-03-14 08:26:53 UTC — will be removed [PNG > tIME]
     • Metadata MetaScrub doesn't recognize: 19 bytes — will be removed [PNG > prVt]
   Low risk
-    • Technical details about the camera or encoding: 1 field — will be removed [PNG > iTXt > XML:com.adobe.xmp]
-    • Technical details about the camera or encoding: 1 field — will be removed [PNG]
+    • Technical details (encoding, settings, statistics): 1 field — will be removed [PNG > iTXt > XML:com.adobe.xmp]
+    • Technical details (encoding, settings, statistics): 1 field — will be removed [PNG]
 
 fixtures/generated/png/trailing.png (PNG image)
   High risk
@@ -141,7 +141,7 @@ fixtures/generated/webp/animated.webp (WebP image)
     • A unique ID that can link copies of this file: xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03 — will be removed [WebP > XMP  > xmpMM:DocumentID]
     • Metadata MetaScrub doesn't recognize: 1 field — will be removed [WebP > XMP ]
   Low risk
-    • Technical details about the camera or encoding: 1 field — will be removed [WebP > XMP ]
+    • Technical details (encoding, settings, statistics): 1 field — will be removed [WebP > XMP ]
 
 fixtures/generated/webp/camera.webp (WebP image)
   High risk
@@ -154,20 +154,20 @@ fixtures/generated/webp/camera.webp (WebP image)
     • A person's name (author, artist or owner): Jane Doe — will be removed [WebP > XMP  > dc:creator]
     • A file path from the computer that made it: C:\Users\jane\Pictures\holiday.psd — will be removed [WebP > XMP  > stRef:filePath]
   Medium risk
-    • Make and model of the camera or phone: Fictional Camera Co. — will be removed [WebP > EXIF > Make]
-    • Make and model of the camera or phone: FC-100 — will be removed [WebP > EXIF > Model]
+    • Make and model of a device (camera, phone, printer): Fictional Camera Co. — will be removed [WebP > EXIF > Make]
+    • Make and model of a device (camera, phone, printer): FC-100 — will be removed [WebP > EXIF > Model]
     • Software or app used: PhotoTool 2.1 — will be removed [WebP > EXIF > Software]
     • Date and time: 2026:03:14 09:26:53 — will be removed [WebP > EXIF > DateTime]
     • Date and time: 2026:03:14 09:26:53 — will be removed [WebP > EXIF > DateTimeOriginal]
-    • Make and model of the camera or phone: FC 24-70mm — will be removed [WebP > EXIF > LensModel]
+    • Make and model of a device (camera, phone, printer): FC 24-70mm — will be removed [WebP > EXIF > LensModel]
     • Software or app used: PhotoTool 2.1 — will be removed [WebP > XMP  > xmp:CreatorTool]
     • A unique ID that can link copies of this file: xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03 — will be removed [WebP > XMP  > xmpMM:DocumentID]
     • Metadata MetaScrub doesn't recognize: 1 field — will be removed [WebP > XMP ]
     • Metadata MetaScrub doesn't recognize: 19 bytes — will be removed [WebP > prVt]
   Low risk
     • Rotation setting: rotated 180° — kept: needed to display correctly [WebP > EXIF > Orientation]
-    • Technical details about the camera or encoding: 2 fields — will be removed [WebP > EXIF]
-    • Technical details about the camera or encoding: 1 field — will be removed [WebP > XMP ]
+    • Technical details (encoding, settings, statistics): 2 fields — will be removed [WebP > EXIF]
+    • Technical details (encoding, settings, statistics): 1 field — will be removed [WebP > XMP ]
 
 fixtures/generated/webp/clean.webp (WebP image)
   No hidden metadata found.

@@ -24,14 +24,16 @@ pub fn finding(kind: FindingKind) -> &'static str {
         EmbeddedFile => "Another file embedded inside it",
         HiddenContent => "Hidden content",
         Description => "A title, caption or keywords",
-        DeviceModel => "Make and model of the camera or phone",
+        Organization => "A company or organization name",
+        CustomProperty => "A custom property (extra details added by a program or person)",
+        DeviceModel => "Make and model of a device (camera, phone, printer)",
         Software => "Software or app used",
         Timestamp => "Date and time",
         DocumentId => "A unique ID that can link copies of this file",
         UnknownMetadata => "Metadata MetaScrub doesn't recognize",
         ColorProfile => "Color profile",
         Orientation => "Rotation setting",
-        TechnicalInfo => "Technical details about the camera or encoding",
+        TechnicalInfo => "Technical details (encoding, settings, statistics)",
         ExtensionMismatch => "The file name's extension doesn't match the real file type",
         _ => "Other metadata",
     }
@@ -80,7 +82,10 @@ pub fn value(finding: &Finding) -> Option<String> {
         Value::Text(text) => text.clone(),
         Value::Integer(n) => match finding.kind {
             FindingKind::Orientation => orientation(*n).to_owned(),
-            FindingKind::TechnicalInfo | FindingKind::UnknownMetadata => {
+            FindingKind::TechnicalInfo
+            | FindingKind::UnknownMetadata
+            | FindingKind::DocumentId
+            | FindingKind::CustomProperty => {
                 format!("{n} field{}", if *n == 1 { "" } else { "s" })
             }
             _ => n.to_string(),
@@ -158,12 +163,21 @@ pub fn format(format: FormatId) -> &'static str {
         FormatId::Jpeg => "JPEG image",
         FormatId::Png => "PNG image",
         FormatId::Webp => "WebP image",
+        FormatId::Docx => "Word document",
+        FormatId::Xlsx => "Excel workbook",
+        FormatId::Pptx => "PowerPoint presentation",
+        FormatId::Zip => "ZIP archive",
+        FormatId::Compound => "old-format or password-protected Office file",
         _ => "file",
     }
 }
 
 pub fn skip_reason(reason: SkipReason, format: Option<FormatId>) -> String {
     match (reason, format) {
+        (SkipReason::UnsupportedFormat, Some(FormatId::Compound)) => {
+            "old-format (.doc, .xls, .ppt) and password-protected Office files aren't supported"
+                .into()
+        }
         (SkipReason::UnsupportedFormat, Some(format)) => {
             format!("{} files aren't supported yet", self::format(format))
         }

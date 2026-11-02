@@ -8,12 +8,12 @@ fixtures/generated/jpeg/camera.jpg (JPEG image)
     • Location where it was created — would be removed
     • A small preview image (may show the original before cropping or edits) — would be removed
   Medium risk
-    • Make and model of the camera or phone — would be removed
+    • Make and model of a device (camera, phone, printer) — would be removed
     • Software or app used — would be removed
     • Date and time — would be removed
   Low risk
     • Rotation setting — kept: needed to display correctly
-    • Technical details about the camera or encoding — would be removed
+    • Technical details (encoding, settings, statistics) — would be removed
 
 fixtures/generated/jpeg/clean.jpg (JPEG image)
   No hidden metadata found.
@@ -60,7 +60,7 @@ fixtures/generated/jpeg/xmp-iptc.jpg (JPEG image)
     • Metadata MetaScrub doesn't recognize — would be removed
     • A title, caption or keywords — would be removed
   Low risk
-    • Technical details about the camera or encoding — would be removed
+    • Technical details (encoding, settings, statistics) — would be removed
 
 fixtures/generated/other/notes.txt skipped: MetaScrub can't read this type of file
 
@@ -75,13 +75,13 @@ fixtures/generated/png/exif.png (PNG image)
     • Serial number of the camera or device — would be removed
     • Location where it was created — would be removed
   Medium risk
-    • Make and model of the camera or phone — would be removed
+    • Make and model of a device (camera, phone, printer) — would be removed
     • Software or app used — would be removed
     • Date and time — would be removed
     • A title, caption or keywords — would be removed
   Low risk
     • Rotation setting — kept: needed to display correctly
-    • Technical details about the camera or encoding — would be removed
+    • Technical details (encoding, settings, statistics) — would be removed
 
 fixtures/generated/png/icc.png (PNG image)
   Low risk
@@ -99,7 +99,7 @@ fixtures/generated/png/text-chunks.png (PNG image)
     • A unique ID that can link copies of this file — would be removed
     • Metadata MetaScrub doesn't recognize — would be removed
   Low risk
-    • Technical details about the camera or encoding — would be removed
+    • Technical details (encoding, settings, statistics) — would be removed
 
 fixtures/generated/png/trailing.png (PNG image)
   High risk
@@ -115,7 +115,7 @@ fixtures/generated/webp/animated.webp (WebP image)
     • Software or app used — would be removed
     • A unique ID that can link copies of this file — would be removed
   Low risk
-    • Technical details about the camera or encoding — would be removed
+    • Technical details (encoding, settings, statistics) — would be removed
 
 fixtures/generated/webp/camera.webp (WebP image)
   High risk
@@ -124,14 +124,14 @@ fixtures/generated/webp/camera.webp (WebP image)
     • Location where it was created — would be removed
     • A file path from the computer that made it — would be removed
   Medium risk
-    • Make and model of the camera or phone — would be removed
+    • Make and model of a device (camera, phone, printer) — would be removed
     • Software or app used — would be removed
     • Date and time — would be removed
     • A unique ID that can link copies of this file — would be removed
     • Metadata MetaScrub doesn't recognize — would be removed
   Low risk
     • Rotation setting — kept: needed to display correctly
-    • Technical details about the camera or encoding — would be removed
+    • Technical details (encoding, settings, statistics) — would be removed
 
 fixtures/generated/webp/clean.webp (WebP image)
   No hidden metadata found.
