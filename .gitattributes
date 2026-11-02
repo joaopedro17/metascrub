@@ -1,0 +1,5 @@
+# Golden test output is compared byte for byte, so text files keep LF on every OS.
+* text=auto eol=lf
+
+# Test fixtures must stay byte-identical, including the .txt one.
+fixtures/** binary

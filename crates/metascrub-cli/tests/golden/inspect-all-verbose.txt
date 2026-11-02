@@ -1,0 +1,133 @@
+$ metascrub inspect -v --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/image.webp fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png
+exit: 1
+
+fixtures/generated/jpeg/camera.jpg (JPEG image)
+  High risk
+    • A person's name (author, artist or owner): Jane Doe — will be removed [EXIF > Artist]
+    • A person's name (author, artist or owner): Copyright Jane Doe — will be removed [EXIF > Copyright]
+    • Serial number of the camera or device: SN-0042-7781 — will be removed [EXIF > BodySerialNumber]
+    • Location where it was created: 48.85840, 2.29450 — will be removed [EXIF > GPS]
+    • A small preview image (may show the original before cropping or edits): 648 bytes — will be removed [EXIF > Thumbnail]
+  Medium risk
+    • Make and model of the camera or phone: Fictional Camera Co. — will be removed [EXIF > Make]
+    • Make and model of the camera or phone: FC-100 — will be removed [EXIF > Model]
+    • Software or app used: PhotoTool 2.1 — will be removed [EXIF > Software]
+    • Date and time: 2026:03:14 09:26:53 — will be removed [EXIF > DateTime]
+    • Date and time: 2026:03:14 09:26:53 — will be removed [EXIF > DateTimeOriginal]
+    • Make and model of the camera or phone: FC 24-70mm — will be removed [EXIF > LensModel]
+  Low risk
+    • Rotation setting: rotated 90° clockwise — kept: needed to display correctly [EXIF > Orientation]
+    • Technical details about the camera or encoding: 2 fields — will be removed [EXIF]
+
+fixtures/generated/jpeg/clean.jpg (JPEG image)
+  No hidden metadata found.
+
+fixtures/generated/jpeg/comment.jpg (JPEG image)
+  High risk
+    • A comment: Edited on Jane's laptop — will be removed [Comment]
+
+fixtures/generated/jpeg/icc-custom.jpg (JPEG image)
+  Low risk
+    • Color profile: Studio monitor, calibrated 2026-03-14 — will be removed [ICC]
+
+fixtures/generated/jpeg/icc-standard.jpg (JPEG image)
+  Low risk
+    • Color profile: sRGB IEC61966-2.1 — kept: a standard profile that reveals nothing [ICC]
+
+fixtures/generated/jpeg/jpeg-named.png (JPEG image)
+  Low risk
+    • The file name's extension doesn't match the real file type: .png — can't be fixed automatically [File name]
+
+fixtures/generated/jpeg/motion-photo.jpg (JPEG image)
+  High risk
+    • Hidden data after the end of the image (such as a Motion Photo video): 40 bytes — will be removed [After end of image]
+
+fixtures/generated/jpeg/multi-picture.jpg (JPEG image)
+  High risk
+    • Extra hidden images (such as depth maps): 648 bytes — will be removed [MPF]
+
+fixtures/generated/jpeg/truncated.jpg failed: the file is damaged or not what it claims to be
+  malformed file: unexpected end of data
+
+fixtures/generated/jpeg/unknown-segment.jpg (JPEG image)
+  Medium risk
+    • Metadata MetaScrub doesn't recognize: 13 bytes — will be removed [APP12]
+
+fixtures/generated/jpeg/xmp-iptc.jpg (JPEG image)
+  High risk
+    • Location where it was created: Paris — will be removed [XMP > photoshop:City]
+    • Location where it was created: 48,51.504N — will be removed [XMP > exif:GPSLatitude]
+    • A person's name (author, artist or owner): Jane Doe — will be removed [XMP > dc:creator]
+    • A file path from the computer that made it: C:\Users\jane\Pictures\holiday.psd — will be removed [XMP > stRef:filePath]
+    • A person's name (author, artist or owner): Jane Doe — will be removed [Photoshop > IPTC > By-line]
+    • Location where it was created: Paris — will be removed [Photoshop > IPTC > City]
+    • A small preview image (may show the original before cropping or edits): 648 bytes — will be removed [Photoshop > Thumbnail]
+  Medium risk
+    • Software or app used: PhotoTool 2.1 — will be removed [XMP > xmp:CreatorTool]
+    • A unique ID that can link copies of this file: xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03 — will be removed [XMP > xmpMM:DocumentID]
+    • Metadata MetaScrub doesn't recognize: 1 field — will be removed [XMP]
+    • A title, caption or keywords: Our first day in Paris — will be removed [Photoshop > IPTC > Caption-Abstract]
+    • A title, caption or keywords: holiday, family — will be removed [Photoshop > IPTC > Keywords]
+  Low risk
+    • Technical details about the camera or encoding: 1 field — will be removed [XMP]
+
+fixtures/generated/other/image.webp skipped: WebP image files aren't supported yet
+
+fixtures/generated/other/notes.txt skipped: MetaScrub can't read this type of file
+
+fixtures/generated/png/bad-checksum.png failed: the file is damaged or not what it claims to be
+  malformed file: PNG chunk checksum mismatch
+
+fixtures/generated/png/clean.png (PNG image)
+  No hidden metadata found.
+
+fixtures/generated/png/exif.png (PNG image)
+  High risk
+    • A person's name (author, artist or owner): Jane Doe — will be removed [PNG > eXIf > Artist]
+    • A person's name (author, artist or owner): Copyright Jane Doe — will be removed [PNG > eXIf > Copyright]
+    • Serial number of the camera or device: SN-0042-7781 — will be removed [PNG > eXIf > BodySerialNumber]
+    • Location where it was created: 48.85840, 2.29450 — will be removed [PNG > eXIf > GPS]
+    • A person's name (author, artist or owner): Jane Doe — will be removed [PNG > tEXt > Raw profile type iptc > By-line]
+    • Location where it was created: Paris — will be removed [PNG > tEXt > Raw profile type iptc > City]
+  Medium risk
+    • Make and model of the camera or phone: Fictional Camera Co. — will be removed [PNG > eXIf > Make]
+    • Make and model of the camera or phone: FC-100 — will be removed [PNG > eXIf > Model]
+    • Software or app used: PhotoTool 2.1 — will be removed [PNG > eXIf > Software]
+    • Date and time: 2026:03:14 09:26:53 — will be removed [PNG > eXIf > DateTime]
+    • Date and time: 2026:03:14 09:26:53 — will be removed [PNG > eXIf > DateTimeOriginal]
+    • Make and model of the camera or phone: FC 24-70mm — will be removed [PNG > eXIf > LensModel]
+    • A title, caption or keywords: Our first day in Paris — will be removed [PNG > tEXt > Raw profile type iptc > Caption-Abstract]
+    • A title, caption or keywords: holiday, family — will be removed [PNG > tEXt > Raw profile type iptc > Keywords]
+  Low risk
+    • Rotation setting: rotated 180° — kept: needed to display correctly [PNG > eXIf > Orientation]
+    • Technical details about the camera or encoding: 2 fields — will be removed [PNG > eXIf]
+
+fixtures/generated/png/icc.png (PNG image)
+  Low risk
+    • Color profile: Display P3 — kept: a standard profile that reveals nothing [PNG > iCCP]
+
+fixtures/generated/png/text-chunks.png (PNG image)
+  High risk
+    • A person's name (author, artist or owner): Jane Doe — will be removed [PNG > tEXt > Author]
+    • A comment: Picture of our new flat — will be removed [PNG > zTXt > Comment]
+    • Location where it was created: Paris — will be removed [PNG > iTXt > XML:com.adobe.xmp > photoshop:City]
+    • Location where it was created: 48,51.504N — will be removed [PNG > iTXt > XML:com.adobe.xmp > exif:GPSLatitude]
+    • A person's name (author, artist or owner): Jane Doe — will be removed [PNG > iTXt > XML:com.adobe.xmp > dc:creator]
+    • A file path from the computer that made it: C:\Users\jane\Pictures\holiday.psd — will be removed [PNG > iTXt > XML:com.adobe.xmp > stRef:filePath]
+  Medium risk
+    • Software or app used: PhotoTool 2.1 — will be removed [PNG > tEXt > Software]
+    • Date and time: Sat, 14 Mar 2026 09:26:53 +0100 — will be removed [PNG > tEXt > Creation Time]
+    • Software or app used: PhotoTool 2.1 — will be removed [PNG > iTXt > XML:com.adobe.xmp > xmp:CreatorTool]
+    • A unique ID that can link copies of this file: xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03 — will be removed [PNG > iTXt > XML:com.adobe.xmp > xmpMM:DocumentID]
+    • Metadata MetaScrub doesn't recognize: 1 field — will be removed [PNG > iTXt > XML:com.adobe.xmp]
+    • Date and time: 2026-03-14 08:26:53 UTC — will be removed [PNG > tIME]
+    • Metadata MetaScrub doesn't recognize: 19 bytes — will be removed [PNG > prVt]
+  Low risk
+    • Technical details about the camera or encoding: 1 field — will be removed [PNG > iTXt > XML:com.adobe.xmp]
+    • Technical details about the camera or encoding: 1 field — will be removed [PNG]
+
+fixtures/generated/png/trailing.png (PNG image)
+  High risk
+    • Hidden data after the end of the image (such as a Motion Photo video): 24 bytes — will be removed [After end of image]
+
+15 files inspected, 11 with hidden metadata, 2 skipped, 2 failed

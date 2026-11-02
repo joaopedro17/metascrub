@@ -9,6 +9,9 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
+flate2.workspace = true
+kamadak-exif.workspace = true
+quick-xml.workspace = true
 serde.workspace = true
 
 [dev-dependencies]

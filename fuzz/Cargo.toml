@@ -1,0 +1,34 @@
+[package]
+name = "metascrub-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+flate2 = "=1.1.10"
+libfuzzer-sys = "=0.4.13"
+metascrub-core = { path = "../crates/metascrub-core" }
+
+[[bin]]
+name = "inspect"
+path = "fuzz_targets/inspect.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "jpeg"
+path = "fuzz_targets/jpeg.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "png"
+path = "fuzz_targets/png.rs"
+test = false
+doc = false
+bench = false

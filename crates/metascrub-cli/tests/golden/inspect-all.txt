@@ -1,0 +1,111 @@
+$ metascrub inspect fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/image.webp fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png
+exit: 1
+
+fixtures/generated/jpeg/camera.jpg (JPEG image)
+  High risk
+    • A person's name (author, artist or owner) — will be removed
+    • Serial number of the camera or device — will be removed
+    • Location where it was created — will be removed
+    • A small preview image (may show the original before cropping or edits) — will be removed
+  Medium risk
+    • Make and model of the camera or phone — will be removed
+    • Software or app used — will be removed
+    • Date and time — will be removed
+  Low risk
+    • Rotation setting — kept: needed to display correctly
+    • Technical details about the camera or encoding — will be removed
+
+fixtures/generated/jpeg/clean.jpg (JPEG image)
+  No hidden metadata found.
+
+fixtures/generated/jpeg/comment.jpg (JPEG image)
+  High risk
+    • A comment — will be removed
+
+fixtures/generated/jpeg/icc-custom.jpg (JPEG image)
+  Low risk
+    • Color profile — will be removed
+
+fixtures/generated/jpeg/icc-standard.jpg (JPEG image)
+  Low risk
+    • Color profile — kept: a standard profile that reveals nothing
+
+fixtures/generated/jpeg/jpeg-named.png (JPEG image)
+  Low risk
+    • The file name's extension doesn't match the real file type — can't be fixed automatically
+
+fixtures/generated/jpeg/motion-photo.jpg (JPEG image)
+  High risk
+    • Hidden data after the end of the image (such as a Motion Photo video) — will be removed
+
+fixtures/generated/jpeg/multi-picture.jpg (JPEG image)
+  High risk
+    • Extra hidden images (such as depth maps) — will be removed
+
+fixtures/generated/jpeg/truncated.jpg failed: the file is damaged or not what it claims to be
+
+fixtures/generated/jpeg/unknown-segment.jpg (JPEG image)
+  Medium risk
+    • Metadata MetaScrub doesn't recognize — will be removed
+
+fixtures/generated/jpeg/xmp-iptc.jpg (JPEG image)
+  High risk
+    • Location where it was created — will be removed
+    • A person's name (author, artist or owner) — will be removed
+    • A file path from the computer that made it — will be removed
+    • A small preview image (may show the original before cropping or edits) — will be removed
+  Medium risk
+    • Software or app used — will be removed
+    • A unique ID that can link copies of this file — will be removed
+    • Metadata MetaScrub doesn't recognize — will be removed
+    • A title, caption or keywords — will be removed
+  Low risk
+    • Technical details about the camera or encoding — will be removed
+
+fixtures/generated/other/image.webp skipped: WebP image files aren't supported yet
+
+fixtures/generated/other/notes.txt skipped: MetaScrub can't read this type of file
+
+fixtures/generated/png/bad-checksum.png failed: the file is damaged or not what it claims to be
+
+fixtures/generated/png/clean.png (PNG image)
+  No hidden metadata found.
+
+fixtures/generated/png/exif.png (PNG image)
+  High risk
+    • A person's name (author, artist or owner) — will be removed
+    • Serial number of the camera or device — will be removed
+    • Location where it was created — will be removed
+  Medium risk
+    • Make and model of the camera or phone — will be removed
+    • Software or app used — will be removed
+    • Date and time — will be removed
+    • A title, caption or keywords — will be removed
+  Low risk
+    • Rotation setting — kept: needed to display correctly
+    • Technical details about the camera or encoding — will be removed
+
+fixtures/generated/png/icc.png (PNG image)
+  Low risk
+    • Color profile — kept: a standard profile that reveals nothing
+
+fixtures/generated/png/text-chunks.png (PNG image)
+  High risk
+    • A person's name (author, artist or owner) — will be removed
+    • A comment — will be removed
+    • Location where it was created — will be removed
+    • A file path from the computer that made it — will be removed
+  Medium risk
+    • Software or app used — will be removed
+    • Date and time — will be removed
+    • A unique ID that can link copies of this file — will be removed
+    • Metadata MetaScrub doesn't recognize — will be removed
+  Low risk
+    • Technical details about the camera or encoding — will be removed
+
+fixtures/generated/png/trailing.png (PNG image)
+  High risk
+    • Hidden data after the end of the image (such as a Motion Photo video) — will be removed
+
+15 files inspected, 11 with hidden metadata, 2 skipped, 2 failed
+Values are hidden so this report is safe to share. Use --show-values to see them.
