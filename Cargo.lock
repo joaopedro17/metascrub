@@ -267,6 +267,7 @@ dependencies = [
  "clap",
  "metascrub-core",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]
@@ -274,6 +275,7 @@ name = "metascrub-core"
 version = "0.1.0"
 dependencies = [
  "flate2",
+ "image",
  "kamadak-exif",
  "quick-xml",
  "serde",
