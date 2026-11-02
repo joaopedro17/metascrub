@@ -1,0 +1,1242 @@
+$ metascrub inspect --json --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/image.webp fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png
+exit: 1
+
+{
+  "command": "inspect",
+  "files": [
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "EXIF",
+            "Make"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Fictional Camera Co."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "EXIF",
+            "Model"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC-100"
+          }
+        },
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "required_to_render"
+          },
+          "kind": "orientation",
+          "location": [
+            "EXIF",
+            "Orientation"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 6
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "EXIF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "EXIF",
+            "DateTime"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "EXIF",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "EXIF",
+            "Copyright"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Copyright Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "EXIF",
+            "DateTimeOriginal"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "EXIF",
+            "BodySerialNumber"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "SN-0042-7781"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "EXIF",
+            "LensModel"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC 24-70mm"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "EXIF",
+            "GPS"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "coordinates",
+            "value": {
+              "latitude": 48.8584,
+              "longitude": 2.2944999999999998
+            }
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "thumbnail",
+          "location": [
+            "EXIF",
+            "Thumbnail"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 648
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "EXIF"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 2
+          }
+        }
+      ],
+      "format": "jpeg",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/jpeg/camera.jpg"
+    },
+    {
+      "findings": [],
+      "format": "jpeg",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/jpeg/clean.jpg"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "comment",
+          "location": [
+            "Comment"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Edited on Jane's laptop"
+          }
+        }
+      ],
+      "format": "jpeg",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/jpeg/comment.jpg"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "color_profile",
+          "location": [
+            "ICC"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "Studio monitor, calibrated 2026-03-14"
+          }
+        }
+      ],
+      "format": "jpeg",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/jpeg/icc-custom.jpg"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "standard_color_profile"
+          },
+          "kind": "color_profile",
+          "location": [
+            "ICC"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "sRGB IEC61966-2.1"
+          }
+        }
+      ],
+      "format": "jpeg",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/jpeg/icc-standard.jpg"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "warn"
+          },
+          "kind": "extension_mismatch",
+          "location": [
+            "File name"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": ".png"
+          }
+        }
+      ],
+      "format": "jpeg",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/jpeg/jpeg-named.png"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "trailing_data",
+          "location": [
+            "After end of image"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 40
+          }
+        }
+      ],
+      "format": "jpeg",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/jpeg/motion-photo.jpg"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "hidden_image",
+          "location": [
+            "MPF"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 648
+          }
+        }
+      ],
+      "format": "jpeg",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/jpeg/multi-picture.jpg"
+    },
+    {
+      "findings": [],
+      "format": "jpeg",
+      "outcome": {
+        "detail": {
+          "detail": "malformed file: unexpected end of data",
+          "kind": "malformed"
+        },
+        "status": "failed"
+      },
+      "output": null,
+      "path": "fixtures/generated/jpeg/truncated.jpg"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "APP12"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 13
+          }
+        }
+      ],
+      "format": "jpeg",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/jpeg/unknown-segment.jpg"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "XMP",
+            "xmp:CreatorTool"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "XMP",
+            "photoshop:City"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Paris"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "XMP",
+            "exif:GPSLatitude"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "48,51.504N"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "XMP",
+            "xmpMM:DocumentID"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "XMP",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "XMP",
+            "stRef:filePath"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "C:\\Users\\jane\\Pictures\\holiday.psd"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "XMP"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "XMP"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Photoshop",
+            "IPTC",
+            "By-line"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "Photoshop",
+            "IPTC",
+            "City"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Paris"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "Photoshop",
+            "IPTC",
+            "Caption-Abstract"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Our first day in Paris"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "Photoshop",
+            "IPTC",
+            "Keywords"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "holiday, family"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "thumbnail",
+          "location": [
+            "Photoshop",
+            "Thumbnail"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 648
+          }
+        }
+      ],
+      "format": "jpeg",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/jpeg/xmp-iptc.jpg"
+    },
+    {
+      "findings": [],
+      "format": "webp",
+      "outcome": {
+        "detail": "unsupported_format",
+        "status": "skipped"
+      },
+      "output": null,
+      "path": "fixtures/generated/other/image.webp"
+    },
+    {
+      "findings": [],
+      "format": null,
+      "outcome": {
+        "detail": "unsupported_format",
+        "status": "skipped"
+      },
+      "output": null,
+      "path": "fixtures/generated/other/notes.txt"
+    },
+    {
+      "findings": [],
+      "format": "png",
+      "outcome": {
+        "detail": {
+          "detail": "malformed file: PNG chunk checksum mismatch",
+          "kind": "malformed"
+        },
+        "status": "failed"
+      },
+      "output": null,
+      "path": "fixtures/generated/png/bad-checksum.png"
+    },
+    {
+      "findings": [],
+      "format": "png",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/png/clean.png"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "PNG",
+            "eXIf",
+            "Make"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Fictional Camera Co."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "PNG",
+            "eXIf",
+            "Model"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC-100"
+          }
+        },
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "required_to_render"
+          },
+          "kind": "orientation",
+          "location": [
+            "PNG",
+            "eXIf",
+            "Orientation"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 3
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "PNG",
+            "eXIf",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "PNG",
+            "eXIf",
+            "DateTime"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "PNG",
+            "eXIf",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "PNG",
+            "eXIf",
+            "Copyright"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Copyright Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "PNG",
+            "eXIf",
+            "DateTimeOriginal"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "PNG",
+            "eXIf",
+            "BodySerialNumber"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "SN-0042-7781"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "PNG",
+            "eXIf",
+            "LensModel"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC 24-70mm"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "PNG",
+            "eXIf",
+            "GPS"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "coordinates",
+            "value": {
+              "latitude": 48.8584,
+              "longitude": 2.2944999999999998
+            }
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "PNG",
+            "eXIf"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 2
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "PNG",
+            "tEXt",
+            "Raw profile type iptc",
+            "By-line"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "PNG",
+            "tEXt",
+            "Raw profile type iptc",
+            "City"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Paris"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "PNG",
+            "tEXt",
+            "Raw profile type iptc",
+            "Caption-Abstract"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Our first day in Paris"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "PNG",
+            "tEXt",
+            "Raw profile type iptc",
+            "Keywords"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "holiday, family"
+          }
+        }
+      ],
+      "format": "png",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/png/exif.png"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "standard_color_profile"
+          },
+          "kind": "color_profile",
+          "location": [
+            "PNG",
+            "iCCP"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "Display P3"
+          }
+        }
+      ],
+      "format": "png",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/png/icc.png"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "PNG",
+            "tEXt",
+            "Author"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "PNG",
+            "tEXt",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "PNG",
+            "tEXt",
+            "Creation Time"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Sat, 14 Mar 2026 09:26:53 +0100"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "comment",
+          "location": [
+            "PNG",
+            "zTXt",
+            "Comment"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Picture of our new flat"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "PNG",
+            "iTXt",
+            "XML:com.adobe.xmp",
+            "xmp:CreatorTool"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "PNG",
+            "iTXt",
+            "XML:com.adobe.xmp",
+            "photoshop:City"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Paris"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "PNG",
+            "iTXt",
+            "XML:com.adobe.xmp",
+            "exif:GPSLatitude"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "48,51.504N"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "PNG",
+            "iTXt",
+            "XML:com.adobe.xmp",
+            "xmpMM:DocumentID"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "PNG",
+            "iTXt",
+            "XML:com.adobe.xmp",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "PNG",
+            "iTXt",
+            "XML:com.adobe.xmp",
+            "stRef:filePath"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "C:\\Users\\jane\\Pictures\\holiday.psd"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "PNG",
+            "iTXt",
+            "XML:com.adobe.xmp"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "PNG",
+            "iTXt",
+            "XML:com.adobe.xmp"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "PNG",
+            "tIME"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 08:26:53 UTC"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "PNG",
+            "prVt"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 19
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "PNG"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        }
+      ],
+      "format": "png",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/png/text-chunks.png"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "trailing_data",
+          "location": [
+            "After end of image"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 24
+          }
+        }
+      ],
+      "format": "png",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/png/trailing.png"
+    }
+  ],
+  "schema_version": 1,
+  "summary": {
+    "cleaned": 0,
+    "copied": 0,
+    "failed": 2,
+    "inspected": 15,
+    "remaining_metadata": 0,
+    "skipped": 2,
+    "verified": 0
+  },
+  "values_shown": true
+}

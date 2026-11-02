@@ -1,0 +1,12 @@
+$ metascrub inspect -q fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/image.webp fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png
+exit: 1
+
+fixtures/generated/jpeg/truncated.jpg failed: the file is damaged or not what it claims to be
+
+fixtures/generated/other/image.webp skipped: WebP image files aren't supported yet
+
+fixtures/generated/other/notes.txt skipped: MetaScrub can't read this type of file
+
+fixtures/generated/png/bad-checksum.png failed: the file is damaged or not what it claims to be
+
+15 files inspected, 11 with hidden metadata, 2 skipped, 2 failed
