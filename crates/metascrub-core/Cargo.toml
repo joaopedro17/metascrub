@@ -12,8 +12,10 @@ authors.workspace = true
 flate2.workspace = true
 kamadak-exif.workspace = true
 quick-xml.workspace = true
+rayon.workspace = true
 serde.workspace = true
 tempfile.workspace = true
+walkdir.workspace = true
 
 [dev-dependencies]
 image.workspace = true

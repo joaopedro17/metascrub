@@ -13,11 +13,48 @@ fn metascrub(args: &[&str]) -> Output {
 }
 
 #[test]
-fn folders_are_rejected_as_invalid_usage() {
+fn folders_need_recursive() {
     let output = metascrub(&["inspect", "fixtures/generated"]);
     assert_eq!(output.status.code(), Some(2));
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("is a folder"), "{stderr}");
+    assert!(stderr.contains("Use -r"), "{stderr}");
+}
+
+#[test]
+fn cleans_a_folder_recursively_into_a_mirrored_output() {
+    let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/generated");
+    let dir = tempfile::tempdir().unwrap();
+    let photos = dir.path().join("photos");
+    std::fs::create_dir_all(photos.join("sub")).unwrap();
+    for (from, to) in [
+        ("jpeg/camera.jpg", "camera.jpg"),
+        ("png/text-chunks.png", "sub/text-chunks.png"),
+        ("other/notes.txt", "notes.txt"),
+    ] {
+        std::fs::copy(fixtures.join(from), photos.join(to)).unwrap();
+    }
+    let out = dir.path().join("out");
+
+    let run = |args: &[&std::ffi::OsStr]| {
+        Command::new(env!("CARGO_BIN_EXE_metascrub"))
+            .args(args)
+            .env("NO_COLOR", "1")
+            .output()
+            .unwrap()
+    };
+    let clean = run(&[
+        "clean".as_ref(),
+        "-r".as_ref(),
+        photos.as_ref(),
+        "-o".as_ref(),
+        out.as_ref(),
+    ]);
+    assert_eq!(clean.status.code(), Some(0), "{clean:?}");
+    for name in ["camera.jpg", "sub/text-chunks.png", "notes.txt"] {
+        assert!(out.join("photos").join(name).is_file(), "{name}");
+    }
+    let verify = run(&["verify".as_ref(), "-r".as_ref(), out.as_ref()]);
+    assert_eq!(verify.status.code(), Some(0), "{verify:?}");
 }
 
 #[test]
