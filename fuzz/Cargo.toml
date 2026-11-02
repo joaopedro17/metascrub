@@ -32,3 +32,17 @@ path = "fuzz_targets/png.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "webp"
+path = "fuzz_targets/webp.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "clean"
+path = "fuzz_targets/clean.rs"
+test = false
+doc = false
+bench = false
