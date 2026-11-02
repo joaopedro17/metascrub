@@ -38,7 +38,7 @@ fixtures $METASCRUB_BLESS="1":
 [working-directory: 'fuzz']
 fuzz target seconds="180":
     mkdir -p corpus/{{target}}
-    cargo +nightly fuzz run {{target}} corpus/{{target}} ../fixtures/generated/jpeg ../fixtures/generated/png ../fixtures/generated/webp -- -max_total_time={{seconds}}
+    cargo +nightly fuzz run {{target}} corpus/{{target}} ../fixtures/generated/jpeg ../fixtures/generated/png ../fixtures/generated/webp ../fixtures/generated/office -- -max_total_time={{seconds}}
 
 # Run MetaScrub, e.g. `just run inspect photo.jpg`
 run *args:

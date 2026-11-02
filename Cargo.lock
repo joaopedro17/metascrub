@@ -426,6 +426,7 @@ version = "0.2.0"
 dependencies = [
  "flate2",
  "image",
+ "zip",
 ]
 
 [[package]]

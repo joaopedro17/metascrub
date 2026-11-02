@@ -1,4 +1,4 @@
-$ metascrub inspect --json --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub inspect --json --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 {
@@ -610,6 +610,977 @@ exit: 1
       },
       "output": null,
       "path": "fixtures/generated/jpeg/xmp-iptc.jpg"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "ZIP",
+            "File dates"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 09:26:52"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "docProps/core.xml",
+            "title"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Q1 report — draft"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "docProps/core.xml",
+            "subject"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Finance"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "docProps/core.xml",
+            "creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "docProps/core.xml",
+            "keywords"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "confidential, acme"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "docProps/core.xml",
+            "description"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Numbers still to be checked with Acme."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "docProps/core.xml",
+            "lastModifiedBy"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "docProps/core.xml",
+            "revision"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "7"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "docProps/core.xml",
+            "lastPrinted"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-13T17:02:00Z"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "docProps/core.xml",
+            "created"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-10T08:15:00Z"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "docProps/core.xml",
+            "modified"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14T09:26:00Z"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "docProps/app.xml",
+            "Application"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Microsoft Excel"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "organization",
+          "location": [
+            "docProps/app.xml",
+            "Company"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Fictional Ltd"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "docProps/app.xml",
+            "AppVersion"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "16.0300"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "docProps/app.xml"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "xl/printerSettings/printerSettings1.bin"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 220
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "xl/workbook.xml",
+            "absPath"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "C:\\Users\\jane.doe\\OneDrive - Fictional Ltd\\Finance\\"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "xl/workbook.xml",
+            "revisionPtr"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "13_ncr:1_{8C2D6F1A-0E4B-4F7A-9D3C-5B1E2A7F9C40}"
+          }
+        }
+      ],
+      "format": "xlsx",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/budget.xlsx"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "word/document.xml",
+            "rsid"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "integer",
+            "value": 5
+          }
+        }
+      ],
+      "format": "docx",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/clean.docx"
+    },
+    {
+      "findings": [],
+      "format": "docx",
+      "outcome": {
+        "detail": {
+          "detail": "unsupported feature: Office documents with comments aren't supported yet",
+          "kind": "unsupported"
+        },
+        "status": "failed"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/comments.docx"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "ZIP",
+            "File dates"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 09:26:52"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "word/_rels/settings.xml.rels",
+            "attachedTemplate"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "file:///C:\\Users\\jane.doe\\AppData\\Roaming\\Microsoft\\Templates\\Report.dotx"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "docProps/core.xml",
+            "title"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Q1 report — draft"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "docProps/core.xml",
+            "subject"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Finance"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "docProps/core.xml",
+            "creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "docProps/core.xml",
+            "keywords"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "confidential, acme"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "docProps/core.xml",
+            "description"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Numbers still to be checked with Acme."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "docProps/core.xml",
+            "lastModifiedBy"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "docProps/core.xml",
+            "revision"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "7"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "docProps/core.xml",
+            "lastPrinted"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-13T17:02:00Z"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "docProps/core.xml",
+            "created"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-10T08:15:00Z"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "docProps/core.xml",
+            "modified"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14T09:26:00Z"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "docProps/app.xml",
+            "Template"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Report.dotx"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "docProps/app.xml",
+            "Application"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Microsoft Office Word"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "organization",
+          "location": [
+            "docProps/app.xml",
+            "Company"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Fictional Ltd"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "docProps/app.xml",
+            "Manager"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Richard Miles"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "docProps/app.xml",
+            "AppVersion"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "16.0000"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "docProps/app.xml"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 4
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "custom_property",
+          "location": [
+            "docProps/custom.xml",
+            "Client"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Acme Corporation"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "custom_property",
+          "location": [
+            "docProps/custom.xml",
+            "Project"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Falcon"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "thumbnail",
+          "location": [
+            "docProps/thumbnail.jpeg"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 648
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "word/people.xml"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "custom_property",
+          "location": [
+            "customXml/item1.xml"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 164
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "word/document.xml",
+            "rsid"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "integer",
+            "value": 5
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "custom_property",
+          "location": [
+            "word/settings.xml",
+            "docVars"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "word/settings.xml",
+            "rsids"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "integer",
+            "value": 3
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "word/settings.xml",
+            "docId"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "{3F2504E0-4F89-11D3-9A0C-0305E82C3301}"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF",
+            "Make"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Fictional Camera Co."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF",
+            "Model"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC-100"
+          }
+        },
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "required_to_render"
+          },
+          "kind": "orientation",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF",
+            "Orientation"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 6
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF",
+            "DateTime"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF",
+            "Copyright"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Copyright Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF",
+            "DateTimeOriginal"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF",
+            "BodySerialNumber"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "SN-0042-7781"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF",
+            "LensModel"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC 24-70mm"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF",
+            "GPS"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "coordinates",
+            "value": {
+              "latitude": 48.8584,
+              "longitude": 2.2944999999999998
+            }
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "thumbnail",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF",
+            "Thumbnail"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 648
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "word/media/image1.jpeg",
+            "EXIF"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 2
+          }
+        }
+      ],
+      "format": "docx",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/report.docx"
+    },
+    {
+      "findings": [],
+      "format": "docx",
+      "outcome": {
+        "detail": {
+          "detail": "unsupported feature: Office documents with tracked changes aren't supported yet",
+          "kind": "unsupported"
+        },
+        "status": "failed"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/tracked-changes.docx"
+    },
+    {
+      "findings": [],
+      "format": "zip",
+      "outcome": {
+        "detail": "unsupported_format",
+        "status": "skipped"
+      },
+      "output": null,
+      "path": "fixtures/generated/other/archive.zip"
+    },
+    {
+      "findings": [],
+      "format": "compound",
+      "outcome": {
+        "detail": "unsupported_format",
+        "status": "skipped"
+      },
+      "output": null,
+      "path": "fixtures/generated/other/legacy.doc"
     },
     {
       "findings": [],
@@ -1810,10 +2781,10 @@ exit: 1
     "cancelled": 0,
     "cleaned": 0,
     "copied": 0,
-    "failed": 3,
-    "inspected": 20,
+    "failed": 5,
+    "inspected": 23,
     "remaining_metadata": 0,
-    "skipped": 1,
+    "skipped": 3,
     "verified": 0
   },
   "values_shown": true

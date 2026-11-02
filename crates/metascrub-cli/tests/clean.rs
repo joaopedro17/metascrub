@@ -27,7 +27,7 @@ fn metascrub(args: &[&std::ffi::OsStr]) -> Output {
 
 fn clean_all_into(out: &Path) -> Vec<PathBuf> {
     let mut fixtures = Vec::new();
-    for dir in ["jpeg", "png", "webp"] {
+    for dir in ["jpeg", "png", "webp", "office"] {
         for entry in fs::read_dir(fixture(dir)).unwrap() {
             fixtures.push(entry.unwrap().path());
         }
@@ -93,6 +93,8 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
     };
     let base_png = exiftool_tags(&fixture("png/clean.png")).unwrap();
     let base_webp = exiftool_tags(&fixture("webp/clean.webp")).unwrap();
+    // Every Office file shows its ZIP structure: entry names, sizes, dates.
+    let base_office = exiftool_tags(&fixture("office/clean.docx")).unwrap();
     // Sanity check that the oracle sees what we planted.
     let original = exiftool_tags(&fixture("jpeg/camera.jpg")).unwrap();
     assert!(
@@ -106,7 +108,9 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
     for entry in fs::read_dir(out.path()).unwrap() {
         let path = entry.unwrap().path();
         let name = path.file_name().unwrap().to_string_lossy().into_owned();
-        let base = if name.ends_with(".webp") {
+        let base = if name.ends_with(".docx") || name.ends_with(".xlsx") {
+            &base_office
+        } else if name.ends_with(".webp") {
             &base_webp
         } else if name.ends_with(".png") && name != "jpeg-named.png" {
             &base_png
@@ -122,7 +126,65 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
         assert!(extras.is_empty(), "{name}: exiftool still finds {extras:?}");
         checked += 1;
     }
-    assert!(checked >= 17, "only {checked} files were cleaned");
+    assert!(checked >= 20, "only {checked} files were cleaned");
+}
+
+/// Cleaned Office files must still open: LibreOffice converts each to PDF.
+/// Skipped when LibreOffice isn't installed, unless
+/// METASCRUB_REQUIRE_LIBREOFFICE is set (as in CI on Linux).
+#[test]
+fn cleaned_office_files_still_open() {
+    let required = std::env::var_os("METASCRUB_REQUIRE_LIBREOFFICE").is_some_and(|v| !v.is_empty());
+    if Command::new("soffice").arg("--version").output().is_err() {
+        assert!(
+            !required,
+            "LibreOffice (soffice) is required but couldn't run"
+        );
+        eprintln!("LibreOffice not installed; skipping");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let out = dir.path().join("out");
+    let mut args = vec![
+        "clean".as_ref(),
+        "-q".as_ref(),
+        "-o".as_ref(),
+        out.as_os_str(),
+    ];
+    let originals: Vec<PathBuf> = [
+        "office/clean.docx",
+        "office/report.docx",
+        "office/budget.xlsx",
+    ]
+    .iter()
+    .map(|f| fixture(f))
+    .collect();
+    args.extend(originals.iter().map(|p| p.as_os_str()));
+    assert_eq!(metascrub(&args).status.code(), Some(0));
+
+    let pdfs = dir.path().join("pdf");
+    let profile = format!(
+        "-env:UserInstallation=file://{}",
+        dir.path().join("profile").display()
+    );
+    for entry in fs::read_dir(&out).unwrap() {
+        let path = entry.unwrap().path();
+        let status = Command::new("soffice")
+            .args([
+                profile.as_str(),
+                "--headless",
+                "--convert-to",
+                "pdf",
+                "--outdir",
+            ])
+            .arg(&pdfs)
+            .arg(&path)
+            .output()
+            .unwrap();
+        let pdf = pdfs.join(path.with_extension("pdf").file_name().unwrap());
+        let size = fs::metadata(&pdf).map(|m| m.len()).unwrap_or(0);
+        assert!(size > 1000, "{} didn't open: {status:?}", path.display());
+    }
 }
 
 #[test]

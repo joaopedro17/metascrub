@@ -10,6 +10,7 @@ publish = false
 [dependencies]
 flate2.workspace = true
 image.workspace = true
+zip.workspace = true
 
 [lints]
 workspace = true

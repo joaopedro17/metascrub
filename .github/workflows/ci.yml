@@ -39,9 +39,13 @@ jobs:
         run: brew install exiftool
       - if: runner.os == 'Windows'
         run: choco install exiftool --no-progress -y
+      # LibreOffice checks that cleaned Office files still open.
+      - if: runner.os == 'Linux'
+        run: sudo apt-get install -y --no-install-recommends libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui
       - run: cargo test --workspace --locked
         env:
           METASCRUB_REQUIRE_EXIFTOOL: "1"
+          METASCRUB_REQUIRE_LIBREOFFICE: ${{ runner.os == 'Linux' && '1' || '' }}
 
   dependencies:
     name: Dependency policy
