@@ -9,4 +9,4 @@ fixtures/generated/other/notes.txt skipped: MetaScrub can't read this type of fi
 
 fixtures/generated/png/bad-checksum.png failed: the file is damaged or not what it claims to be
 
-15 files inspected, 11 with hidden metadata, 2 skipped, 2 failed
+15 files inspected, 10 with hidden metadata, 2 skipped, 2 failed

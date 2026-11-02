@@ -144,9 +144,10 @@ pub enum Disposition {
 
 impl Disposition {
     /// Whether a cleaned file may still contain a finding with this disposition.
-    /// `verify` passes only when every finding is acceptable.
+    /// `verify` passes only when every finding is acceptable. Warnings are,
+    /// because they describe something cleaning can't change.
     pub const fn is_acceptable_after_cleaning(self) -> bool {
-        matches!(self, Self::Keep(_))
+        matches!(self, Self::Keep(_) | Self::Warn)
     }
 }
 
@@ -223,6 +224,8 @@ pub enum Outcome {
     RemainingMetadata,
     /// Unsupported format: copied as a fresh file, but not cleaned.
     Copied,
+    /// `clean --dry-run`: the file would be copied; nothing was written.
+    WouldCopy,
     Skipped(SkipReason),
     /// Not cleaned until the user decides (counts as a failure).
     NeedsDecision(Decision),
@@ -297,7 +300,7 @@ impl RunReport {
                 Outcome::Cleaned | Outcome::WouldClean => summary.cleaned += 1,
                 Outcome::Verified => summary.verified += 1,
                 Outcome::RemainingMetadata => summary.remaining_metadata += 1,
-                Outcome::Copied => summary.copied += 1,
+                Outcome::Copied | Outcome::WouldCopy => summary.copied += 1,
                 Outcome::Skipped(_) => summary.skipped += 1,
                 Outcome::NeedsDecision(_) | Outcome::Failed(_) => summary.failed += 1,
             }
@@ -358,11 +361,11 @@ mod tests {
     }
 
     #[test]
-    fn only_kept_findings_are_acceptable_after_cleaning() {
+    fn only_kept_and_warned_findings_are_acceptable_after_cleaning() {
         assert!(Disposition::Keep(KeepReason::RequiredToRender).is_acceptable_after_cleaning());
         assert!(!Disposition::Remove.is_acceptable_after_cleaning());
         assert!(!Disposition::Normalize.is_acceptable_after_cleaning());
-        assert!(!Disposition::Warn.is_acceptable_after_cleaning());
+        assert!(Disposition::Warn.is_acceptable_after_cleaning());
         assert!(!Disposition::Blocks(Decision::TrackedChanges).is_acceptable_after_cleaning());
     }
 

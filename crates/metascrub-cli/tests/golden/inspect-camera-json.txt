@@ -3,6 +3,7 @@ exit: 0
 
 {
   "command": "inspect",
+  "dry_run": false,
   "files": [
     {
       "findings": [

@@ -35,19 +35,43 @@ pub fn finding(kind: FindingKind) -> &'static str {
     }
 }
 
-pub fn disposition(disposition: Disposition) -> &'static str {
-    match disposition {
-        Disposition::Remove => "will be removed",
-        Disposition::Normalize => "will be reset to a neutral value",
-        Disposition::Keep(KeepReason::RequiredToRender) => "kept: needed to display correctly",
-        Disposition::Keep(KeepReason::StandardColorProfile) => {
+/// When the action happens, relative to the command being run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Tense {
+    /// `inspect` and `verify`: what `clean` would do.
+    Future,
+    /// `clean --dry-run`.
+    Conditional,
+    /// `clean`.
+    Past,
+}
+
+pub fn disposition(disposition: Disposition, tense: Tense) -> &'static str {
+    match (disposition, tense) {
+        (Disposition::Remove, Tense::Future) => "will be removed",
+        (Disposition::Remove, Tense::Conditional) => "would be removed",
+        (Disposition::Remove, Tense::Past) => "removed",
+        (Disposition::Normalize, Tense::Future) => "will be reset to a neutral value",
+        (Disposition::Normalize, Tense::Conditional) => "would be reset to a neutral value",
+        (Disposition::Normalize, Tense::Past) => "reset to a neutral value",
+        (Disposition::Keep(KeepReason::RequiredToRender), _) => "kept: needed to display correctly",
+        (Disposition::Keep(KeepReason::StandardColorProfile), _) => {
             "kept: a standard profile that reveals nothing"
         }
-        Disposition::Keep(KeepReason::UserRequested) => "kept: you asked to keep it",
-        Disposition::Warn => "can't be fixed automatically",
-        Disposition::Blocks(_) => "needs your decision",
+        (Disposition::Keep(KeepReason::UserRequested), _) => "kept: you asked to keep it",
+        (Disposition::Warn, _) => "can't be fixed automatically",
+        (Disposition::Blocks(_), _) => "needs your decision",
     }
 }
+
+pub const COPIED: &str = "copied without cleaning: MetaScrub can't read this type of file, \
+                          so it may still contain hidden information";
+pub const WOULD_COPY: &str = "would be copied without cleaning: MetaScrub can't read this type \
+                              of file, so it may still contain hidden information";
+pub const VERIFIED: &str = "no hidden metadata left";
+pub const REMAINING: &str = "still contains hidden metadata";
+pub const LIMITATIONS: &str = "MetaScrub removes hidden metadata only. It can't remove what's \
+                               visible in a file (faces, places, text), and it doesn't make you anonymous.";
 
 pub fn value(finding: &Finding) -> Option<String> {
     let text = match finding.value.as_ref()? {
