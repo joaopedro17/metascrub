@@ -2,7 +2,8 @@ use std::io::{self, Write};
 
 use anstyle::{AnsiColor, Style};
 use metascrub_core::model::{
-    Disposition, FileReport, Finding, FindingKind, Location, Outcome, Risk, RunReport, Summary,
+    Disposition, FailureKind, FileReport, Finding, FindingKind, Location, Outcome, Risk, RunReport,
+    Summary,
 };
 
 use super::messages::{self, Tense};
@@ -19,6 +20,10 @@ const ERROR: Style = AnsiColor::Red.on_default();
 
 pub fn render(report: &RunReport, settings: &Settings, out: &mut dyn Write) -> io::Result<()> {
     for file in &report.files {
+        // Listed together in the summary instead.
+        if matches!(&file.outcome, Outcome::Failed(f) if f.kind == FailureKind::Cancelled) {
+            continue;
+        }
         let needs_attention = matches!(
             file.outcome,
             Outcome::Failed(_)
@@ -262,6 +267,12 @@ fn problems(summary: &Summary) -> Vec<String> {
     }
     if summary.failed > 0 {
         parts.push(format!("{} failed", summary.failed));
+    }
+    if summary.cancelled > 0 {
+        parts.push(format!(
+            "{} not processed because the run was stopped",
+            summary.cancelled
+        ));
     }
     parts
 }

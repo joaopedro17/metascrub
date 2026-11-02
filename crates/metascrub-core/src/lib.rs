@@ -10,9 +10,10 @@ pub mod model;
 mod options;
 mod output;
 mod pipeline;
+mod plan;
 
 pub use options::Options;
-pub use pipeline::{Command, Observer, OutputMode, Request, run};
+pub use pipeline::{CancelToken, Command, Observer, OutputMode, Request, run};
 
 /// Version of the core library.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

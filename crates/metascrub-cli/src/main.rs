@@ -2,6 +2,7 @@
 
 mod args;
 mod exit;
+mod progress;
 mod render;
 
 use std::io::{self, Write};
@@ -10,9 +11,10 @@ use std::process::ExitCode;
 
 use clap::{CommandFactory, Parser, error::ErrorKind};
 use metascrub_core::model::RunReport;
-use metascrub_core::{Command as CoreCommand, Options, OutputMode, Request};
+use metascrub_core::{CancelToken, Command as CoreCommand, Options, OutputMode, Request};
 
 use args::{Cli, Command, KeepArgs, KeepItem, OutputArgs};
+use progress::Progress;
 use render::{Mode, Settings, Verbosity};
 
 fn main() -> ExitCode {
@@ -22,15 +24,21 @@ fn main() -> ExitCode {
     }
 
     let (mode, request) = match cli.command {
-        Command::Inspect { paths, keep } => (
+        Command::Inspect {
+            paths,
+            recursive,
+            keep,
+        } => (
             Mode::Inspect,
             Request {
                 options: options(&keep),
+                recursive,
                 ..Request::new(CoreCommand::Inspect, paths)
             },
         ),
         Command::Clean {
             paths,
+            recursive,
             output,
             in_place,
             dry_run,
@@ -47,21 +55,33 @@ fn main() -> ExitCode {
                     options: options(&keep),
                     output,
                     dry_run,
+                    recursive,
                     ..Request::new(CoreCommand::Clean, paths)
                 },
             )
         }
-        Command::Verify { paths, keep } => (
+        Command::Verify {
+            paths,
+            recursive,
+            keep,
+        } => (
             Mode::Verify,
             Request {
                 options: options(&keep),
+                recursive,
                 ..Request::new(CoreCommand::Verify, paths)
             },
         ),
     };
-    reject_folders(&request.paths);
+    if !request.recursive {
+        reject_folders(&request.paths);
+    }
 
-    let report = metascrub_core::run(&request, &());
+    let progress = Progress::new(!cli.output.quiet);
+    let cancel = CancelToken::new();
+    stop_on_ctrl_c(&cancel, &progress);
+    let report = metascrub_core::run(&request, &progress, &cancel);
+    progress.finish();
     let settings = settings(mode, &cli.output);
     // A closed pipe (e.g. `| head`) is not an error worth reporting.
     let _ = print(&report, &settings, cli.output.json);
@@ -101,17 +121,32 @@ fn print(report: &RunReport, settings: &Settings, json: bool) -> io::Result<()> 
     }
 }
 
-/// Folder support (`-r`) arrives in a later version.
 fn reject_folders(paths: &[PathBuf]) {
     if let Some(folder) = paths.iter().find(|p| p.is_dir()) {
         Cli::command()
             .error(
                 ErrorKind::InvalidValue,
                 format!(
-                    "'{}' is a folder. Folders aren't supported yet; pass the files inside it instead.",
+                    "'{}' is a folder. Use -r to process folders and everything inside them.",
                     render::messages::path(folder)
                 ),
             )
             .exit();
     }
+}
+
+/// The first Ctrl+C lets the files in progress finish, so no output is left
+/// half-written. A second one stops at once and may leave a temporary
+/// `.metascrub-*.tmp` file behind.
+fn stop_on_ctrl_c(cancel: &CancelToken, progress: &Progress) {
+    let cancel = cancel.clone();
+    let progress = progress.clone();
+    // Without a handler, Ctrl+C still stops the program the usual way.
+    let _ = ctrlc::set_handler(move || {
+        if cancel.is_cancelled() {
+            std::process::exit(exit::INTERRUPTED.into());
+        }
+        cancel.cancel();
+        progress.notice("Stopping after the files in progress. Press Ctrl+C again to stop now.");
+    });
 }

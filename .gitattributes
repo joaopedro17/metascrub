@@ -2,4 +2,4 @@
 * text=auto eol=lf
 
 # Test fixtures must stay byte-identical, including the .txt one.
-fixtures/** binary
+fixtures/generated/** binary

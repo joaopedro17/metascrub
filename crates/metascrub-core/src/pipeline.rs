@@ -1,18 +1,22 @@
 //! Runs a command over a list of files and collects one report per file.
 
-use std::ffi::OsString;
 use std::fs::{self, File};
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+use rayon::prelude::*;
 
 use crate::format::{self, FormatError, FormatHandler, SNIFF_LEN};
-use crate::limits::MAX_IMAGE_BYTES;
+use crate::limits::{MAX_IMAGE_BYTES, MAX_PARALLEL_FILES};
 use crate::model::{
     Disposition, Failure, FailureKind, FileReport, Finding, FindingKind, FormatId, Location,
     Outcome, RunReport, SkipReason, Value,
 };
 use crate::options::Options;
 use crate::output;
+use crate::plan::{self, Job};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
@@ -27,7 +31,8 @@ pub enum Command {
 pub enum OutputMode {
     /// `photo.jpg` → `photo.clean.jpg` in the same folder.
     NextToOriginal,
-    /// Into this folder, keeping the file name. Unsupported files are copied too.
+    /// Into this folder, keeping the file name and mirroring folders.
+    /// Unsupported files are copied too.
     Directory(PathBuf),
     /// Replace the original (`--in-place`).
     InPlace,
@@ -40,6 +45,8 @@ pub struct Request {
     pub options: Options,
     pub output: OutputMode,
     pub dry_run: bool,
+    /// Process folders and everything inside them.
+    pub recursive: bool,
 }
 
 impl Request {
@@ -51,6 +58,7 @@ impl Request {
             options: Options::default(),
             output: OutputMode::NextToOriginal,
             dry_run: false,
+            recursive: false,
         }
     }
 }
@@ -64,30 +72,74 @@ pub trait Observer: Sync {
 
 impl Observer for () {}
 
-pub fn run(request: &Request, observer: &dyn Observer) -> RunReport {
-    observer.planned(request.paths.len());
-    let files = request
-        .paths
-        .iter()
-        .map(|path| {
-            observer.file_started(path);
-            let report = process(path, request);
-            observer.file_finished(&report);
-            report
+/// Stops a run between files: files already started finish, the rest are
+/// reported as cancelled. Clones share the same flag.
+#[derive(Debug, Clone, Default)]
+pub struct CancelToken(Arc<AtomicBool>);
+
+impl CancelToken {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn cancel(&self) {
+        self.0.store(true, Ordering::Relaxed);
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.0.load(Ordering::Relaxed)
+    }
+}
+
+/// Reports come back in the order the files were found, whatever order they
+/// were processed in.
+pub fn run(request: &Request, observer: &dyn Observer, cancel: &CancelToken) -> RunReport {
+    let jobs = plan::plan(request);
+    observer.planned(jobs.len());
+    let run_job = |job: &Job| {
+        if cancel.is_cancelled() {
+            return report(job, Outcome::Failed(cancelled()));
+        }
+        observer.file_started(&job.path);
+        let report = process(job, request);
+        observer.file_finished(&report);
+        report
+    };
+    let threads = std::thread::available_parallelism()
+        .map_or(1, usize::from)
+        .min(MAX_PARALLEL_FILES)
+        .min(jobs.len());
+    let pool = (threads > 1)
+        .then(|| {
+            rayon::ThreadPoolBuilder::new()
+                .num_threads(threads)
+                .build()
+                .ok()
         })
-        .collect();
+        .flatten();
+    let files = match pool {
+        Some(pool) => pool.install(|| jobs.par_iter().map(run_job).collect()),
+        None => jobs.iter().map(run_job).collect(),
+    };
     RunReport { files }
 }
 
-fn process(path: &Path, request: &Request) -> FileReport {
-    let mut report = FileReport {
-        path: path.to_owned(),
+fn report(job: &Job, outcome: Outcome) -> FileReport {
+    FileReport {
+        path: job.path.clone(),
         format: None,
         findings: Vec::new(),
-        outcome: Outcome::Inspected,
+        outcome,
         output: None,
-    };
-    report.outcome = match process_file(path, request, &mut report) {
+    }
+}
+
+fn process(job: &Job, request: &Request) -> FileReport {
+    if let Some(outcome) = &job.outcome {
+        return report(job, outcome.clone());
+    }
+    let mut report = report(job, Outcome::Inspected);
+    report.outcome = match process_file(job, request, &mut report) {
         Ok(outcome) => outcome,
         Err(error) => Outcome::Failed(failure(error)),
     };
@@ -95,10 +147,11 @@ fn process(path: &Path, request: &Request) -> FileReport {
 }
 
 fn process_file(
-    path: &Path,
+    job: &Job,
     request: &Request,
     report: &mut FileReport,
 ) -> Result<Outcome, FormatError> {
+    let path = job.path.as_path();
     let metadata = fs::symlink_metadata(path)?;
     if metadata.file_type().is_symlink() {
         return Ok(Outcome::Skipped(SkipReason::SymbolicLink));
@@ -125,7 +178,7 @@ fn process_file(
         .format
         .and_then(|format| Some((format, format::handler(format)?)))
     else {
-        return unsupported(path, &mut file, request, &settings, report);
+        return unsupported(job, &mut file, request, &settings, report);
     };
 
     let options = &request.options;
@@ -151,7 +204,7 @@ fn process_file(
             Outcome::WouldClean
         }
         Command::Clean => {
-            let (output, findings) = clean(path, file, handler, request, &settings)?;
+            let (output, findings) = clean(job, file, handler, request, &settings)?;
             report.output = Some(output);
             report.findings = findings;
             Outcome::Cleaned
@@ -164,7 +217,7 @@ fn process_file(
 }
 
 fn clean(
-    path: &Path,
+    job: &Job,
     mut file: File,
     handler: &dyn FormatHandler,
     request: &Request,
@@ -178,14 +231,11 @@ fn clean(
         findings = handler.clean(&mut io::Cursor::new(&input), out, &request.options)?;
         Ok(())
     };
-    let written = match &request.output {
-        OutputMode::InPlace => {
-            output::replace(path, settings, write)?;
-            path.to_owned()
-        }
-        OutputMode::NextToOriginal => output::write_new(&cleaned_name(path), settings, write)?,
-        OutputMode::Directory(dir) => {
-            output::write_new(&dir.join(file_name(path)), settings, write)?
+    let written = match &job.target {
+        Some(target) => output::write_new(target, settings, write)?,
+        None => {
+            output::replace(&job.path, settings, write)?;
+            job.path.clone()
         }
     };
     Ok((written, findings))
@@ -194,13 +244,13 @@ fn clean(
 /// Unsupported files are only copied when writing into an output folder,
 /// so the folder is complete (requirements §13.13).
 fn unsupported(
-    path: &Path,
+    job: &Job,
     file: &mut File,
     request: &Request,
     settings: &output::Settings,
     report: &mut FileReport,
 ) -> Result<Outcome, FormatError> {
-    let OutputMode::Directory(dir) = &request.output else {
+    let (OutputMode::Directory(_), Some(target)) = (&request.output, &job.target) else {
         return Ok(Outcome::Skipped(SkipReason::UnsupportedFormat));
     };
     if request.command != Command::Clean {
@@ -211,7 +261,7 @@ fn unsupported(
     }
     // Copying the bytes ourselves, unlike `fs::copy`, never carries over
     // extended attributes or alternate data streams.
-    let written = output::write_new(&dir.join(file_name(path)), settings, |out| {
+    let written = output::write_new(target, settings, |out| {
         io::copy(file, out)?;
         Ok(())
     })?;
@@ -241,21 +291,6 @@ fn ensure_same_file(_checked: &fs::Metadata, file: &File) -> Result<(), FormatEr
     }
 }
 
-/// `photo.jpg` → `photo.clean.jpg`, `notes` → `notes.clean`.
-fn cleaned_name(path: &Path) -> PathBuf {
-    let mut name: OsString = path.file_stem().unwrap_or_default().to_owned();
-    name.push(".clean");
-    if let Some(extension) = path.extension() {
-        name.push(".");
-        name.push(extension);
-    }
-    path.with_file_name(name)
-}
-
-fn file_name(path: &Path) -> &std::ffi::OsStr {
-    path.file_name().unwrap_or(std::ffi::OsStr::new("output"))
-}
-
 fn extension_mismatch(path: &Path, format: FormatId) -> Option<Finding> {
     let extension = path.extension()?.to_str()?.to_ascii_lowercase();
     if format::extensions(format).contains(&extension.as_str()) {
@@ -269,6 +304,13 @@ fn extension_mismatch(path: &Path, format: FormatId) -> Option<Finding> {
         )
         .with_value(Value::Text(format!(".{extension}"))),
     )
+}
+
+fn cancelled() -> Failure {
+    Failure {
+        kind: FailureKind::Cancelled,
+        detail: "the run was stopped before this file was processed".into(),
+    }
 }
 
 fn failure(error: FormatError) -> Failure {
@@ -302,7 +344,7 @@ mod tests {
     }
 
     fn run_one(request: Request) -> FileReport {
-        run(&request, &()).files.remove(0)
+        run(&request, &(), &CancelToken::new()).files.remove(0)
     }
 
     #[test]
@@ -315,7 +357,11 @@ mod tests {
         let missing = dir.path().join("missing.jpg");
 
         let paths = vec![text, broken, missing, dir.path().to_owned()];
-        let report = run(&Request::new(Command::Inspect, paths), &());
+        let report = run(
+            &Request::new(Command::Inspect, paths),
+            &(),
+            &CancelToken::new(),
+        );
         let outcomes: Vec<_> = report.files.iter().map(|f| f.outcome.clone()).collect();
         assert_eq!(outcomes[0], Outcome::Skipped(SkipReason::UnsupportedFormat));
         assert!(matches!(&outcomes[1], Outcome::Failed(f) if f.kind == FailureKind::Malformed));
@@ -354,15 +400,6 @@ mod tests {
         assert_eq!(finding.value, Some(Value::Text(".png".into())));
         assert!(extension_mismatch(Path::new("photo.JPG"), FormatId::Jpeg).is_none());
         assert!(extension_mismatch(Path::new("photo"), FormatId::Jpeg).is_none());
-    }
-
-    #[test]
-    fn names_the_output_next_to_the_original() {
-        assert_eq!(
-            cleaned_name(Path::new("a/photo.jpg")),
-            Path::new("a/photo.clean.jpg")
-        );
-        assert_eq!(cleaned_name(Path::new("notes")), Path::new("notes.clean"));
     }
 
     #[test]
@@ -421,6 +458,7 @@ mod tests {
                 ..Request::new(Command::Clean, vec![original, notes])
             },
             &(),
+            &CancelToken::new(),
         );
         assert_eq!(report.files[0].outcome, Outcome::WouldClean);
         assert!(!report.files[0].findings.is_empty());
@@ -441,6 +479,7 @@ mod tests {
                 )
             },
             &(),
+            &CancelToken::new(),
         );
         assert_eq!(report.files[0].output, Some(out.join("camera.jpg")));
         assert_eq!(report.files[1].outcome, Outcome::Copied);
@@ -459,6 +498,90 @@ mod tests {
             report.outcome,
             Outcome::Skipped(SkipReason::UnsupportedFormat)
         );
+        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn cleans_a_folder_into_a_mirrored_output() {
+        let dir = tempfile::tempdir().unwrap();
+        let photos = dir.path().join("photos");
+        fs::create_dir_all(photos.join("2024")).unwrap();
+        copy_fixture(&photos.join("2024"), "jpeg/camera.jpg");
+        copy_fixture(&photos, "png/text-chunks.png");
+        copy_fixture(&photos, "other/notes.txt");
+        let out = dir.path().join("out");
+
+        let report = run(
+            &Request {
+                output: OutputMode::Directory(out.clone()),
+                recursive: true,
+                ..Request::new(Command::Clean, vec![photos.clone()])
+            },
+            &(),
+            &CancelToken::new(),
+        );
+        let outputs: Vec<_> = report.files.iter().map(|f| f.output.clone()).collect();
+        assert_eq!(
+            outputs,
+            [
+                Some(out.join("photos/2024/camera.jpg")),
+                Some(out.join("photos/notes.txt")),
+                Some(out.join("photos/text-chunks.png")),
+            ]
+        );
+        assert_eq!(report.files[1].outcome, Outcome::Copied);
+        let verify = run(
+            &Request {
+                recursive: true,
+                ..Request::new(Command::Verify, vec![out])
+            },
+            &(),
+            &CancelToken::new(),
+        );
+        let verified = verify
+            .files
+            .iter()
+            .filter(|f| f.outcome == Outcome::Verified);
+        assert_eq!(verified.count(), 2);
+    }
+
+    #[test]
+    fn cleaning_a_folder_again_skips_its_own_output() {
+        let dir = tempfile::tempdir().unwrap();
+        copy_fixture(dir.path(), "jpeg/camera.jpg");
+        let clean = || {
+            run(
+                &Request {
+                    recursive: true,
+                    ..Request::new(Command::Clean, vec![dir.path().to_owned()])
+                },
+                &(),
+                &CancelToken::new(),
+            )
+        };
+        clean();
+        let again = clean();
+        assert_eq!(
+            again.files[0].outcome,
+            Outcome::Skipped(SkipReason::AlreadyCleaned)
+        );
+        assert_eq!(
+            again.files[1].output,
+            Some(dir.path().join("camera.clean-2.jpg"))
+        );
+    }
+
+    #[test]
+    fn a_cancelled_run_writes_nothing_more() {
+        let dir = tempfile::tempdir().unwrap();
+        let original = copy_fixture(dir.path(), "jpeg/camera.jpg");
+        let cancel = CancelToken::new();
+        cancel.cancel();
+        let report = run(&Request::new(Command::Clean, vec![original]), &(), &cancel);
+        assert!(matches!(
+            &report.files[0].outcome,
+            Outcome::Failed(f) if f.kind == FailureKind::Cancelled
+        ));
         assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
     }
 

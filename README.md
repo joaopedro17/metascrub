@@ -4,7 +4,7 @@
 
 MetaScrub is a cross-platform command-line tool that inspects and removes hidden metadata (location, device, author, dates, download sources) from files and folders, so you can share them without leaking personal information.
 
-**Status:** early development. `inspect`, `clean` and `verify` work for JPEG and PNG files; folders and more formats are coming.
+**Status:** early development. `inspect`, `clean` and `verify` work for JPEG and PNG files and for whole folders (`-r`); more formats are coming.
 
 ## Development
 

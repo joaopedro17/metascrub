@@ -2,6 +2,7 @@
 //! place was asked for, and never half-written. Everything is written to a
 //! temporary file in the destination folder first, then renamed.
 
+use std::collections::HashSet;
 use std::fs::{self, File, FileTimes, Permissions};
 use std::io::{self, BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -46,6 +47,19 @@ pub(crate) fn write_new(
         "no free file name for the output",
     )
     .into())
+}
+
+/// The first of `target`, `name-2.ext`, … that is neither taken by another
+/// file of this run nor already on disk. Choosing names before the parallel
+/// part of a run keeps the numbering the same from one run to the next.
+pub(crate) fn reserve(target: &Path, taken: &mut HashSet<PathBuf>) -> PathBuf {
+    let free = (1..=MAX_NAME_ATTEMPTS)
+        .map(|n| numbered(target, n))
+        .find(|c| !taken.contains(c) && fs::symlink_metadata(c).is_err())
+        // `write_new` then fails with a clear error instead.
+        .unwrap_or_else(|| target.to_owned());
+    taken.insert(free.clone());
+    free
 }
 
 /// Replaces `original` atomically: readers see either the old file or the new one.
@@ -138,6 +152,18 @@ mod tests {
         );
         assert_eq!(numbered(Path::new("notes"), 3), Path::new("notes-3"));
         assert_eq!(numbered(Path::new("x.png"), 1), Path::new("x.png"));
+    }
+
+    #[test]
+    fn reserves_names_free_in_the_run_and_on_disk() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("a.jpg"), "existing").unwrap();
+        let mut taken = HashSet::new();
+        let target = dir.path().join("a.jpg");
+        assert_eq!(reserve(&target, &mut taken), dir.path().join("a-2.jpg"));
+        assert_eq!(reserve(&target, &mut taken), dir.path().join("a-3.jpg"));
+        let other = dir.path().join("b.jpg");
+        assert_eq!(reserve(&other, &mut taken), other);
     }
 
     #[test]

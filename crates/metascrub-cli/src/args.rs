@@ -22,8 +22,12 @@ pub struct Cli {
 pub enum Command {
     /// List the hidden metadata in files, without changing anything.
     Inspect {
-        #[arg(required = true, value_name = "FILE")]
+        #[arg(required = true, value_name = "PATH")]
         paths: Vec<PathBuf>,
+
+        /// Process folders and everything inside them.
+        #[arg(short, long)]
+        recursive: bool,
 
         #[command(flatten)]
         keep: KeepArgs,
@@ -31,11 +35,16 @@ pub enum Command {
     /// Remove hidden metadata. Writes `name.clean.ext` next to each file
     /// unless --output or --in-place is given; originals are never changed by default.
     Clean {
-        #[arg(required = true, value_name = "FILE")]
+        #[arg(required = true, value_name = "PATH")]
         paths: Vec<PathBuf>,
 
-        /// Write cleaned files into this folder instead (created if missing).
-        /// Files MetaScrub can't read are copied there too, so the folder is complete.
+        /// Process folders and everything inside them.
+        #[arg(short, long)]
+        recursive: bool,
+
+        /// Write cleaned files into this folder instead (created if missing),
+        /// mirroring the folders given. Files MetaScrub can't read are copied
+        /// there too, so the folder is complete.
         #[arg(short, long, value_name = "DIR", conflicts_with = "in_place")]
         output: Option<PathBuf>,
 
@@ -52,8 +61,12 @@ pub enum Command {
     },
     /// Check that files contain no hidden metadata that cleaning would remove.
     Verify {
-        #[arg(required = true, value_name = "FILE")]
+        #[arg(required = true, value_name = "PATH")]
         paths: Vec<PathBuf>,
+
+        /// Process folders and everything inside them.
+        #[arg(short, long)]
+        recursive: bool,
 
         #[command(flatten)]
         keep: KeepArgs,
