@@ -448,6 +448,7 @@ dependencies = [
  "metascrub-core",
  "serde_json",
  "tempfile",
+ "zip",
 ]
 
 [[package]]

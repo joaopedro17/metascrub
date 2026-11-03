@@ -11,7 +11,9 @@ use std::process::ExitCode;
 
 use clap::{CommandFactory, Parser, error::ErrorKind};
 use metascrub_core::model::RunReport;
-use metascrub_core::{CancelToken, Command as CoreCommand, Options, OutputMode, Request};
+use metascrub_core::{
+    CancelToken, Command as CoreCommand, Options, OutputMode, Request, TrackedChanges,
+};
 
 use args::{Cli, Command, KeepArgs, KeepItem, OutputArgs};
 use progress::Progress;
@@ -31,7 +33,7 @@ fn main() -> ExitCode {
         } => (
             Mode::Inspect,
             Request {
-                options: options(&keep),
+                options: options(&keep, TrackedChanges::Undecided),
                 recursive,
                 ..Request::new(CoreCommand::Inspect, paths)
             },
@@ -42,8 +44,15 @@ fn main() -> ExitCode {
             output,
             in_place,
             dry_run,
+            accept_changes,
+            reject_changes,
             keep,
         } => {
+            let tracked_changes = match (accept_changes, reject_changes) {
+                (true, _) => TrackedChanges::Accept,
+                (_, true) => TrackedChanges::Reject,
+                _ => TrackedChanges::Undecided,
+            };
             let output = match (output, in_place) {
                 (Some(dir), _) => OutputMode::Directory(dir),
                 (None, true) => OutputMode::InPlace,
@@ -52,7 +61,7 @@ fn main() -> ExitCode {
             (
                 Mode::Clean { dry_run },
                 Request {
-                    options: options(&keep),
+                    options: options(&keep, tracked_changes),
                     output,
                     dry_run,
                     recursive,
@@ -67,7 +76,7 @@ fn main() -> ExitCode {
         } => (
             Mode::Verify,
             Request {
-                options: options(&keep),
+                options: options(&keep, TrackedChanges::Undecided),
                 recursive,
                 ..Request::new(CoreCommand::Verify, paths)
             },
@@ -88,12 +97,13 @@ fn main() -> ExitCode {
     exit::exit_code(&report)
 }
 
-fn options(keep: &KeepArgs) -> Options {
+fn options(keep: &KeepArgs, tracked_changes: TrackedChanges) -> Options {
     Options {
         keep_color_profile: keep.keep.contains(&KeepItem::ColorProfile),
         keep_file_times: keep.keep.contains(&KeepItem::FileTimes),
         strip_orientation: keep.strip_orientation,
         keep_comments: keep.keep.contains(&KeepItem::Comments),
+        tracked_changes,
     }
 }
 

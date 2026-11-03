@@ -35,6 +35,8 @@ pub enum FindingKind {
     TrackedChanges,
     Comment,
     EmbeddedFile,
+    /// Macros (VBA): programs stored in the document.
+    Macros,
     HiddenContent,
     Description,
     /// A company or organization (Office "Company").
@@ -67,6 +69,7 @@ impl FindingKind {
             | Self::TrackedChanges
             | Self::Comment
             | Self::EmbeddedFile
+            | Self::Macros
             | Self::HiddenContent => Risk::High,
 
             Self::Description

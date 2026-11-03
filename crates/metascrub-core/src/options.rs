@@ -9,4 +9,18 @@ pub struct Options {
     pub strip_orientation: bool,
     /// Keep Office comments, with authors replaced by a neutral name (`--keep comments`).
     pub keep_comments: bool,
+    pub tracked_changes: TrackedChanges,
+}
+
+/// What to do with tracked changes in Word documents. Every choice changes
+/// the text, so there is no safe default: files with tracked changes are
+/// not cleaned until the user picks one.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum TrackedChanges {
+    #[default]
+    Undecided,
+    /// Keep the text as it reads now (`--accept-changes`).
+    Accept,
+    /// Go back to the text before the changes (`--reject-changes`).
+    Reject,
 }

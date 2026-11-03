@@ -20,6 +20,7 @@ pub struct Files {
     pub comments_docx: Vec<u8>,
     pub budget_xlsx: Vec<u8>,
     pub comments_xlsx: Vec<u8>,
+    pub linked_xlsx: Vec<u8>,
 }
 
 pub fn files(photo: &[u8], thumbnail: &[u8]) -> Files {
@@ -35,8 +36,14 @@ pub fn files(photo: &[u8], thumbnail: &[u8]) -> Files {
             },
             true,
         ),
+        // A word replaced, a sentence made bold, and a whole paragraph deleted.
         tracked_changes_docx: docx(
-            r#"<w:p><w:r><w:t xml:space="preserve">The budget is </w:t></w:r><w:del w:id="1" w:author="Jane Doe" w:date="2026-03-14T09:26:00Z"><w:r><w:delText>€40,000</w:delText></w:r></w:del><w:ins w:id="2" w:author="Jane Doe" w:date="2026-03-14T09:27:00Z"><w:r><w:t>€25,000</w:t></w:r></w:ins><w:r><w:t>.</w:t></w:r></w:p>"#,
+            concat!(
+                r#"<w:p><w:r><w:t xml:space="preserve">The budget is </w:t></w:r><w:del w:id="1" w:author="Jane Doe" w:date="2026-03-14T09:26:00Z"><w:r><w:delText>€40,000</w:delText></w:r></w:del><w:ins w:id="2" w:author="Jane Doe" w:date="2026-03-14T09:27:00Z"><w:r><w:t>€25,000</w:t></w:r></w:ins><w:r><w:t>.</w:t></w:r></w:p>"#,
+                r#"<w:p><w:r><w:rPr><w:b/><w:rPrChange w:id="3" w:author="John Roe" w:date="2026-03-15T10:00:00Z"><w:rPr/></w:rPrChange></w:rPr><w:t>Approved by finance.</w:t></w:r></w:p>"#,
+                r#"<w:p><w:pPr><w:rPr><w:del w:id="4" w:author="John Roe" w:date="2026-03-15T10:01:00Z"/></w:rPr></w:pPr><w:del w:id="5" w:author="John Roe" w:date="2026-03-15T10:01:00Z"><w:r><w:delText>Two people will be let go.</w:delText></w:r></w:del></w:p>"#,
+                r#"<w:p><w:r><w:t>Next steps follow.</w:t></w:r></w:p>"#,
+            ),
             &Extras::default(),
             true,
         ),
@@ -50,6 +57,7 @@ pub fn files(photo: &[u8], thumbnail: &[u8]) -> Files {
         ),
         budget_xlsx: xlsx(),
         comments_xlsx: comments_xlsx(),
+        linked_xlsx: linked_xlsx(),
     }
 }
 
@@ -350,6 +358,95 @@ fn xlsx() -> Vec<u8> {
             ("xl/printerSettings/printerSettings1.bin".into(), printer),
             ("docProps/core.xml".into(), CORE.as_bytes().to_vec()),
             ("docProps/app.xml".into(), APP_EXCEL.as_bytes().to_vec()),
+        ],
+        true,
+    )
+}
+
+/// A workbook with a hidden sheet and a formula that uses a value from
+/// another workbook, linked by its full path.
+fn linked_xlsx() -> Vec<u8> {
+    let types = [
+        override_(
+            "/xl/workbook.xml",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
+        ),
+        override_(
+            "/xl/worksheets/sheet1.xml",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml",
+        ),
+        override_(
+            "/xl/worksheets/sheet2.xml",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml",
+        ),
+        override_(
+            "/xl/externalLinks/externalLink1.xml",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.externalLink+xml",
+        ),
+    ];
+    let workbook = format!(
+        r#"{DECLARATION}<workbook xmlns="{S}" xmlns:r="{DOC_RELS}"><sheets><sheet name="Budget" sheetId="1" r:id="rId1"/><sheet name="Salaries" sheetId="2" state="hidden" r:id="rId2"/></sheets><externalReferences><externalReference r:id="rId3"/></externalReferences></workbook>"#
+    );
+    let budget = format!(
+        r#"{DECLARATION}<worksheet xmlns="{S}"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Forecast</t></is></c><c r="B1"><f>[1]Totals!$A$1</f><v>500</v></c></row></sheetData></worksheet>"#
+    );
+    let salaries = format!(
+        r#"{DECLARATION}<worksheet xmlns="{S}"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Jane Doe</t></is></c><c r="B1"><v>52000</v></c></row></sheetData></worksheet>"#
+    );
+    let link = format!(
+        r#"{DECLARATION}<externalLink xmlns="{S}" xmlns:r="{DOC_RELS}"><externalBook r:id="rId1"><sheetNames><sheetName val="Totals"/></sheetNames><sheetDataSet><sheetData sheetId="0"><row r="1"><cell r="A1"><v>500</v></cell></row></sheetData></sheetDataSet></externalBook></externalLink>"#
+    );
+    zip(
+        &[
+            ("[Content_Types].xml".into(), content_types(&types)),
+            (
+                "_rels/.rels".into(),
+                rels(&[rel(
+                    "rId1",
+                    &format!("{DOC_RELS}/officeDocument"),
+                    "xl/workbook.xml",
+                    false,
+                )]),
+            ),
+            ("xl/workbook.xml".into(), workbook.into_bytes()),
+            (
+                "xl/_rels/workbook.xml.rels".into(),
+                rels(&[
+                    rel(
+                        "rId1",
+                        &format!("{DOC_RELS}/worksheet"),
+                        "worksheets/sheet1.xml",
+                        false,
+                    ),
+                    rel(
+                        "rId2",
+                        &format!("{DOC_RELS}/worksheet"),
+                        "worksheets/sheet2.xml",
+                        false,
+                    ),
+                    rel(
+                        "rId3",
+                        &format!("{DOC_RELS}/externalLink"),
+                        "externalLinks/externalLink1.xml",
+                        false,
+                    ),
+                ]),
+            ),
+            ("xl/worksheets/sheet1.xml".into(), budget.into_bytes()),
+            ("xl/worksheets/sheet2.xml".into(), salaries.into_bytes()),
+            (
+                "xl/externalLinks/externalLink1.xml".into(),
+                link.into_bytes(),
+            ),
+            (
+                "xl/externalLinks/_rels/externalLink1.xml.rels".into(),
+                rels(&[rel(
+                    "rId1",
+                    &format!("{DOC_RELS}/externalLinkPath"),
+                    "file:///C:\\Users\\jane.doe\\OneDrive%20-%20Fictional%20Ltd\\Finance\\Forecast.xlsx",
+                    true,
+                )]),
+            ),
         ],
         true,
     )

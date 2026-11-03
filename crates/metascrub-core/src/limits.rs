@@ -6,7 +6,7 @@ pub const MAX_IMAGE_BYTES: u64 = 512 * 1024 * 1024;
 pub const MAX_INFLATED_BYTES: u64 = 16 * 1024 * 1024;
 
 /// Files processed at the same time. Each may hold up to `MAX_IMAGE_BYTES`
-/// in memory, so this bounds memory use as well as CPU.
+/// in memory, plus its cleaned copy, so this bounds memory use as well as CPU.
 pub const MAX_PARALLEL_FILES: usize = 4;
 
 /// ZIP containers (Office files, later archives) are unpacked in memory, so
@@ -17,3 +17,7 @@ pub const MAX_ZIP_UNPACKED_BYTES: u64 = 512 * 1024 * 1024;
 /// compressed size: real documents stay well below, zip bombs don't.
 pub const MAX_ZIP_RATIO: u64 = 100;
 pub const ZIP_RATIO_CHECK_ABOVE: u64 = 1024 * 1024;
+
+/// Documents embedded in documents (a chart's workbook inside a Word file)
+/// are cleaned too, but only this many levels deep.
+pub const MAX_EMBEDDING_DEPTH: usize = 3;
