@@ -43,6 +43,10 @@ jobs:
       # poppler that cleaned PDFs are valid and still render.
       - if: runner.os == 'Linux'
         run: sudo apt-get install -y --no-install-recommends libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui qpdf poppler-utils
+      # ffmpeg checks that cleaned videos and music still play; heif-convert
+      # that cleaned HEIC and AVIF photos still decode.
+      - if: runner.os == 'Linux'
+        run: sudo apt-get install -y --no-install-recommends ffmpeg libheif-examples libheif-plugin-libde265 libheif-plugin-aomdec
       - run: cargo test --workspace --locked
         env:
           METASCRUB_REQUIRE_EXIFTOOL: "1"
@@ -50,6 +54,7 @@ jobs:
           METASCRUB_REQUIRE_LIBREOFFICE: ${{ runner.os == 'Linux' && '1' || '' }}
           METASCRUB_REQUIRE_PDF_TOOLS: ${{ runner.os == 'Linux' && '1' || '' }}
           METASCRUB_REQUIRE_ARCHIVE_TOOLS: ${{ runner.os == 'Linux' && '1' || '' }}
+          METASCRUB_REQUIRE_MEDIA_TOOLS: ${{ runner.os == 'Linux' && '1' || '' }}
 
   dependencies:
     name: Dependency policy

@@ -8,6 +8,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
 mod archive;
+mod media;
 mod office;
 mod pdf;
 
@@ -31,8 +32,10 @@ fn main() {
     let pdf_dir = root.join("pdf");
     let other_dir = root.join("other");
     let archive_dir = root.join("archive");
+    let media_dir = root.join("media");
     for dir in [
         &archive_dir,
+        &media_dir,
         &jpeg_dir,
         &png_dir,
         &webp_dir,
@@ -295,6 +298,9 @@ fn main() {
     write(&archive_dir, "deep.zip", &archives.deep_zip);
     write(&archive_dir, "traversal.tar", &archives.traversal_tar);
     write(&archive_dir, "app.jar", &archives.app_jar);
+
+    // Videos, music and HEIC/AVIF photos
+    media::write(&media_dir, &jpeg_dir, &png_dir);
 
     // Other
     write(&other_dir, "notes.txt", b"Not an image.\n");

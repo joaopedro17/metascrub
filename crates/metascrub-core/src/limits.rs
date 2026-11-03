@@ -29,6 +29,13 @@ pub const SPOOL_IN_MEMORY_BYTES: usize = 16 * 1024 * 1024;
 /// TAR's extra headers (long names, PAX records) are read into memory.
 pub const MAX_TAR_HEADER_BYTES: u64 = 1024 * 1024;
 
+/// Metadata boxes in videos and photos (and the sample tables of the tracks
+/// cleaning blanks out) are read into memory up to this size. Pictures and
+/// sound never are.
+pub const MAX_MEDIA_BOX_BYTES: u64 = 64 * 1024 * 1024;
+/// A box may hold at most this many boxes.
+pub const MAX_MEDIA_BOXES: usize = 100_000;
+
 /// A PDF's object and cross-reference streams are unpacked while it's
 /// read, and attachments when they're cleaned; none may unpack beyond this.
 pub const MAX_PDF_STREAM_BYTES: usize = 64 * 1024 * 1024;

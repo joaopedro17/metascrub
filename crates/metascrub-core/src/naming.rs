@@ -124,9 +124,11 @@ pub(crate) fn kind(path: &Path) -> &'static str {
         .map(|e| e.to_string_lossy().to_ascii_lowercase())
         .unwrap_or_default();
     match extension.as_str() {
-        "jpg" | "jpeg" | "jpe" | "jfif" | "png" | "webp" | "heic" | "heif" | "avif" | "gif"
-        | "tif" | "tiff" | "bmp" | "dng" | "cr2" | "cr3" | "nef" | "arw" | "orf" | "rw2" => "image",
-        "mp4" | "mov" | "m4v" | "avi" | "mkv" | "webm" | "3gp" => "video",
+        "jpg" | "jpeg" | "jpe" | "jfif" | "png" | "webp" | "heic" | "heif" | "hif" | "avif"
+        | "gif" | "tif" | "tiff" | "bmp" | "dng" | "cr2" | "cr3" | "nef" | "arw" | "orf"
+        | "rw2" => "image",
+        "mp4" | "mov" | "m4v" | "qt" | "avi" | "mkv" | "webm" | "3gp" => "video",
+        "m4a" | "m4b" | "mp3" | "aac" | "wav" | "flac" | "ogg" | "opus" => "audio",
         "pdf" | "doc" | "docx" | "docm" | "dotx" | "xls" | "xlsx" | "xlsm" | "ppt" | "pptx"
         | "pptm" | "odt" | "ods" | "odp" | "rtf" | "txt" | "md" | "csv" => "document",
         _ => "file",

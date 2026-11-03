@@ -7,6 +7,7 @@ mod gzip;
 mod icc;
 mod iptc;
 mod jpeg;
+mod media;
 mod office;
 mod pdf;
 mod png;
@@ -68,16 +69,23 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
         Some(FormatId::Pdf)
     } else if head.starts_with(&[0x1F, 0x8B, 0x08]) {
         Some(FormatId::Gzip)
+    } else if head.get(4..8) == Some(b"ftyp") {
+        media::identify(head.get(8..12)?.try_into().ok()?, &[])
+    } else if matches!(head.get(4..8), Some(b"moov" | b"mdat" | b"wide" | b"pnot")) {
+        // QuickTime files from before `ftyp` existed.
+        Some(FormatId::Mov)
     } else {
         None
     }
 }
 
 /// Like [`sniff`], but looks inside ZIP files to recognize Word, Excel and
-/// PowerPoint documents (and apps and e-books, which aren't archives), and
-/// further into the file for TAR archives. Leaves `input` at the start.
+/// PowerPoint documents (and apps and e-books, which aren't archives), at
+/// every brand of videos and photos, and further into the file for TAR
+/// archives. Leaves `input` at the start.
 pub fn detect(head: &[u8], input: &mut dyn ReadSeek) -> Result<Option<FormatId>, FormatError> {
     let format = match sniff(head) {
+        _ if head.get(4..8) == Some(b"ftyp") => media::detect(input)?,
         Some(FormatId::Zip) => match office::identify(input)? {
             FormatId::Zip if zip_archive::is_package(input)? => None,
             format => Some(format),
@@ -104,6 +112,9 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         FormatId::Zip => Some(&zip_archive::Zip),
         FormatId::Tar => Some(&tar_archive::Tar),
         FormatId::Gzip => Some(&gzip::Gzip),
+        FormatId::Mp4 | FormatId::Mov | FormatId::M4a | FormatId::Heic | FormatId::Avif => {
+            Some(&media::Media)
+        }
         FormatId::Compound | FormatId::Folder => None,
     }
 }
@@ -121,6 +132,12 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::Zip => &["zip"],
         FormatId::Tar => &["tar"],
         FormatId::Gzip => &["gz", "tgz"],
+        FormatId::Mp4 => &["mp4", "m4v"],
+        FormatId::Mov => &["mov", "qt"],
+        // Audio-only MP4 files often keep the `.mp4` extension.
+        FormatId::M4a => &["m4a", "m4b", "m4p", "mp4"],
+        FormatId::Heic => &["heic", "heif", "hif", "heics", "heifs"],
+        FormatId::Avif => &["avif", "avifs"],
         // Password-protected Office files keep their usual extension.
         FormatId::Compound => &[
             "doc", "dot", "xls", "xlt", "ppt", "pot", "pps", "docx", "docm", "xlsx", "xlsm",

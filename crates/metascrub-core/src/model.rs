@@ -46,6 +46,8 @@ pub enum FindingKind {
     SymbolicLink,
     /// Values typed into form fields.
     FormData,
+    /// Subtitles or chapter titles in a video, which MetaScrub doesn't check.
+    TextTrack,
     HiddenContent,
     /// A file the operating system leaves in folders (`.DS_Store`,
     /// `Thumbs.db`, …), which can hold thumbnails, file names or download
@@ -100,6 +102,7 @@ impl FindingKind {
             | Self::FileAttribute
             | Self::SymbolicLink
             | Self::UnreadFile
+            | Self::TextTrack
             | Self::DeviceModel
             | Self::Software
             | Self::Timestamp
@@ -205,6 +208,9 @@ pub enum KeepReason {
     UserRequested,
     /// Nothing is written for this file, so the original keeps it.
     NotWritten,
+    /// Part of the picture itself (a preview, depth map or HDR gain map),
+    /// showing nothing the picture doesn't show.
+    PartOfImage,
 }
 
 /// A choice only the user can make, because every option changes the content.
@@ -269,6 +275,15 @@ pub enum FormatId {
     Tar,
     /// A gzip-compressed file, such as `.tar.gz`.
     Gzip,
+    /// MPEG-4 video (also `.m4v`).
+    Mp4,
+    /// QuickTime video, as iPhones record.
+    Mov,
+    /// MPEG-4 audio (`.m4a`, `.m4b`).
+    M4a,
+    /// HEIC or HEIF photo, as iPhones take.
+    Heic,
+    Avif,
     /// An OLE compound file: an old-format Office file (`.doc`, `.xls`,
     /// `.ppt`) or a password-protected Office file.
     Compound,
