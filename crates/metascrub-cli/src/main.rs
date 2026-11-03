@@ -1,6 +1,7 @@
 //! `metascrub` command-line tool.
 
 mod args;
+mod docs;
 mod exit;
 mod progress;
 mod render;
@@ -26,6 +27,10 @@ fn main() -> ExitCode {
     }
 
     let (mode, request) = match cli.command {
+        Command::Completions { shell } => {
+            return printed(docs::completions(shell, &mut io::stdout().lock()));
+        }
+        Command::Man { page } => return printed(docs::manual(page, &mut io::stdout().lock())),
         Command::Inspect {
             paths,
             recursive,
@@ -106,6 +111,17 @@ fn main() -> ExitCode {
     // A closed pipe (e.g. `| head`) is not an error worth reporting.
     let _ = print(&report, &settings, cli.output.json);
     exit::exit_code(&report)
+}
+
+/// A closed pipe (e.g. `| head`) is not an error worth reporting.
+fn printed(result: io::Result<()>) -> ExitCode {
+    match result {
+        Err(e) if e.kind() != io::ErrorKind::BrokenPipe => {
+            eprintln!("error: {e}");
+            ExitCode::from(1)
+        }
+        _ => ExitCode::SUCCESS,
+    }
 }
 
 fn options(keep: &KeepArgs, tracked_changes: TrackedChanges) -> Options {
