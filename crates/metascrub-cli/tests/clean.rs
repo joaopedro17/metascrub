@@ -292,6 +292,13 @@ fn tracked_changes_need_a_decision() {
     let text = String::from_utf8(output.stdout).unwrap();
     assert!(text.contains("needs your decision"), "{text}");
     assert!(text.contains("--accept-changes"), "{text}");
+    // Nothing was written, so nothing reads as already removed or failed.
+    assert!(text.contains("— will be removed"), "{text}");
+    assert!(!text.contains("— removed"), "{text}");
+    assert!(
+        text.contains("0 files cleaned, 1 needs your decision"),
+        "{text}"
+    );
     assert!(!out.exists());
 
     for (flag, kept, gone) in [
@@ -369,7 +376,14 @@ fn verify_exits_4_until_the_file_is_cleaned() {
             .code(),
         Some(0)
     );
-    assert_eq!(verify(&dir.path().join("camera.clean.jpg")), Some(0));
+    let output = metascrub(&[
+        "verify".as_ref(),
+        dir.path().join("camera.clean.jpg").as_os_str(),
+    ]);
+    assert_eq!(output.status.code(), Some(0));
+    // No hints about values or options for a report that lists nothing.
+    let text = String::from_utf8(output.stdout).unwrap();
+    assert_eq!(text.lines().filter(|l| !l.is_empty()).count(), 2, "{text}");
 }
 
 #[test]

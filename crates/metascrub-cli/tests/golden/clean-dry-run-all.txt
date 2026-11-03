@@ -188,9 +188,8 @@ fixtures/generated/media/iphone.mov (QuickTime video)
     • Location where it was created — would be removed
   Medium risk
     • Software or app used — would be removed
-    • Date and time — would be reset to a neutral value
+    • Date and time — would be removed or reset to a neutral value
     • Make and model of a device (camera, phone, printer) — would be removed
-    • Date and time — would be removed
     • A unique ID that can link copies of this file — would be removed
 
 fixtures/generated/media/phone.mp4 (MP4 video)
@@ -429,5 +428,5 @@ fixtures/generated/webp/trailing.webp (WebP image)
 
 fixtures/generated/webp/truncated.webp failed: the file is damaged or not what it claims to be
 
-45 files would be cleaned, 5 skipped, 7 failed
+45 files would be cleaned, 5 skipped, 1 needs your decision, 6 failed
 Values are hidden so this report is safe to share. Use --show-values to see them.
