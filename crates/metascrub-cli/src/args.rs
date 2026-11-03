@@ -56,6 +56,16 @@ pub enum Command {
         #[arg(long)]
         dry_run: bool,
 
+        /// Accept all tracked changes in Word documents (keep the text as it
+        /// reads now), so they can be cleaned.
+        #[arg(long, conflicts_with = "reject_changes")]
+        accept_changes: bool,
+
+        /// Reject all tracked changes in Word documents (go back to the text
+        /// before the changes), so they can be cleaned.
+        #[arg(long)]
+        reject_changes: bool,
+
         #[command(flatten)]
         keep: KeepArgs,
     },

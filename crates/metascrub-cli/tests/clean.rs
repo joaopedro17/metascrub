@@ -150,6 +150,8 @@ fn cleaned_office_files_still_open() {
         "office/budget.xlsx",
         "office/comments.docx",
         "office/comments.xlsx",
+        "office/tracked-changes.docx",
+        "office/linked.xlsx",
     ]
     .iter()
     .map(|f| fixture(f))
@@ -158,8 +160,12 @@ fn cleaned_office_files_still_open() {
         "-env:UserInstallation=file://{}",
         dir.path().join("profile").display()
     );
-    // With comments removed (the default) and kept anonymized.
-    for (mode, extra) in [("removed", None), ("kept", Some("--keep=comments"))] {
+    // With comments removed (the default) and kept anonymized, and tracked
+    // changes accepted and rejected.
+    for (mode, extra) in [
+        ("removed", ["--accept-changes"].as_slice()),
+        ("kept", ["--keep=comments", "--reject-changes"].as_slice()),
+    ] {
         let out = dir.path().join(mode);
         let mut args = vec![
             "clean".as_ref(),
@@ -167,7 +173,7 @@ fn cleaned_office_files_still_open() {
             "-o".as_ref(),
             out.as_os_str(),
         ];
-        args.extend(extra.map(std::ffi::OsStr::new));
+        args.extend(extra.iter().map(std::ffi::OsStr::new));
         args.extend(originals.iter().map(|p| p.as_os_str()));
         assert_eq!(metascrub(&args).status.code(), Some(0), "{mode}");
 
@@ -191,6 +197,59 @@ fn cleaned_office_files_still_open() {
             assert!(size > 1000, "{} didn't open: {status:?}", path.display());
         }
     }
+}
+
+#[test]
+fn tracked_changes_need_a_decision() {
+    let dir = tempfile::tempdir().unwrap();
+    let original = fixture("office/tracked-changes.docx");
+    let clean = |extra: &[&str]| {
+        let out = dir
+            .path()
+            .join(extra.first().unwrap_or(&"none").trim_start_matches('-'));
+        let mut args = vec!["clean".as_ref(), "-o".as_ref(), out.as_os_str()];
+        args.extend(extra.iter().map(std::ffi::OsStr::new));
+        args.push(original.as_os_str());
+        (metascrub(&args), out)
+    };
+
+    let (output, out) = clean(&[]);
+    assert_eq!(output.status.code(), Some(3));
+    let text = String::from_utf8(output.stdout).unwrap();
+    assert!(text.contains("needs your decision"), "{text}");
+    assert!(text.contains("--accept-changes"), "{text}");
+    assert!(!out.exists());
+
+    for (flag, kept, gone) in [
+        ("--accept-changes", "€25,000", "€40,000"),
+        ("--reject-changes", "€40,000", "€25,000"),
+    ] {
+        let (output, out) = clean(&[flag]);
+        assert_eq!(output.status.code(), Some(0), "{flag}");
+        let cleaned = out.join("tracked-changes.docx");
+        let verify = metascrub(&["verify".as_ref(), cleaned.as_os_str()]);
+        assert_eq!(verify.status.code(), Some(0), "{flag}");
+        let mut zip = zip::ZipArchive::new(fs::File::open(&cleaned).unwrap()).unwrap();
+        let mut document = String::new();
+        std::io::Read::read_to_string(
+            &mut zip.by_name("word/document.xml").unwrap(),
+            &mut document,
+        )
+        .unwrap();
+        assert!(
+            document.contains(kept) && !document.contains(gone),
+            "{flag}: {document}"
+        );
+        assert!(!document.contains("Jane Doe") && !document.contains("John Roe"));
+    }
+
+    let both = metascrub(&[
+        "clean".as_ref(),
+        "--accept-changes".as_ref(),
+        "--reject-changes".as_ref(),
+        original.as_os_str(),
+    ]);
+    assert_eq!(both.status.code(), Some(2));
 }
 
 #[test]

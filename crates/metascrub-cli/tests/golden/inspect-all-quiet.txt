@@ -1,9 +1,7 @@
-$ metascrub inspect -q fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub inspect -q fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 fixtures/generated/jpeg/truncated.jpg failed: the file is damaged or not what it claims to be
-
-fixtures/generated/office/tracked-changes.docx failed: the file uses a feature MetaScrub can't handle safely, so it was left alone
 
 fixtures/generated/other/archive.zip skipped: ZIP archive files aren't supported yet
 
@@ -15,4 +13,4 @@ fixtures/generated/png/bad-checksum.png failed: the file is damaged or not what 
 
 fixtures/generated/webp/truncated.webp failed: the file is damaged or not what it claims to be
 
-25 files inspected, 18 with hidden metadata, 3 skipped, 4 failed
+27 files inspected, 20 with hidden metadata, 3 skipped, 3 failed

@@ -260,6 +260,7 @@ fn main() {
     write(&office_dir, "comments.docx", &office.comments_docx);
     write(&office_dir, "budget.xlsx", &office.budget_xlsx);
     write(&office_dir, "comments.xlsx", &office.comments_xlsx);
+    write(&office_dir, "linked.xlsx", &office.linked_xlsx);
 
     // Other
     write(&other_dir, "notes.txt", b"Not an image.\n");

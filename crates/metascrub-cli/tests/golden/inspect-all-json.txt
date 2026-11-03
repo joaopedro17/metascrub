@@ -1,4 +1,4 @@
-$ metascrub inspect --json --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub inspect --json --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 {
@@ -1237,6 +1237,61 @@ exit: 1
           },
           "kind": "file_path",
           "location": [
+            "xl/externalLinks/_rels/externalLink1.xml.rels",
+            "externalLinkPath"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "file:///C:\\Users\\jane.doe\\OneDrive%20-%20Fictional%20Ltd\\Finance\\Forecast.xlsx"
+          }
+        },
+        {
+          "disposition": {
+            "action": "warn"
+          },
+          "kind": "hidden_content",
+          "location": [
+            "xl/workbook.xml",
+            "sheet"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Salaries"
+          }
+        }
+      ],
+      "format": "xlsx",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/linked.xlsx"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "ZIP",
+            "File dates"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 09:26:52"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
             "word/_rels/settings.xml.rels",
             "attachedTemplate"
           ],
@@ -1837,14 +1892,88 @@ exit: 1
       "path": "fixtures/generated/office/report.docx"
     },
     {
-      "findings": [],
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "ZIP",
+            "File dates"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 09:26:52"
+          }
+        },
+        {
+          "disposition": {
+            "action": "blocks",
+            "reason": "tracked_changes"
+          },
+          "kind": "tracked_changes",
+          "location": [
+            "word/document.xml"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "integer",
+            "value": 5
+          }
+        },
+        {
+          "disposition": {
+            "action": "blocks",
+            "reason": "tracked_changes"
+          },
+          "kind": "person_name",
+          "location": [
+            "word/document.xml",
+            "author"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "blocks",
+            "reason": "tracked_changes"
+          },
+          "kind": "person_name",
+          "location": [
+            "word/document.xml",
+            "author"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "word/document.xml",
+            "rsid"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        }
+      ],
       "format": "docx",
       "outcome": {
-        "detail": {
-          "detail": "unsupported feature: Office documents with tracked changes aren't supported yet",
-          "kind": "unsupported"
-        },
-        "status": "failed"
+        "status": "inspected"
       },
       "output": null,
       "path": "fixtures/generated/office/tracked-changes.docx"
@@ -3068,8 +3197,8 @@ exit: 1
     "cancelled": 0,
     "cleaned": 0,
     "copied": 0,
-    "failed": 4,
-    "inspected": 25,
+    "failed": 3,
+    "inspected": 27,
     "remaining_metadata": 0,
     "skipped": 3,
     "verified": 0

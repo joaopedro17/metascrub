@@ -5,9 +5,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use metascrub_core::Options;
 use metascrub_core::format::{Cleaned, clean_bytes, inspect_bytes};
-use metascrub_core::model::FormatId;
+use metascrub_core::model::{Disposition, FormatId};
+use metascrub_core::{Options, TrackedChanges};
 
 /// Every fixture that a cleaner accepts, with its contents.
 fn cleanable_fixtures() -> Vec<(PathBuf, Vec<u8>)> {
@@ -43,7 +43,7 @@ fn clean(data: &[u8], options: &Options) -> Cleaned {
     clean_bytes(data, options).unwrap().unwrap()
 }
 
-fn option_sets() -> [Options; 4] {
+fn option_sets() -> [Options; 5] {
     [
         Options::default(),
         Options {
@@ -56,6 +56,11 @@ fn option_sets() -> [Options; 4] {
         },
         Options {
             keep_comments: true,
+            tracked_changes: TrackedChanges::Reject,
+            ..Options::default()
+        },
+        Options {
+            tracked_changes: TrackedChanges::Accept,
             ..Options::default()
         },
     ]
@@ -90,8 +95,16 @@ fn cleaning_a_cleaned_file_changes_nothing() {
 fn cleaned_files_pass_verification() {
     for (path, data) in cleanable_fixtures() {
         for options in option_sets() {
-            let cleaned = clean(&data, &options).data;
-            let (_, findings) = inspect_bytes(&cleaned, &options).unwrap();
+            let cleaned = clean(&data, &options);
+            // Not written: the user has to decide first.
+            if cleaned
+                .findings
+                .iter()
+                .any(|f| matches!(f.disposition, Disposition::Blocks(_)))
+            {
+                continue;
+            }
+            let (_, findings) = inspect_bytes(&cleaned.data, &options).unwrap();
             let remaining: Vec<_> = findings
                 .iter()
                 .filter(|f| !f.disposition.is_acceptable_after_cleaning())

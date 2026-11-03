@@ -183,6 +183,20 @@ impl Element {
         }
     }
 
+    /// Changes the element's name, keeping its prefix: `w:delText` → `w:t`.
+    pub(super) fn rename(&mut self, local: &str) {
+        let old = AsRef::<str>::as_ref(&self.start.name()).to_owned();
+        let name = match old.split_once(':') {
+            Some((prefix, _)) => format!("{prefix}:{local}"),
+            None => local.to_owned(),
+        };
+        self.start.set_name(&name);
+        if self.end.is_some() {
+            self.end = Some(BytesEnd::new(name));
+        }
+        local.clone_into(&mut self.local);
+    }
+
     /// All text inside the element, with entities resolved.
     pub(super) fn text(&self) -> String {
         let mut text = String::new();
@@ -209,6 +223,16 @@ impl Element {
             }
         }
         text
+    }
+}
+
+/// Visits every element, depth first.
+pub(super) fn visit_elements<'a>(nodes: &'a [Node], visit: &mut impl FnMut(&'a Element)) {
+    for node in nodes {
+        if let Node::Element(element) = node {
+            visit(element);
+            visit_elements(&element.children, visit);
+        }
     }
 }
 
@@ -336,6 +360,23 @@ mod tests {
         assert_eq!(
             String::from_utf8(write(&nodes).unwrap()).unwrap(),
             "<w:c xmlns:w=\"urn:w\" w:author=\"A &amp; B\" w:id=\"0\"/>"
+        );
+    }
+
+    #[test]
+    fn renames_elements_keeping_their_prefix() {
+        let mut nodes = parse(
+            b"<w:p xmlns:w=\"urn:w\"><w:del w:id=\"1\"><w:r><w:delText xml:space=\"preserve\">a </w:delText><w:t/></w:r></w:del></w:p>",
+        )
+        .unwrap();
+        for_each_element(&mut nodes, &mut |e| {
+            if e.is(&[W], "delText") {
+                e.rename("t");
+            }
+        });
+        assert_eq!(
+            String::from_utf8(write(&nodes).unwrap()).unwrap(),
+            "<w:p xmlns:w=\"urn:w\"><w:del w:id=\"1\"><w:r><w:t xml:space=\"preserve\">a </w:t><w:t/></w:r></w:del></w:p>"
         );
     }
 

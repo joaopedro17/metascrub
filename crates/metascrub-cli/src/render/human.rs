@@ -68,12 +68,13 @@ fn render_file(file: &FileReport, settings: &Settings, out: &mut dyn Write) -> i
             }
             Ok(())
         }
-        Outcome::NeedsDecision(_) => {
+        Outcome::NeedsDecision(decision) => {
             writeln!(
                 out,
-                "{BOLD}{path}{BOLD:#} {ERROR}needs your decision{ERROR:#}"
+                "{BOLD}{path}{BOLD:#} {DIM}({kind}){DIM:#} {ERROR}needs your decision{ERROR:#}"
             )?;
-            render_findings(&file.findings, settings, out)
+            render_findings(&file.findings, settings, out)?;
+            writeln!(out, "  {}", messages::decision(*decision))
         }
         Outcome::Copied => writeln!(
             out,

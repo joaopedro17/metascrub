@@ -1,4 +1,4 @@
-$ metascrub inspect -v --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub inspect -v --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 fixtures/generated/jpeg/camera.jpg (JPEG image)
@@ -124,6 +124,13 @@ fixtures/generated/office/comments.xlsx (Excel workbook)
     • Date and time: 2026-03-14T09:30:12.34 — will be removed [xl/threadedComments/threadedComment1.xml > threadedComment > dT]
     • Date and time: 2026-03-14T10:02:45.67 — will be removed [xl/threadedComments/threadedComment1.xml > threadedComment > dT]
 
+fixtures/generated/office/linked.xlsx (Excel workbook)
+  High risk
+    • A file path from the computer that made it: file:///C:\Users\jane.doe\OneDrive%20-%20Fictional%20Ltd\Finance\Forecast.xlsx — will be removed [xl/externalLinks/_rels/externalLink1.xml.rels > externalLinkPath]
+    • Hidden content (hidden text, sheets or slides, or speaker notes): Salaries — can't be fixed automatically [xl/workbook.xml > sheet]
+  Medium risk
+    • Date and time: 2026-03-14 09:26:52 — will be removed [ZIP > File dates]
+
 fixtures/generated/office/report.docx (Word document)
   High risk
     • A file path from the computer that made it: file:///C:\Users\jane.doe\AppData\Roaming\Microsoft\Templates\Report.dotx — will be removed [word/_rels/settings.xml.rels > attachedTemplate]
@@ -169,8 +176,14 @@ fixtures/generated/office/report.docx (Word document)
     • Rotation setting: rotated 90° clockwise — kept: needed to display correctly [word/media/image1.jpeg > EXIF > Orientation]
     • Technical details (encoding, settings, statistics): 2 fields — will be removed [word/media/image1.jpeg > EXIF]
 
-fixtures/generated/office/tracked-changes.docx failed: the file uses a feature MetaScrub can't handle safely, so it was left alone
-  unsupported feature: Office documents with tracked changes aren't supported yet
+fixtures/generated/office/tracked-changes.docx (Word document)
+  High risk
+    • Tracked changes (may contain deleted text): 5 changes — needs your decision [word/document.xml]
+    • A person's name (author, artist or owner): Jane Doe — needs your decision [word/document.xml > author]
+    • A person's name (author, artist or owner): John Roe — needs your decision [word/document.xml > author]
+  Medium risk
+    • Date and time: 2026-03-14 09:26:52 — will be removed [ZIP > File dates]
+    • A unique ID that can link copies of this file: 1 field — will be removed [word/document.xml > rsid]
 
 fixtures/generated/other/archive.zip skipped: ZIP archive files aren't supported yet
 
@@ -288,4 +301,4 @@ fixtures/generated/webp/trailing.webp (WebP image)
 fixtures/generated/webp/truncated.webp failed: the file is damaged or not what it claims to be
   malformed file: unexpected end of data
 
-25 files inspected, 18 with hidden metadata, 3 skipped, 4 failed
+27 files inspected, 20 with hidden metadata, 3 skipped, 3 failed

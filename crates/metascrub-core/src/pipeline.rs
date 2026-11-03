@@ -11,8 +11,8 @@ use rayon::prelude::*;
 use crate::format::{self, FormatError, FormatHandler, SNIFF_LEN};
 use crate::limits::{MAX_IMAGE_BYTES, MAX_PARALLEL_FILES};
 use crate::model::{
-    Disposition, Failure, FailureKind, FileReport, Finding, FindingKind, FormatId, Location,
-    Outcome, RunReport, SkipReason, Value,
+    Decision, Disposition, Failure, FailureKind, FileReport, Finding, FindingKind, FormatId,
+    Location, Outcome, RunReport, SkipReason, Value,
 };
 use crate::options::Options;
 use crate::output;
@@ -201,13 +201,19 @@ fn process_file(
         }
         Command::Clean if request.dry_run => {
             report.findings = handler.inspect(&mut file, options)?;
-            Outcome::WouldClean
+            match decision_needed(&report.findings) {
+                Some(decision) => Outcome::NeedsDecision(decision),
+                None => Outcome::WouldClean,
+            }
         }
         Command::Clean => {
             let (output, findings) = clean(job, file, handler, request, &settings)?;
-            report.output = Some(output);
+            report.output = output;
             report.findings = findings;
-            Outcome::Cleaned
+            match decision_needed(&report.findings) {
+                Some(decision) => Outcome::NeedsDecision(decision),
+                None => Outcome::Cleaned,
+            }
         }
     };
     if let Some(finding) = extension_mismatch(path, format) {
@@ -216,19 +222,24 @@ fn process_file(
     Ok(outcome)
 }
 
+/// Writes nothing when the findings say the user must decide first.
 fn clean(
     job: &Job,
     mut file: File,
     handler: &dyn FormatHandler,
     request: &Request,
     settings: &output::Settings,
-) -> Result<(PathBuf, Vec<Finding>), FormatError> {
+) -> Result<(Option<PathBuf>, Vec<Finding>), FormatError> {
     // Closed before writing: Windows can't replace a file that is still open.
     let input = format::read_limited(&mut file, MAX_IMAGE_BYTES)?;
     drop(file);
-    let mut findings = Vec::new();
+    let mut cleaned = Vec::new();
+    let findings = handler.clean(&mut io::Cursor::new(&input), &mut cleaned, &request.options)?;
+    if decision_needed(&findings).is_some() {
+        return Ok((None, findings));
+    }
     let write = |out: &mut dyn Write| {
-        findings = handler.clean(&mut io::Cursor::new(&input), out, &request.options)?;
+        out.write_all(&cleaned)?;
         Ok(())
     };
     let written = match &job.target {
@@ -238,7 +249,14 @@ fn clean(
             job.path.clone()
         }
     };
-    Ok((written, findings))
+    Ok((Some(written), findings))
+}
+
+fn decision_needed(findings: &[Finding]) -> Option<Decision> {
+    findings.iter().find_map(|f| match f.disposition {
+        Disposition::Blocks(decision) => Some(decision),
+        _ => None,
+    })
 }
 
 /// Unsupported files are only copied when writing into an output folder,
@@ -318,7 +336,7 @@ fn failure(error: FormatError) -> Failure {
         FormatError::Io(_) => FailureKind::Io,
         FormatError::Malformed(_) => FailureKind::Malformed,
         FormatError::Unsupported(_) => FailureKind::Unsupported,
-        FormatError::TooLarge { .. } => FailureKind::LimitExceeded,
+        FormatError::TooLarge { .. } | FormatError::TooDeep { .. } => FailureKind::LimitExceeded,
     };
     Failure {
         kind,
@@ -402,6 +420,34 @@ mod tests {
 
         let again = run_one(Request::new(Command::Clean, vec![original]));
         assert_eq!(again.output, Some(dir.path().join("camera.clean-2.jpg")));
+    }
+
+    #[test]
+    fn tracked_changes_are_not_cleaned_until_the_user_decides() {
+        let dir = tempfile::tempdir().unwrap();
+        let original = copy_fixture(dir.path(), "office/tracked-changes.docx");
+        let needs_decision = Outcome::NeedsDecision(Decision::TrackedChanges);
+        let dry_run = Request {
+            dry_run: true,
+            ..Request::new(Command::Clean, vec![original.clone()])
+        };
+        assert_eq!(run_one(dry_run).outcome, needs_decision);
+        let report = run_one(Request::new(Command::Clean, vec![original.clone()]));
+        assert_eq!(report.outcome, needs_decision);
+        assert_eq!(report.output, None);
+        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
+
+        let accept = Request {
+            options: Options {
+                tracked_changes: crate::TrackedChanges::Accept,
+                ..Options::default()
+            },
+            ..Request::new(Command::Clean, vec![original])
+        };
+        let report = run_one(accept);
+        assert_eq!(report.outcome, Outcome::Cleaned);
+        let verify = run_one(Request::new(Command::Verify, vec![report.output.unwrap()]));
+        assert_eq!(verify.outcome, Outcome::Verified);
     }
 
     #[test]

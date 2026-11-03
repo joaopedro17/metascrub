@@ -4,17 +4,22 @@
 //! document; everything else is removed.
 
 mod comments;
+mod hidden;
 mod package;
 mod props;
+mod revisions;
 mod xml;
 
+use std::cell::Cell;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::{Read, Write};
 
 use super::archive::{self, Entry, zip_error};
 use super::{FormatError, FormatHandler, ReadSeek, clean_bytes, read_image};
-use crate::model::{Disposition, Finding, FindingKind, FormatId, Location, Value};
-use crate::options::Options;
+use crate::limits::MAX_EMBEDDING_DEPTH;
+use crate::model::{Decision, Disposition, Finding, FindingKind, FormatId, Location, Value};
+use crate::options::{Options, TrackedChanges};
+use hidden::Family;
 use package::{CONTENT_TYPES, ContentTypes, PACKAGE_RELS, Relationship};
 use xml::Element;
 
@@ -41,26 +46,6 @@ const S: &[&str] = &[
     "http://purl.oclc.org/ooxml/spreadsheetml/main",
 ];
 const P188: &[&str] = &["http://schemas.microsoft.com/office/powerpoint/2018/8/main"];
-
-/// Word elements that record tracked changes.
-const TRACKED_CHANGES: &[&str] = &[
-    "ins",
-    "del",
-    "moveFrom",
-    "moveTo",
-    "rPrChange",
-    "pPrChange",
-    "sectPrChange",
-    "tblPrChange",
-    "trPrChange",
-    "tcPrChange",
-    "tblGridChange",
-    "tblPrExChange",
-    "numberingChange",
-    "cellIns",
-    "cellDel",
-    "cellMerge",
-];
 
 /// `[Content_Types].xml` and `_rels/.rels` are tiny in real documents.
 const MAX_SMALL_PART_BYTES: u64 = 1024 * 1024;
@@ -153,6 +138,12 @@ fn small_entry<R: Read + std::io::Seek>(
 enum Role {
     Keep,
     Image,
+    /// Another document inside this one (a chart's workbook): cleaned
+    /// with the same rules when MetaScrub can read it.
+    Package,
+    /// An embedded file MetaScrub can't look into (OLE, ActiveX): kept and reported.
+    Object,
+    Macros,
     Remove(Removed),
     /// Depends on the format and on `--keep comments`.
     Comments,
@@ -245,7 +236,12 @@ fn role(kind: &str) -> Role {
         | "slideUpdateInfo"
         | "media"
         | "video"
-        | "audio" => Role::Keep,
+        | "audio"
+        | "control"
+        | "wordVbaData"
+        | "vbaProjectSignature"
+        | "vbaProjectSignatureAgile"
+        | "vbaProjectSignatureV3" => Role::Keep,
         "image" | "hdphoto" => Role::Image,
         "core-properties" => Role::Remove(Removed::Core),
         "extended-properties" => Role::Remove(Removed::App),
@@ -257,20 +253,15 @@ fn role(kind: &str) -> Role {
         "classificationlabels" => Role::Remove(Removed::SensitivityLabels),
         "comments" | "commentsExtended" | "commentsIds" | "commentsExtensible" => Role::Comments,
         "threadedComment" | "person" | "commentAuthors" | "authors" => Role::Comments,
-        "revisionHeaders" | "revisionLog" | "usernames" => Role::Refuse("tracked changes"),
-        "vbaProject" | "wordVbaData" | "keyMapCustomizations" | "vbaProjectSignature" => {
-            Role::Refuse("macros")
+        "revisionHeaders" | "revisionLog" | "usernames" => {
+            Role::Refuse("Excel change history (shared workbooks)")
         }
-        "oleObject"
-        | "package"
-        | "control"
-        | "activeXControl"
-        | "activeXControlBinary"
-        | "aFChunk"
-        | "subDocument" => Role::Refuse("embedded files"),
-        "externalLink" | "externalLinkPath" | "externalLinkLong" => {
-            Role::Refuse("links to other workbooks")
-        }
+        "vbaProject" | "keyMapCustomizations" => Role::Macros,
+        // An imported chunk can be a Word document, HTML, RTF or plain text.
+        "package" | "aFChunk" => Role::Package,
+        "oleObject" | "activeXControlBinary" => Role::Object,
+        "externalLink" => Role::Keep,
+        "subDocument" => Role::Refuse("subdocuments"),
         _ => Role::Refuse("unrecognized parts"),
     }
 }
@@ -287,6 +278,7 @@ struct Walk {
     /// Parts to keep (lower-case names).
     kept: HashSet<String>,
     images: HashSet<String>,
+    packages: HashSet<String>,
     removed: Vec<(String, Removed)>,
     /// The relationships each kept part (and the package, `""`) keeps.
     relationships: HashMap<String, Vec<Relationship>>,
@@ -324,7 +316,38 @@ impl<'a> Package<'a> {
     }
 }
 
+thread_local! {
+    static DEPTH: Cell<usize> = const { Cell::new(0) };
+}
+
+/// How deep the document being read is embedded in others. Each file is
+/// read on one thread from start to end, so a thread-local count works.
+struct Depth;
+
+impl Depth {
+    fn enter() -> Result<Self, FormatError> {
+        let depth = DEPTH.with(|d| {
+            d.set(d.get() + 1);
+            d.get()
+        });
+        let guard = Self;
+        if depth > MAX_EMBEDDING_DEPTH {
+            return Err(FormatError::TooDeep {
+                limit: MAX_EMBEDDING_DEPTH,
+            });
+        }
+        Ok(guard)
+    }
+}
+
+impl Drop for Depth {
+    fn drop(&mut self) {
+        DEPTH.with(|d| d.set(d.get().saturating_sub(1)));
+    }
+}
+
 fn analyze(data: &[u8], options: &Options) -> Result<Analysis, FormatError> {
+    let _depth = Depth::enter()?;
     let archive = archive::read(data)?;
     let package = Package::new(&archive.entries);
     let mut findings = Vec::new();
@@ -384,7 +407,8 @@ fn analyze(data: &[u8], options: &Options) -> Result<Analysis, FormatError> {
             }
             continue;
         }
-        let data = if walk.images.contains(&name) {
+        let embedded = walk.packages.contains(&name);
+        let data = if embedded || walk.images.contains(&name) {
             match clean_bytes(&entry.data, options)? {
                 Some(cleaned) => {
                     findings.extend(
@@ -395,7 +419,12 @@ fn analyze(data: &[u8], options: &Options) -> Result<Analysis, FormatError> {
                     );
                     cleaned.data
                 }
-                None => entry.data.clone(),
+                None => {
+                    if embedded {
+                        findings.push(embedded_file(entry, FindingKind::EmbeddedFile));
+                    }
+                    entry.data.clone()
+                }
             }
         } else {
             let content_type = types
@@ -497,6 +526,30 @@ fn walk(
                         );
                         removed_id(&mut walk, &source, &relationship.id);
                     }
+                    // A linked workbook's path: the file name is enough
+                    // for Excel to find it next to this one.
+                    "externalLinkPath" | "externalLinkLong" | "xlPathMissing" => {
+                        let Some(name) = file_name(&relationship.target) else {
+                            return Err(refuse("links to other files"));
+                        };
+                        if name != relationship.target {
+                            walk.findings.push(
+                                Finding::new(
+                                    FindingKind::FilePath,
+                                    Location::new([
+                                        package::relationships_part(&source).as_str(),
+                                        kind,
+                                    ]),
+                                    Disposition::Remove,
+                                )
+                                .with_value(Value::Text(relationship.target.clone())),
+                            );
+                        }
+                        kept_relationships.push(Relationship {
+                            target: name,
+                            ..relationship
+                        });
+                    }
                     _ => return Err(refuse("links to other files")),
                 }
                 continue;
@@ -505,6 +558,12 @@ fn walk(
                 kept_relationships.push(relationship);
                 continue;
             };
+            // Pointing at a part that isn't there: nothing to keep, and its
+            // content type is dropped with the missing part.
+            if package.get(&target).is_none() {
+                removed_id(&mut walk, &source, &relationship.id);
+                continue;
+            }
             let target_name = target.to_lowercase();
             let role = match role(kind) {
                 Role::Comments => comment_role(types.of(&target), options),
@@ -514,13 +573,28 @@ fn walk(
                 other => other,
             };
             match role {
-                Role::Keep | Role::Image => {
-                    if role == Role::Image {
-                        walk.images.insert(target_name.clone());
-                    }
+                Role::Keep | Role::Image | Role::Package | Role::Object | Role::Macros => {
                     kept_relationships.push(relationship);
                     walk.removed.retain(|(name, _)| name != &target_name);
-                    if package.get(&target).is_some() && walk.kept.insert(target_name) {
+                    if let Some(entry) = package.get(&target)
+                        && walk.kept.insert(target_name.clone())
+                    {
+                        match role {
+                            Role::Image => {
+                                walk.images.insert(target_name);
+                            }
+                            Role::Package => {
+                                walk.packages.insert(target_name);
+                            }
+                            Role::Object => walk
+                                .findings
+                                .push(embedded_file(entry, FindingKind::EmbeddedFile)),
+                            Role::Macros => {
+                                walk.findings
+                                    .push(embedded_file(entry, FindingKind::Macros));
+                            }
+                            _ => {}
+                        }
                         queue.push_back(target);
                     }
                 }
@@ -566,6 +640,22 @@ fn notes_layer_role(data: Option<&[u8]>) -> Role {
         Some(shapes) if shapes.others == 0 => Role::Remove(Removed::Dependent),
         _ => Role::Refuse("notes next to form controls"),
     }
+}
+
+/// Kept as it is, but reported: it may hold anything.
+fn embedded_file(entry: &Entry, kind: FindingKind) -> Finding {
+    Finding::new(
+        kind,
+        Location::new([entry.name.as_str()]),
+        Disposition::Warn,
+    )
+    .with_value(Value::Bytes(entry.data.len() as u64))
+}
+
+/// The last part of a path or address: `C:\Users\jane\Budget.xlsx` → `Budget.xlsx`.
+fn file_name(target: &str) -> Option<String> {
+    let name = target.rsplit(['/', '\\']).next()?.trim();
+    (!name.is_empty() && name != "." && name != "..").then(|| name.to_owned())
 }
 
 fn refuse(what: &str) -> FormatError {
@@ -634,9 +724,13 @@ fn rewrite(
     options: &Options,
     findings: &mut Vec<Finding>,
 ) -> Result<Option<Vec<u8>>, FormatError> {
-    let word = content_type.contains("wordprocessingml");
-    let excel = content_type.contains("spreadsheetml");
-    let powerpoint = content_type.contains("presentationml");
+    // Macro-enabled files use the vendor's own content types.
+    let word = content_type.contains("wordprocessingml")
+        || content_type.starts_with("application/vnd.ms-word.");
+    let excel = content_type.contains("spreadsheetml")
+        || content_type.starts_with("application/vnd.ms-excel.");
+    let powerpoint = content_type.contains("presentationml")
+        || content_type.starts_with("application/vnd.ms-powerpoint.");
     let comment_part = comments::is_comment_part(content_type);
     if !(word || excel || powerpoint || comment_part) || !content_type.ends_with("xml") {
         return Ok(None);
@@ -647,12 +741,31 @@ fn rewrite(
     let mut changed = false;
 
     if word {
-        let mut tracked = false;
-        xml::for_each_element(&mut nodes, &mut |e| {
-            tracked |= TRACKED_CHANGES.iter().any(|name| e.is(W, name));
-        });
-        if tracked {
-            return Err(refuse("tracked changes"));
+        let changes = revisions::find(&nodes);
+        if changes.any() {
+            let disposition = match options.tracked_changes {
+                TrackedChanges::Undecided => Disposition::Blocks(Decision::TrackedChanges),
+                TrackedChanges::Accept | TrackedChanges::Reject => {
+                    revisions::apply(
+                        &mut nodes,
+                        options.tracked_changes == TrackedChanges::Accept,
+                    )?;
+                    changed = true;
+                    Disposition::Remove
+                }
+            };
+            found.push(
+                Finding::new(FindingKind::TrackedChanges, location.clone(), disposition)
+                    .with_value(Value::Integer(changes.changes as i64)),
+            );
+            found.extend(changes.authors.into_iter().map(|author| {
+                Finding::new(
+                    FindingKind::PersonName,
+                    location.child("author"),
+                    disposition,
+                )
+                .with_value(Value::Text(author))
+            }));
         }
     }
 
@@ -761,6 +874,16 @@ fn rewrite(
             )
             .with_value(Value::Integer(revision_ids as i64)),
         );
+    }
+
+    let family = match (word, excel, powerpoint) {
+        (true, _, _) => Some(Family::Word),
+        (_, true, _) => Some(Family::Excel),
+        (_, _, true) => Some(Family::PowerPoint),
+        _ => None,
+    };
+    if let Some(family) = family {
+        found.extend(hidden::findings(&nodes, family, content_type, &location));
     }
 
     findings.extend(found);
@@ -998,26 +1121,219 @@ mod tests {
     #[test]
     fn features_not_handled_yet_are_refused() {
         let unsupported = |data: Vec<u8>| matches!(clean(&data), Err(FormatError::Unsupported(_)));
-        let tracked = document(
-            r#"<w:p><w:del w:author="Jane"><w:r><w:delText>secret</w:delText></w:r></w:del></w:p>"#,
-        );
-        assert!(unsupported(docx(&tracked, &[])));
-        assert!(unsupported(docx(
-            &document(""),
-            &[("rId9", "comments", "comments.xml")]
+        assert!(unsupported(docx_with(
+            "comments",
+            "comments.xml",
+            b"<comments/>"
         )));
-        assert!(unsupported(docx(
-            &document(""),
-            &[("rId9", "vbaProject", "vbaProject.bin")]
+        assert!(unsupported(docx_with(
+            "subDocument",
+            "chapter1.docx",
+            b"PK"
         )));
         assert!(unsupported(docx(
             &document(""),
             &[("rId9", "image!", r"file:///C:\Users\jane\photo.jpg")]
         )));
-        assert!(unsupported(docx(
-            &document(""),
-            &[("rId9", "http://example.com/new-thing", "x.xml")]
+        assert!(unsupported(docx_with(
+            "http://example.com/new-thing",
+            "x.xml",
+            b"<x/>"
         )));
+    }
+
+    /// The `clean` fuzzer found that a kept relationship to a missing part
+    /// lost its content type, so the cleaned file was refused.
+    #[test]
+    fn relationships_to_missing_parts_are_dropped() {
+        let data = docx(&document(""), &[("rId9", "comments", "comments.xml")]);
+        let keep = Options {
+            keep_comments: true,
+            ..Options::default()
+        };
+        let (cleaned, _) = clean_with(&data, &keep);
+        assert!(!entry(&cleaned, "word/_rels/document.xml.rels").contains("comments"));
+        assert_eq!(clean_with(&cleaned, &keep).0, cleaned);
+    }
+
+    const TRACKED: &str = r#"<w:p><w:del w:id="1" w:author="Jane Doe"><w:r><w:delText>secret</w:delText></w:r></w:del><w:ins w:id="2" w:author="Jane Doe"><w:r><w:t>public</w:t></w:r></w:ins></w:p>"#;
+
+    fn with_changes(choice: TrackedChanges) -> Options {
+        Options {
+            tracked_changes: choice,
+            ..Options::default()
+        }
+    }
+
+    #[test]
+    fn tracked_changes_wait_for_a_decision() {
+        let (_, findings) = clean_with(&docx(&document(TRACKED), &[]), &Options::default());
+        let blocking: Vec<_> = findings
+            .iter()
+            .filter(|f| f.disposition == Disposition::Blocks(Decision::TrackedChanges))
+            .map(|f| (f.kind, f.value.clone()))
+            .collect();
+        assert_eq!(
+            blocking,
+            [
+                (FindingKind::TrackedChanges, Some(Value::Integer(2))),
+                (
+                    FindingKind::PersonName,
+                    Some(Value::Text("Jane Doe".into()))
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn tracked_changes_are_accepted_or_rejected() {
+        let data = docx(&document(TRACKED), &[]);
+        for (choice, kept, gone) in [
+            (TrackedChanges::Accept, "public", "secret"),
+            (TrackedChanges::Reject, "secret", "public"),
+        ] {
+            let options = with_changes(choice);
+            let (cleaned, findings) = clean_with(&data, &options);
+            let document = entry(&cleaned, "word/document.xml");
+            assert!(
+                document.contains(kept) && !document.contains(gone),
+                "{document}"
+            );
+            assert!(!document.contains("Jane") && !document.contains("w:del"));
+            assert!(
+                findings
+                    .iter()
+                    .any(|f| f.kind == FindingKind::TrackedChanges
+                        && f.disposition == Disposition::Remove)
+            );
+            let (_, left) = inspect_bytes(&cleaned, &Options::default()).unwrap();
+            assert!(
+                left.iter()
+                    .all(|f| f.disposition.is_acceptable_after_cleaning()),
+                "{left:?}"
+            );
+            assert_eq!(clean_with(&cleaned, &options).0, cleaned);
+        }
+    }
+
+    #[test]
+    fn macros_are_kept_and_reported() {
+        let data = docx_with(
+            "http://schemas.microsoft.com/office/2006/relationships/vbaProject",
+            "vbaProject.bin",
+            b"VBA",
+        );
+        let (cleaned, findings) = clean(&data).unwrap();
+        assert!(names(&cleaned).contains(&"word/vbaProject.bin".to_owned()));
+        let macros = findings
+            .iter()
+            .find(|f| f.kind == FindingKind::Macros)
+            .unwrap();
+        assert_eq!(macros.disposition, Disposition::Warn);
+        assert_eq!(macros.value, Some(Value::Bytes(3)));
+    }
+
+    /// `outer` with `inner` embedded as `word/embeddings/<name>`.
+    fn embedding(kind: &str, name: &str, inner: &[u8]) -> Vec<u8> {
+        docx_with(kind, &format!("embeddings/{name}"), inner)
+    }
+
+    /// A Word document with one more relationship, to `word/<target>`.
+    fn docx_with(kind: &str, target: &str, data: &[u8]) -> Vec<u8> {
+        let outer = docx(&document(""), &[("rId9", kind, target)]);
+        let mut archive = archive::read(&outer).unwrap();
+        archive.entries.push(Entry {
+            name: format!("word/{target}"),
+            data: data.to_vec(),
+        });
+        let mut out = Vec::new();
+        archive::write(&archive.entries, &mut out).unwrap();
+        out
+    }
+
+    #[test]
+    fn embedded_documents_are_cleaned_too() {
+        let inner = docx(&document(""), &[]);
+        let data = embedding("package", "Sheet.docx", &inner);
+        let (cleaned, findings) = clean(&data).unwrap();
+        let archive = archive::read(&cleaned).unwrap();
+        let embedded = archive
+            .entries
+            .iter()
+            .find(|e| e.name == "word/embeddings/Sheet.docx")
+            .unwrap();
+        assert_eq!(embedded.data, clean(&inner).unwrap().0);
+        assert!(findings.iter().any(|f| {
+            f.kind == FindingKind::PersonName
+                && f.location.parts().first().map(String::as_str)
+                    == Some("word/embeddings/Sheet.docx")
+        }));
+
+        // Too deep to follow.
+        let mut nested = inner;
+        for _ in 0..MAX_EMBEDDING_DEPTH {
+            nested = embedding("package", "Sheet.docx", &nested);
+        }
+        assert!(matches!(clean(&nested), Err(FormatError::TooDeep { .. })));
+    }
+
+    #[test]
+    fn other_embedded_files_are_kept_and_reported() {
+        for (kind, name, data) in [
+            ("oleObject", "oleObject1.bin", &b"\xD0\xCF\x11\xE0 OLE"[..]),
+            ("package", "Report.pdf", &b"%PDF-1.7"[..]),
+        ] {
+            let (cleaned, findings) = clean(&embedding(kind, name, data)).unwrap();
+            assert!(names(&cleaned).contains(&format!("word/embeddings/{name}")));
+            let embedded = findings
+                .iter()
+                .find(|f| f.kind == FindingKind::EmbeddedFile)
+                .unwrap();
+            assert_eq!(embedded.disposition, Disposition::Warn);
+        }
+    }
+
+    #[test]
+    fn linked_workbooks_keep_only_their_file_name() {
+        let types = r#"<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/externalLinks/externalLink1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.externalLink+xml"/></Types>"#;
+        let data = zip_of(&[
+            ("[Content_Types].xml", types.as_bytes()),
+            (
+                "_rels/.rels",
+                relationships(&[("rId1", "officeDocument", "xl/workbook.xml")]).as_bytes(),
+            ),
+            (
+                "xl/workbook.xml",
+                format!(r#"<workbook xmlns="{}"/>"#, S[0]).as_bytes(),
+            ),
+            (
+                "xl/_rels/workbook.xml.rels",
+                relationships(&[("rId1", "externalLink", "externalLinks/externalLink1.xml")])
+                    .as_bytes(),
+            ),
+            (
+                "xl/externalLinks/externalLink1.xml",
+                format!(r#"<externalLink xmlns="{}"/>"#, S[0]).as_bytes(),
+            ),
+            (
+                "xl/externalLinks/_rels/externalLink1.xml.rels",
+                relationships(&[(
+                    "rId1",
+                    "externalLinkPath!",
+                    r"file:///C:\Users\jane.doe\Documents\Budget%202026.xlsx",
+                )])
+                .as_bytes(),
+            ),
+        ]);
+        let (cleaned, findings) = clean(&data).unwrap();
+        let rels = entry(&cleaned, "xl/externalLinks/_rels/externalLink1.xml.rels");
+        assert!(
+            rels.contains(r#"Target="Budget%202026.xlsx""#) && !rels.contains("jane"),
+            "{rels}"
+        );
+        assert!(findings.iter().any(|f| f.kind == FindingKind::FilePath));
+        let (_, again) = clean(&cleaned).unwrap();
+        assert!(!again.iter().any(|f| f.kind == FindingKind::FilePath));
     }
 
     #[test]

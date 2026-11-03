@@ -146,6 +146,10 @@ pub enum FormatError {
     TooLarge {
         limit: u64,
     },
+    /// Files embedded in files, more levels deep than the limit allows.
+    TooDeep {
+        limit: usize,
+    },
 }
 
 impl FormatError {
@@ -161,6 +165,7 @@ impl fmt::Display for FormatError {
             Self::Malformed(detail) => write!(f, "malformed file: {detail}"),
             Self::Unsupported(detail) => write!(f, "unsupported feature: {detail}"),
             Self::TooLarge { limit } => write!(f, "larger than the {limit}-byte limit"),
+            Self::TooDeep { limit } => write!(f, "files nested more than {limit} levels deep"),
         }
     }
 }

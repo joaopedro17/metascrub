@@ -12,7 +12,7 @@ mod output;
 mod pipeline;
 mod plan;
 
-pub use options::Options;
+pub use options::{Options, TrackedChanges};
 pub use pipeline::{CancelToken, Command, Observer, OutputMode, Request, run};
 
 /// Version of the core library.

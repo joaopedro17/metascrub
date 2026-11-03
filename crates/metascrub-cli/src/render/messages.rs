@@ -3,7 +3,8 @@
 use std::path::Path;
 
 use metascrub_core::model::{
-    Disposition, FailureKind, Finding, FindingKind, FormatId, KeepReason, SkipReason, Value,
+    Decision, Disposition, FailureKind, Finding, FindingKind, FormatId, KeepReason, SkipReason,
+    Value,
 };
 
 const MAX_VALUE_CHARS: usize = 80;
@@ -22,7 +23,8 @@ pub fn finding(kind: FindingKind) -> &'static str {
         TrackedChanges => "Tracked changes (may contain deleted text)",
         Comment => "A comment",
         EmbeddedFile => "Another file embedded inside it",
-        HiddenContent => "Hidden content",
+        Macros => "Macros (programs that can run when the file is opened)",
+        HiddenContent => "Hidden content (hidden text, sheets or slides, or speaker notes)",
         Description => "A title, caption or keywords",
         Organization => "A company or organization name",
         CustomProperty => "A custom property (extra details added by a program or person)",
@@ -77,6 +79,17 @@ pub const REMAINING: &str = "still contains hidden metadata";
 pub const LIMITATIONS: &str = "MetaScrub removes hidden metadata only. It can't remove what's \
                                visible in a file (faces, places, text), and it doesn't make you anonymous.";
 
+/// What to do about a file that needs a decision.
+pub fn decision(decision: Decision) -> &'static str {
+    match decision {
+        Decision::TrackedChanges => {
+            "Tracked changes can hide deleted text. Clean again with --accept-changes \
+             (keep the text as it reads now) or --reject-changes (go back to the text \
+             before the changes)."
+        }
+    }
+}
+
 pub fn value(finding: &Finding) -> Option<String> {
     let text = match finding.value.as_ref()? {
         Value::Text(text) => text.clone(),
@@ -88,6 +101,7 @@ pub fn value(finding: &Finding) -> Option<String> {
             | FindingKind::CustomProperty => {
                 format!("{n} field{}", if *n == 1 { "" } else { "s" })
             }
+            FindingKind::TrackedChanges => format!("{n} change{}", if *n == 1 { "" } else { "s" }),
             _ => n.to_string(),
         },
         Value::Coordinates {
