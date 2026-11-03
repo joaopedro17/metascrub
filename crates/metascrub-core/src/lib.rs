@@ -5,13 +5,17 @@
 //! later) turns into text.
 
 pub mod format;
+mod fsmeta;
 pub mod limits;
 pub mod model;
+mod naming;
 mod options;
 mod output;
 mod pipeline;
 mod plan;
 
+#[doc(hidden)]
+pub use fsmeta::describe_attribute;
 pub use options::{Options, TrackedChanges};
 pub use pipeline::{CancelToken, Command, Observer, OutputMode, Request, run};
 

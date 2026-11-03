@@ -86,7 +86,7 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         FormatId::Webp => Some(&webp::Webp),
         FormatId::Docx | FormatId::Xlsx | FormatId::Pptx => Some(&office::Office),
         FormatId::Pdf => Some(&pdf::Pdf),
-        FormatId::Zip | FormatId::Compound => None,
+        FormatId::Zip | FormatId::Compound | FormatId::Folder => None,
     }
 }
 
@@ -106,6 +106,7 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
             "doc", "dot", "xls", "xlt", "ppt", "pot", "pps", "docx", "docm", "xlsx", "xlsm",
             "pptx", "pptm",
         ],
+        FormatId::Folder => &[],
     }
 }
 

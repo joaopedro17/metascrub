@@ -1,7 +1,7 @@
 //! Turns the paths the user gave into the list of files to process, in a
 //! fixed order, with each output name chosen before anything runs in parallel.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -9,6 +9,7 @@ use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
 use crate::model::{Failure, FailureKind, Outcome, SkipReason};
+use crate::naming;
 use crate::output;
 use crate::pipeline::{Command, OutputMode, Request};
 
@@ -16,17 +17,28 @@ use crate::pipeline::{Command, OutputMode, Request};
 pub(crate) struct Job {
     pub(crate) path: PathBuf,
     /// Where `clean` writes, already free of collisions. `None` in place.
+    /// For a folder, its copy in the output folder.
     pub(crate) target: Option<PathBuf>,
     /// Known without opening the file (folder errors, already-cleaned names).
     pub(crate) outcome: Option<Outcome>,
+    /// Of a folder, only what the file system stores with it is processed.
+    pub(crate) folder: bool,
+    /// Left by the operating system, not by the user (requirements §5.4).
+    pub(crate) junk: bool,
+    /// The name reveals a date, device or app.
+    pub(crate) name_leaks: bool,
+    /// `target` has a neutral name. In place, the original is then removed.
+    pub(crate) renamed: bool,
 }
 
-/// A file found in the input, with its path relative to the output folder.
+/// A file or folder found in the input, with its path relative to the
+/// output folder.
 #[derive(Debug)]
 struct Found {
     path: PathBuf,
     relative: PathBuf,
     error: Option<Failure>,
+    folder: bool,
 }
 
 pub(crate) fn plan(request: &Request) -> Vec<Job> {
@@ -34,23 +46,30 @@ pub(crate) fn plan(request: &Request) -> Vec<Job> {
         OutputMode::Directory(dir) => fs::canonicalize(dir).ok(),
         _ => None,
     };
+    // Cleaning next to the originals leaves the folders as they are.
+    let folders = request.command != Command::Clean || request.output != OutputMode::NextToOriginal;
     let mut found = Vec::new();
     for path in &request.paths {
         if request.recursive && is_folder(path) {
-            walk(path, output_dir.as_deref(), &mut found);
+            walk(path, output_dir.as_deref(), folders, &mut found);
         } else {
             found.push(Found {
                 path: path.clone(),
                 relative: PathBuf::from(file_name(path)),
                 error: None,
+                folder: false,
             });
         }
     }
 
     let mut taken = HashSet::new();
+    let mut numbers = HashMap::new();
     found
         .into_iter()
         .map(|found| {
+            if found.folder {
+                return folder_job(found, request);
+            }
             let outcome = match found.error {
                 Some(failure) => Some(Outcome::Failed(failure)),
                 None if request.command == Command::Clean && looks_cleaned(&found.path) => {
@@ -58,6 +77,30 @@ pub(crate) fn plan(request: &Request) -> Vec<Job> {
                 }
                 None => None,
             };
+            let junk = is_junk(&found.path);
+            let name_leaks = !junk && naming::leaks(file_name(&found.path));
+            if request.command == Command::Clean
+                && request.rename
+                && name_leaks
+                && outcome.is_none()
+            {
+                let target = neutral_name(
+                    &found.path,
+                    &found.relative,
+                    request,
+                    &mut taken,
+                    &mut numbers,
+                );
+                return Job {
+                    path: found.path,
+                    target: Some(target),
+                    outcome,
+                    folder: false,
+                    junk,
+                    name_leaks,
+                    renamed: true,
+                };
+            }
             let target = match (&request.command, &request.output, &outcome) {
                 (Command::Clean, OutputMode::NextToOriginal, None) => {
                     Some(output::reserve(&cleaned_name(&found.path), &mut taken))
@@ -71,9 +114,87 @@ pub(crate) fn plan(request: &Request) -> Vec<Job> {
                 path: found.path,
                 target,
                 outcome,
+                folder: false,
+                junk,
+                name_leaks,
+                renamed: false,
             }
         })
         .collect()
+}
+
+/// `image-001.jpg` in the folder the file is written to (`image-001.clean.jpg`
+/// next to the original): the first number free in this run and on disk,
+/// counted per folder and kind of file.
+fn neutral_name(
+    path: &Path,
+    relative: &Path,
+    request: &Request,
+    taken: &mut HashSet<PathBuf>,
+    numbers: &mut HashMap<(PathBuf, &'static str), u32>,
+) -> PathBuf {
+    let base = match &request.output {
+        OutputMode::Directory(dir) => dir.join(relative),
+        OutputMode::NextToOriginal | OutputMode::InPlace => path.to_owned(),
+    };
+    let kind = naming::kind(path);
+    let suffix = match request.output {
+        OutputMode::NextToOriginal => ".clean",
+        OutputMode::Directory(_) | OutputMode::InPlace => "",
+    };
+    let folder = base.parent().map(Path::to_owned).unwrap_or_default();
+    let next = numbers.entry((folder, kind)).or_insert(1);
+    loop {
+        let mut name = OsString::from(format!("{kind}-{:03}{suffix}", *next));
+        if let Some(extension) = path.extension() {
+            name.push(".");
+            name.push(extension);
+        }
+        let candidate = base.with_file_name(name);
+        *next += 1;
+        if !taken.contains(&candidate) && fs::symlink_metadata(&candidate).is_err() {
+            taken.insert(candidate.clone());
+            return candidate;
+        }
+    }
+}
+
+/// The output folder itself (`relative` is empty for `.`) is the user's, and
+/// left alone.
+fn folder_job(found: Found, request: &Request) -> Job {
+    let target = match (&request.command, &request.output) {
+        (Command::Clean, OutputMode::Directory(dir)) if !found.relative.as_os_str().is_empty() => {
+            Some(dir.join(&found.relative))
+        }
+        _ => None,
+    };
+    Job {
+        junk: is_junk(&found.path),
+        path: found.path,
+        target,
+        outcome: None,
+        folder: true,
+        name_leaks: false,
+        renamed: false,
+    }
+}
+
+/// Folder settings and thumbnail caches (`.DS_Store`, `Thumbs.db`,
+/// `desktop.ini`), the extra halves macOS writes on other file systems
+/// (`._photo.jpg`), and the `__MACOSX` folder of ZIP files made on a Mac.
+fn is_junk(path: &Path) -> bool {
+    const NAMES: &[&str] = &[
+        ".DS_Store",
+        "Thumbs.db",
+        "ehthumbs.db",
+        "ehthumbs_vista.db",
+        "desktop.ini",
+    ];
+    let name = file_name(path).to_string_lossy();
+    // Windows names don't depend on case.
+    NAMES.iter().any(|junk| name.eq_ignore_ascii_case(junk))
+        || (name.starts_with("._") && name.len() > 2)
+        || path.components().any(|c| c.as_os_str() == "__MACOSX")
 }
 
 /// Symbolic links to folders are not followed, like links inside folders.
@@ -81,12 +202,21 @@ fn is_folder(path: &Path) -> bool {
     fs::symlink_metadata(path).is_ok_and(|m| m.is_dir())
 }
 
-/// Everything inside `root` except folders, sorted by name. Symbolic links and
-/// special files are listed too, so the report says why they were skipped.
-fn walk(root: &Path, output_dir: Option<&Path>, found: &mut Vec<Found>) {
+/// Everything inside `root`, sorted by name, each folder before its contents.
+/// Folders, `root` included, only when `folders`. Symbolic links and special
+/// files are listed too, so the report says why they were skipped.
+fn walk(root: &Path, output_dir: Option<&Path>, folders: bool, found: &mut Vec<Found>) {
     // `photos` is mirrored as `out/photos/…`; `.` has no name, so its
     // contents go straight into `out/`.
     let base = PathBuf::from(root.file_name().unwrap_or_default());
+    if folders {
+        found.push(Found {
+            path: root.to_owned(),
+            relative: base.clone(),
+            error: None,
+            folder: true,
+        });
+    }
     let walker = WalkDir::new(root)
         .min_depth(1)
         .follow_links(false)
@@ -100,11 +230,12 @@ fn walk(root: &Path, output_dir: Option<&Path>, found: &mut Vec<Found>) {
         });
     for entry in walker {
         match entry {
-            Ok(entry) if entry.file_type().is_dir() => {}
+            Ok(entry) if entry.file_type().is_dir() && !folders => {}
             Ok(entry) => {
                 let relative = entry.path().strip_prefix(root).unwrap_or(entry.path());
                 found.push(Found {
                     relative: base.join(relative),
+                    folder: entry.file_type().is_dir(),
                     path: entry.into_path(),
                     error: None,
                 });
@@ -118,6 +249,7 @@ fn walk(root: &Path, output_dir: Option<&Path>, found: &mut Vec<Found>) {
                         kind: FailureKind::Io,
                         detail: error.to_string(),
                     }),
+                    folder: false,
                 });
             }
         }
@@ -167,10 +299,101 @@ mod tests {
         }
     }
 
+    fn files(jobs: Vec<Job>) -> Vec<Job> {
+        jobs.into_iter().filter(|j| !j.folder).collect()
+    }
+
     fn touch(path: PathBuf) -> PathBuf {
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(&path, "x").unwrap();
         path
+    }
+
+    #[test]
+    fn recognizes_junk_files() {
+        for path in [
+            ".DS_Store",
+            "photos/Thumbs.db",
+            "photos/THUMBS.DB",
+            "Desktop.ini",
+            "._photo.jpg",
+            "__MACOSX",
+            "a/__MACOSX/photos/photo.jpg",
+        ] {
+            assert!(is_junk(Path::new(path)), "{path}");
+        }
+        for path in [
+            "photo.jpg",
+            "._",
+            "my.DS_Store.txt",
+            "__MACOSX.txt",
+            "notes.ini",
+        ] {
+            assert!(!is_junk(Path::new(path)), "{path}");
+        }
+    }
+
+    fn renaming(output: OutputMode, paths: &[&Path]) -> Vec<Job> {
+        plan(&Request {
+            rename: true,
+            ..request(Command::Clean, output, paths)
+        })
+    }
+
+    #[test]
+    fn renames_leaking_names_with_a_number_per_folder_and_kind() {
+        let dir = tempfile::tempdir().unwrap();
+        let photos = dir.path().join("photos");
+        touch(photos.join("IMG_20261102_143512.jpg"));
+        touch(photos.join("PXL_20261102_150000.jpg"));
+        touch(photos.join("VID_20261102_143512.mp4"));
+        touch(photos.join("holiday.jpg"));
+        touch(photos.join("trip/IMG_1234.JPG"));
+        // Already taken on disk: skipped.
+        touch(photos.join("image-002.clean.jpg"));
+
+        let jobs = files(renaming(OutputMode::NextToOriginal, &[&photos]));
+        let targets: Vec<_> = jobs
+            .iter()
+            .map(|j| {
+                let target = j.target.as_ref()?.strip_prefix(&photos).ok()?;
+                Some(target.to_string_lossy().replace('\\', "/"))
+            })
+            .collect();
+        let expected = [
+            Some("image-001.clean.jpg"),
+            Some("image-003.clean.jpg"),
+            Some("video-001.clean.mp4"),
+            Some("holiday.clean.jpg"),
+            None, // image-002.clean.jpg looks already cleaned
+            Some("trip/image-001.clean.JPG"),
+        ];
+        assert_eq!(targets, expected.map(|t| t.map(String::from)));
+        let renamed: Vec<_> = jobs.iter().map(|j| j.renamed).collect();
+        assert_eq!(renamed, [true, true, true, false, false, true]);
+    }
+
+    #[test]
+    fn renamed_files_go_into_the_output_or_stay_in_their_folder() {
+        let dir = tempfile::tempdir().unwrap();
+        let photo = touch(dir.path().join("photos/IMG_1234.jpg"));
+        let out = dir.path().join("out");
+        let jobs = files(renaming(
+            OutputMode::Directory(out.clone()),
+            &[&dir.path().join("photos")],
+        ));
+        assert_eq!(jobs[0].target, Some(out.join("photos/image-001.jpg")));
+        let jobs = renaming(OutputMode::InPlace, &[&photo]);
+        assert_eq!(
+            jobs[0].target,
+            Some(dir.path().join("photos/image-001.jpg"))
+        );
+        // Only `clean` renames.
+        let jobs = plan(&Request {
+            rename: true,
+            ..request(Command::Inspect, OutputMode::NextToOriginal, &[&photo])
+        });
+        assert!(jobs[0].name_leaks && !jobs[0].renamed);
     }
 
     #[test]
@@ -217,9 +440,49 @@ mod tests {
             &[&photos],
         ));
         let paths: Vec<_> = jobs.iter().map(|j| j.path.clone()).collect();
-        assert_eq!(paths, [a, b]);
-        assert_eq!(jobs[0].target, Some(out.join("photos/2024/a.jpg")));
-        assert_eq!(jobs[1].target, Some(out.join("photos/b.jpg")));
+        assert_eq!(paths, [photos.clone(), photos.join("2024"), a, b]);
+        let targets: Vec<_> = jobs.iter().map(|j| j.target.clone()).collect();
+        assert_eq!(
+            targets,
+            [
+                Some(out.join("photos")),
+                Some(out.join("photos/2024")),
+                Some(out.join("photos/2024/a.jpg")),
+                Some(out.join("photos/b.jpg")),
+            ]
+        );
+        assert!(jobs[0].folder && jobs[1].folder && !jobs[2].folder);
+    }
+
+    #[test]
+    fn folders_are_left_alone_when_cleaning_next_to_the_originals() {
+        let dir = tempfile::tempdir().unwrap();
+        touch(dir.path().join("sub/a.jpg"));
+        let jobs = plan(&request(
+            Command::Clean,
+            OutputMode::NextToOriginal,
+            &[dir.path()],
+        ));
+        assert_eq!(jobs.len(), 1);
+        assert!(!jobs[0].folder);
+    }
+
+    #[test]
+    fn the_output_folder_itself_is_never_a_target() {
+        let out = PathBuf::from("out");
+        let clean = request(Command::Clean, OutputMode::Directory(out.clone()), &[]);
+        let folder = |relative: &str| Found {
+            path: PathBuf::from("."),
+            relative: PathBuf::from(relative),
+            error: None,
+            folder: true,
+        };
+        // `.` has no name, so its contents go straight into `out/`.
+        assert_eq!(folder_job(folder(""), &clean).target, None);
+        assert_eq!(
+            folder_job(folder("photos"), &clean).target,
+            Some(out.join("photos"))
+        );
     }
 
     #[test]
@@ -242,6 +505,9 @@ mod tests {
             OutputMode::Directory(out),
             &[dir.path()],
         ));
+        let folders: Vec<_> = jobs.iter().filter(|j| j.folder).map(|j| &j.path).collect();
+        assert_eq!(folders, [dir.path(), &dir.path().join("out")]);
+        let jobs = files(jobs);
         assert_eq!(jobs.len(), 1);
         assert_eq!(jobs[0].path, dir.path().join("a.jpg"));
     }
@@ -297,11 +563,11 @@ mod tests {
         let elsewhere = tempfile::tempdir().unwrap();
         touch(elsewhere.path().join("secret.jpg"));
         std::os::unix::fs::symlink(elsewhere.path(), dir.path().join("link")).unwrap();
-        let jobs = plan(&request(
+        let jobs = files(plan(&request(
             Command::Inspect,
             OutputMode::NextToOriginal,
             &[dir.path()],
-        ));
+        )));
         assert_eq!(jobs.len(), 1);
         assert_eq!(jobs[0].path, dir.path().join("link"));
     }
@@ -319,11 +585,11 @@ mod tests {
         if fs::read_dir(&locked).is_ok() {
             return;
         }
-        let jobs = plan(&request(
+        let jobs = files(plan(&request(
             Command::Inspect,
             OutputMode::NextToOriginal,
             &[dir.path()],
-        ));
+        )));
         fs::set_permissions(&locked, fs::Permissions::from_mode(0o755)).unwrap();
         assert_eq!(jobs.len(), 2);
         assert_eq!(jobs[0].path, dir.path().join("b.jpg"));

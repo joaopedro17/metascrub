@@ -2,8 +2,8 @@ use std::io::{self, Write};
 
 use anstyle::{AnsiColor, Style};
 use metascrub_core::model::{
-    Disposition, FailureKind, FileReport, Finding, FindingKind, Location, Outcome, Risk, RunReport,
-    Summary,
+    Disposition, FailureKind, FileReport, Finding, FindingKind, KeepReason, Location, Outcome,
+    Risk, RunReport, Summary,
 };
 
 use super::messages::{self, Tense};
@@ -52,10 +52,18 @@ fn render_file(file: &FileReport, settings: &Settings, out: &mut dyn Write) -> i
     match &file.outcome {
         Outcome::Skipped(reason) => {
             let reason = messages::skip_reason(*reason, file.format);
+            // A file MetaScrub can't read still moves to its new name.
             writeln!(
                 out,
-                "{BOLD}{path}{BOLD:#} {WARNING}skipped: {reason}{WARNING:#}"
-            )
+                "{BOLD}{path}{BOLD:#}{arrow} {WARNING}skipped: {reason}{WARNING:#}"
+            )?;
+            // What the file system stores with a file MetaScrub can't read.
+            render_findings(&file.findings, settings, out)?;
+            let not_written = Disposition::Keep(KeepReason::NotWritten);
+            if file.findings.iter().any(|f| f.disposition == not_written) {
+                writeln!(out, "  {}", messages::ATTRIBUTES_HINT)?;
+            }
+            Ok(())
         }
         Outcome::Failed(failure) => {
             let message = messages::failure(failure.kind);
@@ -86,6 +94,8 @@ fn render_file(file: &FileReport, settings: &Settings, out: &mut dyn Write) -> i
             "{BOLD}{path}{BOLD:#} {WARNING}{}{WARNING:#}",
             messages::WOULD_COPY
         ),
+        Outcome::Removed => writeln!(out, "{BOLD}{path}{BOLD:#} {}", messages::REMOVED),
+        Outcome::WouldRemove => writeln!(out, "{BOLD}{path}{BOLD:#} {}", messages::WOULD_REMOVE),
         Outcome::Verified => {
             writeln!(
                 out,
@@ -209,9 +219,10 @@ fn render_summary(report: &RunReport, settings: &Settings, out: &mut dyn Write) 
                 .files
                 .iter()
                 .filter(|f| {
-                    f.findings
-                        .iter()
-                        .any(|finding| !finding.disposition.is_acceptable_after_cleaning())
+                    f.outcome == Outcome::Inspected
+                        && f.findings
+                            .iter()
+                            .any(|finding| !finding.disposition.is_acceptable_after_cleaning())
                 })
                 .count();
             vec![format!(
@@ -220,14 +231,26 @@ fn render_summary(report: &RunReport, settings: &Settings, out: &mut dyn Write) 
             )]
         }
         Mode::Clean { dry_run } => {
-            let (cleaned, copied) = if dry_run {
-                ("would be cleaned", "would be copied without cleaning")
+            let (cleaned, copied, removed) = if dry_run {
+                (
+                    "would be cleaned",
+                    "would be copied without cleaning",
+                    "would be removed",
+                )
             } else {
-                ("cleaned", "copied without cleaning")
+                ("cleaned", "copied without cleaning", "removed")
             };
             let mut parts = vec![format!("{} {cleaned}", files(summary.cleaned))];
             if summary.copied > 0 {
                 parts.push(format!("{} {copied}", summary.copied));
+            }
+            if summary.removed > 0 {
+                let junk = if summary.removed == 1 {
+                    "junk file"
+                } else {
+                    "junk files"
+                };
+                parts.push(format!("{} {junk} {removed}", summary.removed));
             }
             parts
         }
@@ -254,6 +277,19 @@ fn render_summary(report: &RunReport, settings: &Settings, out: &mut dyn Write) 
             out,
             "{DIM}Values are hidden so this report is safe to share. Use --show-values to see them.{DIM:#}"
         )?;
+    }
+    let left = |kind| {
+        report
+            .files
+            .iter()
+            .flat_map(|f| &f.findings)
+            .any(|f| f.kind == kind && f.disposition == Disposition::Warn)
+    };
+    if left(FindingKind::JunkFile) {
+        writeln!(out, "{DIM}{}{DIM:#}", messages::JUNK_HINT)?;
+    }
+    if left(FindingKind::FileName) {
+        writeln!(out, "{DIM}{}{DIM:#}", messages::NAME_HINT)?;
     }
     if settings.mode == (Mode::Clean { dry_run: false }) && summary.cleaned > 0 {
         writeln!(out, "{DIM}{}{DIM:#}", messages::LIMITATIONS)?;

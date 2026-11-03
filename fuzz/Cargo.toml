@@ -41,6 +41,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "attributes"
+path = "fuzz_targets/attributes.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "clean"
 path = "fuzz_targets/clean.rs"
 test = false

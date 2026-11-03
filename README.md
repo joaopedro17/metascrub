@@ -31,6 +31,7 @@ metascrub clean --in-place photo.jpg   # replace the original
 metascrub clean --dry-run -r photos    # show what would be removed
 metascrub verify -r shared             # check nothing removable is left
 metascrub clean --accept-changes report.docx   # accept tracked changes, then clean
+metascrub clean -r --in-place --remove-junk --rename photos   # also tidy names and junk
 ```
 
 Originals are never changed unless you use `--in-place`. Existing files are never overwritten: a second output becomes `photo.clean-2.jpg`. Folders need `-r`; symbolic links aren't followed, and files that look already cleaned (`*.clean.*`) are skipped. With `-o`, files MetaScrub can't read are copied too, so the folder is complete, and reported as not cleaned.
@@ -71,7 +72,14 @@ Every cleaned PDF is written anew from what the document still uses, so text fro
 - **Scripts** (JavaScript) and **filled-in form fields** are reported but left alone.
 - **Encrypted** PDFs are skipped, since MetaScrub never asks for passwords. **Digitally signed** PDFs are refused: rewriting them would break the signature.
 
-Output files get the date 1980-01-01 and the original's permissions. `--keep file-times` leaves the current date instead.
+### Files and folders
+
+Some information isn't inside a file at all, but stored next to it by the operating system or left in its folder:
+
+- **Download addresses and tags.** Browsers record where a file was downloaded from: in extended attributes on Linux and macOS (`user.xdg.origin.url`, `com.apple.metadata:kMDItemWhereFroms`, `com.apple.quarantine`), and in the `Zone.Identifier` stream on Windows. Finder tags and comments live there too. MetaScrub reports them for files and folders. Its outputs are new files, so they never carry them; with `--in-place` they're removed, even from files MetaScrub can't read (whose content stays as it is).
+- **Dates.** Output files and folders get the date 1980-01-01, and keep the original's permissions. With `--in-place -r`, so do the cleaned folder and the folders in it; with `-o`, the folders created in the output (not the output folder itself). `--keep file-times` leaves the current date instead. Cleaning next to the originals leaves folders alone.
+- **Junk files** that the operating system leaves in folders (`.DS_Store`, `Thumbs.db`, `desktop.ini`, `._` files, `__MACOSX` folders) can hold thumbnails, file names and download addresses. They're reported; `--remove-junk` deletes them with `--in-place`, or leaves them out of the `-o` copy.
+- **File names** like `IMG_20261102_143512.jpg`, `PXL_…`, `Screenshot 2026-11-02 …` or `WhatsApp Image …` show when a file was made and on which phone or with which app. They're reported; `--rename` gives such files a neutral name: `image-001.jpg`, `video-001.mp4`, `document-001.pdf` or `file-001.zip`, numbered per folder. Names without a date or a known camera or app pattern stay as they are.
 
 ### Exit codes
 
@@ -97,7 +105,9 @@ MetaScrub removes **hidden metadata**. It does not:
 - Clean old-format (`.doc`, `.xls`, `.ppt`) or password-protected Office files, Excel workbooks with change history (shared workbooks), or documents linked to files outside them (linked images or objects). These are skipped or refused and reported.
 - Remove what documents contain as content: text, hidden text, speaker notes, cached values from linked workbooks, form values, scripts, or what's inside macros and embedded files it can't read.
 - Keep HDR in "Ultra HDR" photos: their gain map is a hidden image and is removed, so the photo shows in standard range.
-- Report filesystem metadata yet, such as extended attributes or Windows alternate data streams that hold a download URL. Outputs are always written as new files, so they don't carry these. On Linux, a file's change time (ctime) can't be set by normal programs.
+- Set every date the file system keeps. On Linux, a file's change time (ctime) and creation time can't be set by normal programs.
+- Remove `com.apple.provenance` on macOS: the system adds it to files written by downloaded apps (MetaScrub included) and doesn't allow removing it. It's an ID, not a description of you or the file, so it isn't reported either.
+- Rename folders, or files with names you chose yourself, even if they reveal something.
 
 ## Development
 
