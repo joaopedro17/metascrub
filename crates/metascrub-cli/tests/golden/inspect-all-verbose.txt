@@ -237,11 +237,11 @@ fixtures/generated/archive/photos.zip (ZIP archive)
     • Technical details (encoding, settings, statistics): 1 field — will be removed [Holiday/screens.zip > screenshot.png > PNG]
     • Technical details (encoding, settings, statistics): 9 fields — will be removed [ZIP > Owner IDs]
 
-fixtures/generated/archive/traversal.tar failed: the file is damaged or not what it claims to be
-  malformed file: unsafe entry name ../../evil.txt
+fixtures/generated/archive/traversal.tar failed: it contains a file whose path leads outside it (like ../), which could overwrite other files when extracted, so it was left alone
+  unsafe path ../../evil.txt
 
-fixtures/generated/archive/traversal.zip failed: the file is damaged or not what it claims to be
-  malformed file: unsafe entry name ../../evil.txt
+fixtures/generated/archive/traversal.zip failed: it contains a file whose path leads outside it (like ../), which could overwrite other files when extracted, so it was left alone
+  unsafe path ../../evil.txt
 
 fixtures/generated/jpeg/camera.jpg (JPEG image)
   High risk

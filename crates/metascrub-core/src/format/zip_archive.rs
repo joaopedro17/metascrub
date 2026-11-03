@@ -458,10 +458,10 @@ mod tests {
     #[test]
     fn unsafe_and_oversized_archives_are_refused() {
         let traversal = zip_of(&[("../evil.txt", b"x")]);
-        assert!(
-            Zip.inspect(&mut Cursor::new(&traversal), &Options::default())
-                .is_err()
-        );
+        assert!(matches!(
+            Zip.inspect(&mut Cursor::new(&traversal), &Options::default()),
+            Err(FormatError::UnsafePath(name)) if name == "../evil.txt"
+        ));
         let bomb = zip_of(&[("zeros", &vec![0u8; 4 * 1024 * 1024])]);
         assert!(matches!(
             Zip.inspect(&mut Cursor::new(&bomb), &Options::default()),

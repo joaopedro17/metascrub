@@ -104,7 +104,7 @@ pub(super) fn check_name(name: &str) -> Result<(), FormatError> {
         || name.contains(':')
         || name.split('/').any(|part| part == "..");
     if unsafe_name {
-        return Err(FormatError::malformed(format!("unsafe entry name {name}")));
+        return Err(FormatError::UnsafePath(name.to_owned()));
     }
     Ok(())
 }

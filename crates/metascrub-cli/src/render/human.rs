@@ -160,7 +160,7 @@ fn render_findings(
             write!(
                 out,
                 " {DIM}— {}{DIM:#}",
-                messages::disposition(line.disposition, tense)
+                messages::disposition(line.kind, line.disposition, tense)
             )?;
             if let Some(location) = line.location {
                 write!(

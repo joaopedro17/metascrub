@@ -558,6 +558,7 @@ fn failure(error: FormatError) -> Failure {
         FormatError::Io(_) => FailureKind::Io,
         FormatError::Malformed(_) => FailureKind::Malformed,
         FormatError::Unsupported(_) | FormatError::Encrypted => FailureKind::Unsupported,
+        FormatError::UnsafePath(_) => FailureKind::UnsafePath,
         FormatError::TooLarge { .. } | FormatError::TooDeep { .. } => FailureKind::LimitExceeded,
     };
     Failure {
