@@ -1,7 +1,7 @@
 # cargo-about: lists the licenses of the crates built into the release
 # binaries, for THIRD-PARTY-LICENSES.md in each release archive.
 # Keep `accepted` in step with the allow list in deny.toml.
-accepted = ["MIT", "Apache-2.0", "Unicode-3.0", "BSD-2-Clause"]
+accepted = ["MIT", "Apache-2.0", "Unicode-3.0", "BSD-2-Clause", "BSD-3-Clause"]
 ignore-build-dependencies = true
 ignore-dev-dependencies = true
 # Only the platforms release binaries are built for.
