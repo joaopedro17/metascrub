@@ -8,9 +8,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use rayon::prelude::*;
 
+use crate::budget::{self, Budget};
 use crate::format::{self, FormatError, FormatHandler, SNIFF_LEN};
 use crate::fsmeta::{self, Attribute};
-use crate::limits::MAX_PARALLEL_FILES;
+use crate::limits::{MAX_PARALLEL_FILES, MEMORY_BUDGET_BYTES};
 use crate::model::{
     Decision, Disposition, Failure, FailureKind, FileReport, Finding, FindingKind, FormatId,
     KeepReason, Location, Outcome, RunReport, SkipReason, Value,
@@ -105,12 +106,13 @@ impl CancelToken {
 pub fn run(request: &Request, observer: &dyn Observer, cancel: &CancelToken) -> RunReport {
     let jobs = plan::plan(request);
     observer.planned(jobs.len());
+    let budget = Budget::new(MEMORY_BUDGET_BYTES);
     let run_job = |job: &Job| {
         if cancel.is_cancelled() {
             return report(job, Outcome::Failed(cancelled()));
         }
         observer.file_started(&job.path);
-        let report = process(job, request);
+        let report = process(job, request, &budget);
         observer.file_finished(&report);
         report
     };
@@ -158,7 +160,7 @@ fn report(job: &Job, outcome: Outcome) -> FileReport {
     }
 }
 
-fn process(job: &Job, request: &Request) -> FileReport {
+fn process(job: &Job, request: &Request, budget: &Budget) -> FileReport {
     if let Some(outcome) = &job.outcome {
         return report(job, outcome.clone());
     }
@@ -169,7 +171,7 @@ fn process(job: &Job, request: &Request) -> FileReport {
     } else if job.junk && removes_junk(request) && is_regular_file(&job.path) {
         remove_junk(job, request, &mut report)
     } else {
-        process_file(job, request, &mut report)
+        process_file(job, request, budget, &mut report)
     };
     report.outcome = match result {
         Ok(outcome) => outcome,
@@ -256,6 +258,7 @@ fn remove_junk(
 fn process_file(
     job: &Job,
     request: &Request,
+    budget: &Budget,
     report: &mut FileReport,
 ) -> Result<Outcome, FormatError> {
     let path = job.path.as_path();
@@ -289,6 +292,7 @@ fn process_file(
         return unsupported(job, &mut file, request, &settings, attributes, report);
     };
 
+    let _memory = budget.reserve(budget::estimate(format, metadata.len()));
     // Outputs are new files, which never carry the original's attributes.
     let attributes = fsmeta::findings(attributes, Disposition::Remove);
     let options = &request.options;

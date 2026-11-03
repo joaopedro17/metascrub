@@ -5,9 +5,11 @@ pub const MAX_IMAGE_BYTES: u64 = 512 * 1024 * 1024;
 /// this, so a few bytes can't expand into gigabytes.
 pub const MAX_INFLATED_BYTES: u64 = 16 * 1024 * 1024;
 
-/// Files processed at the same time. Each may hold up to `MAX_IMAGE_BYTES`
-/// in memory, plus its cleaned copy, so this bounds memory use as well as CPU.
+/// Files processed at the same time.
 pub const MAX_PARALLEL_FILES: usize = 4;
+/// Files read whole into memory (images, PDF, Office) may together take
+/// about this much while they're processed; larger ones wait their turn.
+pub const MEMORY_BUDGET_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
 /// ZIP containers and archives hold at most this many files, so a small file
 /// can't expand into millions (requirements §13.9).

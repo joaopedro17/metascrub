@@ -137,6 +137,21 @@ Some information isn't inside a file at all, but stored next to it by the operat
 | 4 | `verify` found metadata that cleaning would remove |
 | 130 | Stopped with Ctrl+C |
 
+### Speed and memory
+
+Measured on a 24-thread Linux PC (WSL) with an SSD, with the release build:
+
+| Task | Time | Peak memory |
+|---|---|---|
+| Inspect 5,100 small files of every supported type in 100 folders | 0.1 s | 26 MB |
+| Clean the same folders | 0.3–0.6 s | 28 MB |
+| Clean 500 phone photos (8 MB each, 3.9 GB) | 2–3 s | 115 MB |
+| Clean a 2 GB video | 1.5–4 s | 5 MB |
+| Clean a ZIP archive of 600 MB | 4 s | 29 MB |
+| Clean four 400 MB PDFs | 13 s | 2 GB |
+
+Videos, music and archives are processed from disk, so their size barely changes the memory used. Images, PDFs and Office files are read whole, and a PDF can take several times its size while it's rewritten; MetaScrub processes up to 4 files at once, but large ones wait their turn so they stay within about 2 GB together. A single file larger than that runs alone.
+
 ### Stability
 
 From 1.0, MetaScrub follows [Semantic Versioning](https://semver.org). Within 1.x, scripts that use it keep working:
