@@ -35,8 +35,12 @@ pub enum FindingKind {
     TrackedChanges,
     Comment,
     EmbeddedFile,
-    /// Macros (VBA): programs stored in the document.
+    /// Macros (VBA) or JavaScript: programs stored in the document.
     Macros,
+    /// Older versions of the document kept in the same file (PDF incremental updates).
+    EarlierVersions,
+    /// Values typed into form fields.
+    FormData,
     HiddenContent,
     Description,
     /// A company or organization (Office "Company").
@@ -70,6 +74,8 @@ impl FindingKind {
             | Self::Comment
             | Self::EmbeddedFile
             | Self::Macros
+            | Self::EarlierVersions
+            | Self::FormData
             | Self::HiddenContent => Risk::High,
 
             Self::Description
@@ -229,6 +235,7 @@ pub enum FormatId {
     Jpeg,
     Png,
     Webp,
+    Pdf,
     /// Word document (also `.docm`, `.dotx`, `.dotm`).
     Docx,
     /// Excel workbook (also `.xlsm`, `.xltx`, `.xltm`, `.xlam`).

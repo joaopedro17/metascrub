@@ -18,6 +18,10 @@ pub const MAX_ZIP_UNPACKED_BYTES: u64 = 512 * 1024 * 1024;
 pub const MAX_ZIP_RATIO: u64 = 100;
 pub const ZIP_RATIO_CHECK_ABOVE: u64 = 1024 * 1024;
 
+/// A PDF's object and cross-reference streams are unpacked while it's
+/// read, and attachments when they're cleaned; none may unpack beyond this.
+pub const MAX_PDF_STREAM_BYTES: usize = 64 * 1024 * 1024;
+
 /// Documents embedded in documents (a chart's workbook inside a Word file)
 /// are cleaned too, but only this many levels deep.
 pub const MAX_EMBEDDING_DEPTH: usize = 3;

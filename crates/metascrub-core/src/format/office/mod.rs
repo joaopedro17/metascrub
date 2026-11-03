@@ -10,13 +10,11 @@ mod props;
 mod revisions;
 mod xml;
 
-use std::cell::Cell;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::{Read, Write};
 
 use super::archive::{self, Entry, zip_error};
-use super::{FormatError, FormatHandler, ReadSeek, clean_bytes, read_image};
-use crate::limits::MAX_EMBEDDING_DEPTH;
+use super::{Depth, FormatError, FormatHandler, ReadSeek, clean_embedded, read_image};
 use crate::model::{Decision, Disposition, Finding, FindingKind, FormatId, Location, Value};
 use crate::options::{Options, TrackedChanges};
 use hidden::Family;
@@ -316,36 +314,6 @@ impl<'a> Package<'a> {
     }
 }
 
-thread_local! {
-    static DEPTH: Cell<usize> = const { Cell::new(0) };
-}
-
-/// How deep the document being read is embedded in others. Each file is
-/// read on one thread from start to end, so a thread-local count works.
-struct Depth;
-
-impl Depth {
-    fn enter() -> Result<Self, FormatError> {
-        let depth = DEPTH.with(|d| {
-            d.set(d.get() + 1);
-            d.get()
-        });
-        let guard = Self;
-        if depth > MAX_EMBEDDING_DEPTH {
-            return Err(FormatError::TooDeep {
-                limit: MAX_EMBEDDING_DEPTH,
-            });
-        }
-        Ok(guard)
-    }
-}
-
-impl Drop for Depth {
-    fn drop(&mut self) {
-        DEPTH.with(|d| d.set(d.get().saturating_sub(1)));
-    }
-}
-
 fn analyze(data: &[u8], options: &Options) -> Result<Analysis, FormatError> {
     let _depth = Depth::enter()?;
     let archive = archive::read(data)?;
@@ -409,7 +377,7 @@ fn analyze(data: &[u8], options: &Options) -> Result<Analysis, FormatError> {
         }
         let embedded = walk.packages.contains(&name);
         let data = if embedded || walk.images.contains(&name) {
-            match clean_bytes(&entry.data, options)? {
+            match clean_embedded(&entry.data, options)? {
                 Some(cleaned) => {
                     findings.extend(
                         cleaned
@@ -899,6 +867,7 @@ mod tests {
     use super::*;
     use crate::format::archive::tests::zip_of;
     use crate::format::inspect_bytes;
+    use crate::limits::MAX_EMBEDDING_DEPTH;
     use crate::model::KeepReason;
     use comments::W16CEX;
     use std::io::Cursor;
@@ -1278,10 +1247,32 @@ mod tests {
     }
 
     #[test]
+    fn embedded_pdfs_are_cleaned_too() {
+        let pdf = std::fs::read(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../fixtures/generated/pdf/report.pdf"),
+        )
+        .unwrap();
+        let (cleaned, findings) = clean(&embedding("package", "Report.pdf", &pdf)).unwrap();
+        assert!(findings.iter().any(|f| {
+            f.kind == FindingKind::PersonName
+                && f.location.parts().first().map(String::as_str)
+                    == Some("word/embeddings/Report.pdf")
+        }));
+        let archive = archive::read(&cleaned).unwrap();
+        let embedded = archive
+            .entries
+            .iter()
+            .find(|e| e.name == "word/embeddings/Report.pdf")
+            .unwrap();
+        assert!(!embedded.data.windows(8).any(|w| w == b"Jane Doe"));
+    }
+
+    #[test]
     fn other_embedded_files_are_kept_and_reported() {
         for (kind, name, data) in [
             ("oleObject", "oleObject1.bin", &b"\xD0\xCF\x11\xE0 OLE"[..]),
-            ("package", "Report.pdf", &b"%PDF-1.7"[..]),
+            ("package", "Notes.txt", &b"Plain text"[..]),
         ] {
             let (cleaned, findings) = clean(&embedding(kind, name, data)).unwrap();
             assert!(names(&cleaned).contains(&format!("word/embeddings/{name}")));

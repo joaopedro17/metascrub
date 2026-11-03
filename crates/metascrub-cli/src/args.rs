@@ -100,8 +100,10 @@ pub enum KeepItem {
     ColorProfile,
     /// The current date on output files, instead of 1980-01-01.
     FileTimes,
-    /// Comments in Office documents, with every author shown as "Author".
+    /// Comments in Office and PDF documents, with every author shown as "Author".
     Comments,
+    /// Files attached to PDF documents (cleaned too when MetaScrub can read them).
+    Attachments,
 }
 
 #[derive(Debug, Args)]

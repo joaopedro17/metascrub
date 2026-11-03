@@ -7,14 +7,16 @@ mod icc;
 mod iptc;
 mod jpeg;
 mod office;
+mod pdf;
 mod png;
 mod webp;
 mod xmp;
 
+use std::cell::Cell;
 use std::fmt;
 use std::io::{self, Read, Seek, SeekFrom, Write};
 
-use crate::limits::{MAX_IMAGE_BYTES, MAX_INFLATED_BYTES};
+use crate::limits::{MAX_EMBEDDING_DEPTH, MAX_IMAGE_BYTES, MAX_INFLATED_BYTES};
 use crate::model::{Disposition, Finding, FindingKind, FormatId, KeepReason, Location, Value};
 use crate::options::Options;
 
@@ -58,6 +60,8 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
         Some(FormatId::Png)
     } else if head.get(0..4) == Some(b"RIFF") && head.get(8..12) == Some(b"WEBP") {
         Some(FormatId::Webp)
+    } else if head.starts_with(b"%PDF-") {
+        Some(FormatId::Pdf)
     } else {
         None
     }
@@ -81,6 +85,7 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         FormatId::Png => Some(&png::Png),
         FormatId::Webp => Some(&webp::Webp),
         FormatId::Docx | FormatId::Xlsx | FormatId::Pptx => Some(&office::Office),
+        FormatId::Pdf => Some(&pdf::Pdf),
         FormatId::Zip | FormatId::Compound => None,
     }
 }
@@ -94,6 +99,7 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::Docx => &["docx", "docm", "dotx", "dotm"],
         FormatId::Xlsx => &["xlsx", "xlsm", "xltx", "xltm", "xlam"],
         FormatId::Pptx => &["pptx", "pptm", "potx", "potm", "ppsx", "ppsm", "ppam"],
+        FormatId::Pdf => &["pdf"],
         FormatId::Zip => &["zip"],
         // Password-protected Office files keep their usual extension.
         FormatId::Compound => &[
@@ -137,6 +143,46 @@ pub fn clean_bytes(data: &[u8], options: &Options) -> Result<Option<Cleaned>, Fo
     }))
 }
 
+/// Cleans a file found inside another one. `None` when MetaScrub can't
+/// read it, including when it's encrypted: the outer file is still cleaned.
+fn clean_embedded(data: &[u8], options: &Options) -> Result<Option<Cleaned>, FormatError> {
+    match clean_bytes(data, options) {
+        Err(FormatError::Encrypted) => Ok(None),
+        other => other,
+    }
+}
+
+thread_local! {
+    static DEPTH: Cell<usize> = const { Cell::new(0) };
+}
+
+/// How deep the file being read is embedded in others (a chart's workbook
+/// in a Word document, an attachment in a PDF). Each file is read on one
+/// thread from start to end, so a thread-local count works.
+struct Depth;
+
+impl Depth {
+    fn enter() -> Result<Self, FormatError> {
+        let depth = DEPTH.with(|d| {
+            d.set(d.get() + 1);
+            d.get()
+        });
+        let guard = Self;
+        if depth > MAX_EMBEDDING_DEPTH {
+            return Err(FormatError::TooDeep {
+                limit: MAX_EMBEDDING_DEPTH,
+            });
+        }
+        Ok(guard)
+    }
+}
+
+impl Drop for Depth {
+    fn drop(&mut self) {
+        DEPTH.with(|d| d.set(d.get().saturating_sub(1)));
+    }
+}
+
 #[derive(Debug)]
 pub enum FormatError {
     Io(io::Error),
@@ -150,6 +196,8 @@ pub enum FormatError {
     TooDeep {
         limit: usize,
     },
+    /// MetaScrub never asks for passwords, so encrypted files are skipped.
+    Encrypted,
 }
 
 impl FormatError {
@@ -166,6 +214,7 @@ impl fmt::Display for FormatError {
             Self::Unsupported(detail) => write!(f, "unsupported feature: {detail}"),
             Self::TooLarge { limit } => write!(f, "larger than the {limit}-byte limit"),
             Self::TooDeep { limit } => write!(f, "files nested more than {limit} levels deep"),
+            Self::Encrypted => f.write_str("encrypted"),
         }
     }
 }
@@ -264,6 +313,7 @@ mod tests {
         assert_eq!(sniff(b"RIFF\x10\0\0\0WAVEfmt "), None);
         assert_eq!(sniff(b"PK\x03\x04\x14\0"), Some(FormatId::Zip));
         assert_eq!(sniff(COMPOUND_SIGNATURE), Some(FormatId::Compound));
+        assert_eq!(sniff(b"%PDF-1.7\n%"), Some(FormatId::Pdf));
         assert_eq!(sniff(b"hello"), None);
         assert_eq!(sniff(&[]), None);
     }

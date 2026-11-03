@@ -141,6 +141,7 @@ fn process(job: &Job, request: &Request) -> FileReport {
     let mut report = report(job, Outcome::Inspected);
     report.outcome = match process_file(job, request, &mut report) {
         Ok(outcome) => outcome,
+        Err(FormatError::Encrypted) => Outcome::Skipped(SkipReason::Encrypted),
         Err(error) => Outcome::Failed(failure(error)),
     };
     report
@@ -335,7 +336,7 @@ fn failure(error: FormatError) -> Failure {
     let kind = match error {
         FormatError::Io(_) => FailureKind::Io,
         FormatError::Malformed(_) => FailureKind::Malformed,
-        FormatError::Unsupported(_) => FailureKind::Unsupported,
+        FormatError::Unsupported(_) | FormatError::Encrypted => FailureKind::Unsupported,
         FormatError::TooLarge { .. } | FormatError::TooDeep { .. } => FailureKind::LimitExceeded,
     };
     Failure {
@@ -420,6 +421,16 @@ mod tests {
 
         let again = run_one(Request::new(Command::Clean, vec![original]));
         assert_eq!(again.output, Some(dir.path().join("camera.clean-2.jpg")));
+    }
+
+    #[test]
+    fn encrypted_files_are_skipped() {
+        let dir = tempfile::tempdir().unwrap();
+        let original = copy_fixture(dir.path(), "pdf/encrypted.pdf");
+        let report = run_one(Request::new(Command::Clean, vec![original]));
+        assert_eq!(report.outcome, Outcome::Skipped(SkipReason::Encrypted));
+        assert_eq!(report.format, Some(FormatId::Pdf));
+        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
     }
 
     #[test]
