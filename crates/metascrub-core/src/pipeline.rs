@@ -1,7 +1,7 @@
 //! Runs a command over a list of files and collects one report per file.
 
 use std::fs::{self, File};
-use std::io::{self, Read, Seek, SeekFrom, Write};
+use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -10,7 +10,7 @@ use rayon::prelude::*;
 
 use crate::format::{self, FormatError, FormatHandler, SNIFF_LEN};
 use crate::fsmeta::{self, Attribute};
-use crate::limits::{MAX_IMAGE_BYTES, MAX_PARALLEL_FILES};
+use crate::limits::MAX_PARALLEL_FILES;
 use crate::model::{
     Decision, Disposition, Failure, FailureKind, FileReport, Finding, FindingKind, FormatId,
     KeepReason, Location, Outcome, RunReport, SkipReason, Value,
@@ -385,29 +385,31 @@ fn finish_folder(job: &Job, request: &Request) -> Result<(), FormatError> {
 }
 
 /// Writes nothing when the findings say the user must decide first.
+/// Streams from the file into the output's temporary file, which only
+/// becomes the output once nothing needs a decision.
 fn clean(
     job: &Job,
-    mut file: File,
+    file: File,
     handler: &dyn FormatHandler,
     request: &Request,
     settings: &output::Settings,
 ) -> Result<(Option<PathBuf>, Vec<Finding>), FormatError> {
-    // Closed before writing: Windows can't replace a file that is still open.
-    let input = format::read_limited(&mut file, MAX_IMAGE_BYTES)?;
-    drop(file);
-    let mut cleaned = Vec::new();
-    let findings = handler.clean(&mut io::Cursor::new(&input), &mut cleaned, &request.options)?;
+    let mut draft = output::Draft::new(job.target.as_deref().unwrap_or(&job.path))?;
+    let findings = {
+        let mut input = BufReader::new(file);
+        let mut out = BufWriter::new(draft.file());
+        let findings = handler.clean(&mut input, &mut out, &request.options)?;
+        out.flush()?;
+        findings
+        // The input is closed here: Windows can't replace a file that is still open.
+    };
     if decision_needed(&findings).is_some() {
         return Ok((None, findings));
     }
-    let write = |out: &mut dyn Write| {
-        out.write_all(&cleaned)?;
-        Ok(())
-    };
     let written = match &job.target {
-        Some(target) => output::write_new(target, settings, write)?,
+        Some(target) => draft.finish_new(target, settings)?,
         None => {
-            output::replace(&job.path, settings, write)?;
+            draft.finish_replace(&job.path, settings)?;
             job.path.clone()
         }
     };

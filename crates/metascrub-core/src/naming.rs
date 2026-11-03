@@ -1,7 +1,8 @@
 //! File names that give something away: when a photo was taken
 //! (`IMG_20261102_143512.jpg`), on which phone (`PXL_…`), or through which
 //! app it was sent (`WhatsApp Image …`). `--rename` replaces them with
-//! neutral names like `image-001.jpg`.
+//! neutral names like `image-001.jpg`. And files whose name alone says
+//! they're junk the operating system left behind.
 
 use std::ffi::OsStr;
 use std::path::Path;
@@ -98,6 +99,24 @@ fn separated_date(year: &[u8], rest: &[u8]) -> bool {
         && is_date(&date)
 }
 
+/// Folder settings and thumbnail caches (`.DS_Store`, `Thumbs.db`,
+/// `desktop.ini`), the extra halves macOS writes on other file systems
+/// (`._photo.jpg`), and the `__MACOSX` folder of ZIP files made on a Mac.
+pub(crate) fn is_junk(path: &Path) -> bool {
+    const NAMES: &[&str] = &[
+        ".DS_Store",
+        "Thumbs.db",
+        "ehthumbs.db",
+        "ehthumbs_vista.db",
+        "desktop.ini",
+    ];
+    let name = path.file_name().unwrap_or_default().to_string_lossy();
+    // Windows names don't depend on case.
+    NAMES.iter().any(|junk| name.eq_ignore_ascii_case(junk))
+        || (name.starts_with("._") && name.len() > 2)
+        || path.components().any(|c| c.as_os_str() == "__MACOSX")
+}
+
 /// The neutral word for a file, from its extension.
 pub(crate) fn kind(path: &Path) -> &'static str {
     let extension = path
@@ -157,6 +176,30 @@ mod tests {
             "imagine.png",
         ] {
             assert!(!leaks(OsStr::new(name)), "{name}");
+        }
+    }
+
+    #[test]
+    fn recognizes_junk_files() {
+        for path in [
+            ".DS_Store",
+            "photos/Thumbs.db",
+            "photos/THUMBS.DB",
+            "Desktop.ini",
+            "._photo.jpg",
+            "__MACOSX",
+            "a/__MACOSX/photos/photo.jpg",
+        ] {
+            assert!(is_junk(Path::new(path)), "{path}");
+        }
+        for path in [
+            "photo.jpg",
+            "._",
+            "my.DS_Store.txt",
+            "__MACOSX.txt",
+            "notes.ini",
+        ] {
+            assert!(!is_junk(Path::new(path)), "{path}");
         }
     }
 

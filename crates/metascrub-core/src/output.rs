@@ -24,19 +24,113 @@ pub(crate) struct Settings {
     pub(crate) neutral_times: bool,
 }
 
-/// Writes a new file at `target`, or `name-2.ext`, `name-3.ext`, … when that
-/// name is taken. Returns the path written.
+/// An output being written: a temporary file in the folder it will end up
+/// in. Dropped before it's finished, it disappears, and so do the folders
+/// created for it if nothing else was written into them.
+#[derive(Debug)]
+pub(crate) struct Draft {
+    temp: Option<NamedTempFile>,
+    created: Vec<PathBuf>,
+}
+
+impl Draft {
+    /// Creates the folder of `destination` if needed.
+    pub(crate) fn new(destination: &Path) -> Result<Self, FormatError> {
+        let dir = parent(destination);
+        let created: Vec<PathBuf> = dir
+            .ancestors()
+            .take_while(|d| !d.as_os_str().is_empty() && !d.exists())
+            .map(Path::to_owned)
+            .collect();
+        // Another output's unfinished draft may remove a shared new folder
+        // just after it was created here; then it's created again.
+        let mut attempts = 0;
+        let temp = loop {
+            fs::create_dir_all(dir)?;
+            match tempfile::Builder::new()
+                .prefix(".metascrub-")
+                .suffix(".tmp")
+                .tempfile_in(dir)
+            {
+                Err(e) if e.kind() == io::ErrorKind::NotFound && attempts < 3 => attempts += 1,
+                other => break other?,
+            }
+        };
+        Ok(Self {
+            temp: Some(temp),
+            created,
+        })
+    }
+
+    pub(crate) fn file(&mut self) -> &mut File {
+        match &mut self.temp {
+            Some(temp) => temp.as_file_mut(),
+            // Only `seal` takes it, consuming the draft.
+            None => unreachable!("a draft keeps its file until it's finished"),
+        }
+    }
+
+    /// Becomes a new file at `target`, or `name-2.ext`, `name-3.ext`, … when
+    /// that name is taken. Returns the path written.
+    pub(crate) fn finish_new(
+        self,
+        target: &Path,
+        settings: &Settings,
+    ) -> Result<PathBuf, FormatError> {
+        let temp = self.seal(settings)?;
+        place(temp, target, settings, |temp, path| {
+            temp.persist_noclobber(path).map(drop)
+        })
+    }
+
+    /// Replaces `original` atomically: readers see either the old file or the new one.
+    pub(crate) fn finish_replace(
+        self,
+        original: &Path,
+        settings: &Settings,
+    ) -> Result<(), FormatError> {
+        let temp = self.seal(settings)?;
+        temp.persist(original).map_err(|e| e.error)?;
+        Ok(())
+    }
+
+    fn seal(mut self, settings: &Settings) -> Result<NamedTempFile, FormatError> {
+        self.created.clear();
+        let temp = self
+            .temp
+            .take()
+            .ok_or_else(|| io::Error::other("the draft was already finished"))?;
+        fs::set_permissions(temp.path(), settings.permissions.clone())?;
+        // Last, so no later write changes the modification time again.
+        if settings.neutral_times {
+            set_neutral_times(temp.as_file())?;
+        }
+        Ok(temp)
+    }
+}
+
+impl Drop for Draft {
+    fn drop(&mut self) {
+        // The temporary file first, so its folder can be empty.
+        drop(self.temp.take());
+        // Innermost first; a folder something else was written into stays.
+        for dir in &self.created {
+            if fs::remove_dir(dir).is_err() {
+                break;
+            }
+        }
+    }
+}
+
+/// Writes a new file at `target` (see [`Draft::finish_new`]).
 pub(crate) fn write_new(
     target: &Path,
     settings: &Settings,
     write: impl FnOnce(&mut dyn Write) -> Result<(), FormatError>,
 ) -> Result<PathBuf, FormatError> {
-    let dir = parent(target);
-    fs::create_dir_all(dir)?;
-    let temp = prepare(dir, settings, write)?;
-    place(temp, target, settings, |temp, path| {
-        temp.persist_noclobber(path).map(drop)
-    })
+    let mut draft = Draft::new(target)?;
+    write_into(&mut draft, write)?;
+    draft.finish_new(target, settings)
 }
 
 /// Gives `temp` the first free name, with `rename`, which must never
@@ -113,37 +207,14 @@ pub(crate) fn reserve(target: &Path, taken: &mut HashSet<PathBuf>) -> PathBuf {
     free
 }
 
-/// Replaces `original` atomically: readers see either the old file or the new one.
-pub(crate) fn replace(
-    original: &Path,
-    settings: &Settings,
+fn write_into(
+    draft: &mut Draft,
     write: impl FnOnce(&mut dyn Write) -> Result<(), FormatError>,
 ) -> Result<(), FormatError> {
-    let temp = prepare(parent(original), settings, write)?;
-    temp.persist(original).map_err(|e| e.error)?;
+    let mut out = BufWriter::new(draft.file());
+    write(&mut out)?;
+    out.flush()?;
     Ok(())
-}
-
-fn prepare(
-    dir: &Path,
-    settings: &Settings,
-    write: impl FnOnce(&mut dyn Write) -> Result<(), FormatError>,
-) -> Result<NamedTempFile, FormatError> {
-    let mut temp = tempfile::Builder::new()
-        .prefix(".metascrub-")
-        .suffix(".tmp")
-        .tempfile_in(dir)?;
-    {
-        let mut out = BufWriter::new(temp.as_file_mut());
-        write(&mut out)?;
-        out.flush()?;
-    }
-    fs::set_permissions(temp.path(), settings.permissions.clone())?;
-    // Last, so no later write changes the modification time again.
-    if settings.neutral_times {
-        set_neutral_times(temp.as_file())?;
-    }
-    Ok(temp)
 }
 
 /// Gives an existing file or folder the neutral date, changing nothing else.
@@ -322,7 +393,9 @@ mod tests {
         let settings = settings(dir.path());
         let target = dir.path().join("photo.clean.jpg");
         fs::write(&target, "existing").unwrap();
-        let temp = prepare(dir.path(), &settings, write_text("new")).unwrap();
+        let mut draft = Draft::new(&target).unwrap();
+        write_into(&mut draft, write_text("new")).unwrap();
+        let temp = draft.seal(&settings).unwrap();
 
         let written = place(temp, &target, &settings, no_safe_rename).unwrap();
         assert_eq!(written, dir.path().join("photo.clean-2.jpg"));
@@ -339,11 +412,32 @@ mod tests {
     }
 
     #[test]
+    fn an_unfinished_draft_leaves_no_folders_behind() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("out/photos/photo.jpg");
+        let draft = Draft::new(&target).unwrap();
+        assert!(dir.path().join("out/photos").is_dir());
+        drop(draft);
+        assert!(!dir.path().join("out").exists());
+
+        // A folder something else was written into stays.
+        let draft = Draft::new(&target).unwrap();
+        fs::write(dir.path().join("out/other.jpg"), "x").unwrap();
+        drop(draft);
+        assert!(!dir.path().join("out/photos").exists());
+        assert!(dir.path().join("out/other.jpg").exists());
+    }
+
+    #[test]
     fn replace_swaps_the_content_in_place() {
         let dir = tempfile::tempdir().unwrap();
         let original = dir.path().join("photo.jpg");
         fs::write(&original, "old").unwrap();
-        replace(&original, &settings(dir.path()), write_text("new")).unwrap();
+        let mut draft = Draft::new(&original).unwrap();
+        write_into(&mut draft, write_text("new")).unwrap();
+        draft
+            .finish_replace(&original, &settings(dir.path()))
+            .unwrap();
         assert_eq!(fs::read_to_string(&original).unwrap(), "new");
     }
 

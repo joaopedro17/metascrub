@@ -77,7 +77,7 @@ pub(crate) fn plan(request: &Request) -> Vec<Job> {
                 }
                 None => None,
             };
-            let junk = is_junk(&found.path);
+            let junk = naming::is_junk(&found.path);
             let name_leaks = !junk && naming::leaks(file_name(&found.path));
             if request.command == Command::Clean
                 && request.rename
@@ -169,7 +169,7 @@ fn folder_job(found: Found, request: &Request) -> Job {
         _ => None,
     };
     Job {
-        junk: is_junk(&found.path),
+        junk: naming::is_junk(&found.path),
         path: found.path,
         target,
         outcome: None,
@@ -177,24 +177,6 @@ fn folder_job(found: Found, request: &Request) -> Job {
         name_leaks: false,
         renamed: false,
     }
-}
-
-/// Folder settings and thumbnail caches (`.DS_Store`, `Thumbs.db`,
-/// `desktop.ini`), the extra halves macOS writes on other file systems
-/// (`._photo.jpg`), and the `__MACOSX` folder of ZIP files made on a Mac.
-fn is_junk(path: &Path) -> bool {
-    const NAMES: &[&str] = &[
-        ".DS_Store",
-        "Thumbs.db",
-        "ehthumbs.db",
-        "ehthumbs_vista.db",
-        "desktop.ini",
-    ];
-    let name = file_name(path).to_string_lossy();
-    // Windows names don't depend on case.
-    NAMES.iter().any(|junk| name.eq_ignore_ascii_case(junk))
-        || (name.starts_with("._") && name.len() > 2)
-        || path.components().any(|c| c.as_os_str() == "__MACOSX")
 }
 
 /// Symbolic links to folders are not followed, like links inside folders.
@@ -307,30 +289,6 @@ mod tests {
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(&path, "x").unwrap();
         path
-    }
-
-    #[test]
-    fn recognizes_junk_files() {
-        for path in [
-            ".DS_Store",
-            "photos/Thumbs.db",
-            "photos/THUMBS.DB",
-            "Desktop.ini",
-            "._photo.jpg",
-            "__MACOSX",
-            "a/__MACOSX/photos/photo.jpg",
-        ] {
-            assert!(is_junk(Path::new(path)), "{path}");
-        }
-        for path in [
-            "photo.jpg",
-            "._",
-            "my.DS_Store.txt",
-            "__MACOSX.txt",
-            "notes.ini",
-        ] {
-            assert!(!is_junk(Path::new(path)), "{path}");
-        }
     }
 
     fn renaming(output: OutputMode, paths: &[&Path]) -> Vec<Job> {
