@@ -4,7 +4,7 @@
 
 MetaScrub is a cross-platform command-line tool that inspects and removes hidden metadata (location, device, author, dates, download sources) from files and folders, so you can share them without leaking personal information.
 
-**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG and WebP images, Word, Excel, PowerPoint and PDF documents, and whole folders (`-r`); more formats are coming.
+**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG and WebP images, Word, Excel, PowerPoint and PDF documents, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`); video and HEIC are coming.
 
 ## Install
 
@@ -28,6 +28,7 @@ metascrub inspect photo.jpg            # list hidden metadata, change nothing
 metascrub clean photo.jpg              # write photo.clean.jpg next to it
 metascrub clean -r photos -o shared    # clean a folder into shared/photos/…
 metascrub clean --in-place photo.jpg   # replace the original
+metascrub clean holiday.zip            # every file inside cleaned, in holiday.clean.zip
 metascrub clean --dry-run -r photos    # show what would be removed
 metascrub verify -r shared             # check nothing removable is left
 metascrub clean --accept-changes report.docx   # accept tracked changes, then clean
@@ -47,6 +48,7 @@ Reports hide metadata values so they're safe to share; `--show-values` shows the
 | WebP | EXIF, XMP, unknown chunks, data after the image | Image data, transparency, animation |
 | PDF | Document information (author, title, dates, software), XMP, the document ID (replaced by one computed from the cleaned file), page thumbnails, application data, comments, attachments, earlier versions left by incremental saves, unused objects, data after the end | Pages and their content; photos inside are cleaned like JPEG |
 | Word, Excel, PowerPoint | Document properties (author, company, dates, custom properties), thumbnail, revision and document IDs, template and folder paths, printer settings, people lists, sensitivity labels, comments, unknown parts, ZIP dates | The document's content; images inside are cleaned like the formats above |
+| ZIP, TAR, gzip | Dates, owner names and IDs, permissions (reset to 644, or 755 for folders and programs), comments, extra fields and PAX records (including saved download addresses), gzip's original file name, junk files | Every file inside, cleaned like the formats above; files MetaScrub can't read are kept as they are |
 
 By default, two things that affect how the image looks are kept:
 
@@ -71,6 +73,16 @@ Every cleaned PDF is written anew from what the document still uses, so text fro
 - **Attachments** are removed. `--keep attachments` keeps them, cleaned with the same rules when MetaScrub can read them (a photo or Word document attached to a PDF), with only their file name and no dates.
 - **Scripts** (JavaScript) and **filled-in form fields** are reported but left alone.
 - **Encrypted** PDFs are skipped, since MetaScrub never asks for passwords. **Digitally signed** PDFs are refused: rewriting them would break the signature.
+
+### Archives
+
+ZIP, TAR and gzip-compressed files (`.tar.gz`, `.tgz`, `.gz`) are treated like a folder inside a file: every file in them is cleaned with the same rules, and the result is a new archive. Archives inside archives are cleaned too, up to 3 levels deep.
+
+- **Files MetaScrub can't read** (a text file, a damaged photo, an encrypted or too deeply nested archive) are kept exactly as they are and listed as possibly still containing hidden information.
+- **Junk files** inside (`__MACOSX/`, `.DS_Store`, `._` files, `Thumbs.db`) are always removed: the cleaned archive is a new file, so nothing of yours is deleted.
+- **Symbolic links** inside are kept, never followed, and listed with their target.
+- **Safety:** an archive may unpack to at most 4 GB in total, archives inside it included, with at most 10,000 files, and no file may unpack to more than 100 times its compressed size (zip bombs). Archives with paths that point outside them (`../`) are refused; encrypted ones are skipped, since MetaScrub never asks for passwords. Archives of any size are processed a file at a time, using temporary files rather than memory for large ones.
+- **Apps, e-books and OpenDocument files** are ZIP files too (`.jar`, `.apk`, `.epub`, `.odt`, …), but they're often signed and depend on their exact content, so they're not treated as archives.
 
 ### Files and folders
 
@@ -100,14 +112,15 @@ MetaScrub removes **hidden metadata**. It does not:
 - Remove invisible watermarks or steganography, or defeat camera sensor fingerprinting.
 - Guarantee anonymity.
 - Securely delete originals. With `--in-place`, the original bytes may still be recoverable from the disk, and other hard links to the file keep the original.
-- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, Office and PDF documents; HEIC, archives and video are planned.
+- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, Office and PDF documents, and ZIP, TAR and gzip archives; HEIC and video are planned.
+- Clean 7z or RAR archives, ZIP files compressed with methods other than Deflate (such as LZMA or Zstandard), or TAR archives with sparse files or device files. These are refused and reported.
 - Clean encrypted or digitally signed PDFs. They're skipped or refused and reported.
 - Clean old-format (`.doc`, `.xls`, `.ppt`) or password-protected Office files, Excel workbooks with change history (shared workbooks), or documents linked to files outside them (linked images or objects). These are skipped or refused and reported.
 - Remove what documents contain as content: text, hidden text, speaker notes, cached values from linked workbooks, form values, scripts, or what's inside macros and embedded files it can't read.
 - Keep HDR in "Ultra HDR" photos: their gain map is a hidden image and is removed, so the photo shows in standard range.
 - Set every date the file system keeps. On Linux, a file's change time (ctime) and creation time can't be set by normal programs.
 - Remove `com.apple.provenance` on macOS: the system adds it to files written by downloaded apps (MetaScrub included) and doesn't allow removing it. It's an ID, not a description of you or the file, so it isn't reported either.
-- Rename folders, or files with names you chose yourself, even if they reveal something.
+- Rename folders, or files with names you chose yourself, even if they reveal something. Names of files inside archives are never changed.
 
 ## Development
 

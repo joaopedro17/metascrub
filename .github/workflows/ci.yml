@@ -49,6 +49,7 @@ jobs:
           METASCRUB_REQUIRE_FS_ATTRIBUTES: "1"
           METASCRUB_REQUIRE_LIBREOFFICE: ${{ runner.os == 'Linux' && '1' || '' }}
           METASCRUB_REQUIRE_PDF_TOOLS: ${{ runner.os == 'Linux' && '1' || '' }}
+          METASCRUB_REQUIRE_ARCHIVE_TOOLS: ${{ runner.os == 'Linux' && '1' || '' }}
 
   dependencies:
     name: Dependency policy

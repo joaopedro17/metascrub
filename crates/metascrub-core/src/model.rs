@@ -39,6 +39,11 @@ pub enum FindingKind {
     Macros,
     /// Older versions of the document kept in the same file (PDF incremental updates).
     EarlierVersions,
+    /// A file inside an archive that MetaScrub can't read, kept as it is.
+    UnreadFile,
+    /// A symbolic link inside an archive, kept and never followed; its
+    /// target can be a path from the computer that made the archive.
+    SymbolicLink,
     /// Values typed into form fields.
     FormData,
     HiddenContent,
@@ -93,6 +98,8 @@ impl FindingKind {
             | Self::Organization
             | Self::CustomProperty
             | Self::FileAttribute
+            | Self::SymbolicLink
+            | Self::UnreadFile
             | Self::DeviceModel
             | Self::Software
             | Self::Timestamp
@@ -257,8 +264,11 @@ pub enum FormatId {
     Xlsx,
     /// PowerPoint presentation (also `.pptm`, `.ppsx`, `.potx`, …).
     Pptx,
-    /// Any other ZIP file.
+    /// A ZIP archive (not an Office file, an app or an e-book).
     Zip,
+    Tar,
+    /// A gzip-compressed file, such as `.tar.gz`.
+    Gzip,
     /// An OLE compound file: an old-format Office file (`.doc`, `.xls`,
     /// `.ppt`) or a password-protected Office file.
     Compound,

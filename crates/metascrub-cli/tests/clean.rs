@@ -409,3 +409,88 @@ fn dry_run_writes_nothing() {
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
 }
+
+/// Cleaned archives must still extract with the system's own tools, with
+/// their files intact and the junk gone. Skipped when `unzip` or `tar`
+/// isn't installed, unless METASCRUB_REQUIRE_ARCHIVE_TOOLS is set (as in CI
+/// on Linux).
+#[test]
+fn cleaned_archives_still_extract() {
+    let required =
+        std::env::var_os("METASCRUB_REQUIRE_ARCHIVE_TOOLS").is_some_and(|v| !v.is_empty());
+    let installed = ["unzip", "tar"]
+        .iter()
+        .all(|tool| Command::new(tool).arg("--help").output().is_ok());
+    if !installed {
+        assert!(!required, "unzip and tar are required but couldn't run");
+        eprintln!("unzip or tar not installed; skipping");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let out = dir.path().join("out");
+    let names = ["photos.zip", "photos.tar", "photos.tar.gz"];
+    let mut args = vec![
+        "clean".as_ref(),
+        "-q".as_ref(),
+        "-o".as_ref(),
+        out.as_os_str(),
+    ];
+    let originals: Vec<_> = names
+        .iter()
+        .map(|n| fixture(&format!("archive/{n}")))
+        .collect();
+    args.extend(originals.iter().map(|p| p.as_os_str()));
+    assert_eq!(metascrub(&args).status.code(), Some(0));
+
+    for name in names {
+        let archive = out.join(name);
+        let into = dir.path().join(format!("{name}.extracted"));
+        fs::create_dir_all(&into).unwrap();
+        let extract = if name.ends_with(".zip") {
+            Command::new("unzip")
+                .arg("-q")
+                .arg(&archive)
+                .arg("-d")
+                .arg(&into)
+                .output()
+        } else {
+            Command::new("tar")
+                .arg("-xf")
+                .arg(&archive)
+                .arg("-C")
+                .arg(&into)
+                .output()
+        }
+        .unwrap();
+        assert!(extract.status.success(), "{name}: {extract:?}");
+
+        let holiday = into.join("Holiday");
+        assert_eq!(
+            fs::read_to_string(holiday.join("notes.txt")).unwrap(),
+            "Remember the charger.\n",
+            "{name}"
+        );
+        for file in ["IMG_20260314_092652.jpg", "itinerary.docx", "upload.sh"] {
+            assert!(holiday.join(file).is_file(), "{name}: {file}");
+        }
+        assert!(!into.join("__MACOSX").exists(), "{name}");
+        assert!(!holiday.join(".DS_Store").exists(), "{name}");
+        assert!(!holiday.join("._notes.txt").exists(), "{name}");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = |file: &str| {
+                fs::metadata(holiday.join(file))
+                    .unwrap()
+                    .permissions()
+                    .mode()
+                    & 0o777
+            };
+            assert_eq!(mode("upload.sh") & 0o100, 0o100, "{name}: still a program");
+            let link = fs::read_link(holiday.join("latest.jpg")).unwrap();
+            assert_eq!(link, Path::new("IMG_20260314_092652.jpg"), "{name}");
+        }
+    }
+    let verify = metascrub(&["verify".as_ref(), "-r".as_ref(), out.as_os_str()]);
+    assert_eq!(verify.status.code(), Some(0), "{verify:?}");
+}

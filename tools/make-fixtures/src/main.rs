@@ -7,6 +7,7 @@
 // A developer tool: failing loudly on a bug is the right behavior.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
+mod archive;
 mod office;
 mod pdf;
 
@@ -29,7 +30,9 @@ fn main() {
     let office_dir = root.join("office");
     let pdf_dir = root.join("pdf");
     let other_dir = root.join("other");
+    let archive_dir = root.join("archive");
     for dir in [
+        &archive_dir,
         &jpeg_dir,
         &png_dir,
         &webp_dir,
@@ -279,6 +282,19 @@ fn main() {
     write(&pdf_dir, "attachments.pdf", &pdfs.attachments);
     write(&pdf_dir, "form.pdf", &pdfs.form);
     write(&pdf_dir, "encrypted.pdf", &pdfs.encrypted);
+
+    // Archives
+    let png = fs::read(png_dir.join("text-chunks.png")).unwrap();
+    let archives = archive::files(&camera, &office.report_docx, &png);
+    write(&archive_dir, "photos.zip", &archives.photos_zip);
+    write(&archive_dir, "photos.tar", &archives.photos_tar);
+    write(&archive_dir, "photos.tar.gz", &archives.photos_tar_gz);
+    write(&archive_dir, "bomb.zip", &archives.bomb_zip);
+    write(&archive_dir, "traversal.zip", &archives.traversal_zip);
+    write(&archive_dir, "encrypted.zip", &archives.encrypted_zip);
+    write(&archive_dir, "deep.zip", &archives.deep_zip);
+    write(&archive_dir, "traversal.tar", &archives.traversal_tar);
+    write(&archive_dir, "app.jar", &archives.app_jar);
 
     // Other
     write(&other_dir, "notes.txt", b"Not an image.\n");
