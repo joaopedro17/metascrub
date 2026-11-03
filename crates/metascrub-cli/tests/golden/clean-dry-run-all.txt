@@ -1,4 +1,4 @@
-$ metascrub clean --dry-run fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub clean --dry-run fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 fixtures/generated/jpeg/camera.jpg (JPEG image)
@@ -80,7 +80,20 @@ fixtures/generated/office/clean.docx (Word document)
   Medium risk
     • A unique ID that can link copies of this file — would be removed
 
-fixtures/generated/office/comments.docx failed: the file uses a feature MetaScrub can't handle safely, so it was left alone
+fixtures/generated/office/comments.docx (Word document)
+  High risk
+    • A comment — would be removed
+    • A person's name (author, artist or owner) — would be removed
+  Medium risk
+    • Date and time — would be removed
+    • A unique ID that can link copies of this file — would be removed
+
+fixtures/generated/office/comments.xlsx (Excel workbook)
+  High risk
+    • A person's name (author, artist or owner) — would be removed
+    • A comment — would be removed
+  Medium risk
+    • Date and time — would be removed
 
 fixtures/generated/office/report.docx (Word document)
   High risk
@@ -191,5 +204,5 @@ fixtures/generated/webp/trailing.webp (WebP image)
 
 fixtures/generated/webp/truncated.webp failed: the file is damaged or not what it claims to be
 
-23 files would be cleaned, 3 skipped, 5 failed
+25 files would be cleaned, 3 skipped, 4 failed
 Values are hidden so this report is safe to share. Use --show-values to see them.

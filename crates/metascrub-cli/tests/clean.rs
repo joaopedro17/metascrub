@@ -144,46 +144,52 @@ fn cleaned_office_files_still_open() {
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let out = dir.path().join("out");
-    let mut args = vec![
-        "clean".as_ref(),
-        "-q".as_ref(),
-        "-o".as_ref(),
-        out.as_os_str(),
-    ];
     let originals: Vec<PathBuf> = [
         "office/clean.docx",
         "office/report.docx",
         "office/budget.xlsx",
+        "office/comments.docx",
+        "office/comments.xlsx",
     ]
     .iter()
     .map(|f| fixture(f))
     .collect();
-    args.extend(originals.iter().map(|p| p.as_os_str()));
-    assert_eq!(metascrub(&args).status.code(), Some(0));
-
-    let pdfs = dir.path().join("pdf");
     let profile = format!(
         "-env:UserInstallation=file://{}",
         dir.path().join("profile").display()
     );
-    for entry in fs::read_dir(&out).unwrap() {
-        let path = entry.unwrap().path();
-        let status = Command::new("soffice")
-            .args([
-                profile.as_str(),
-                "--headless",
-                "--convert-to",
-                "pdf",
-                "--outdir",
-            ])
-            .arg(&pdfs)
-            .arg(&path)
-            .output()
-            .unwrap();
-        let pdf = pdfs.join(path.with_extension("pdf").file_name().unwrap());
-        let size = fs::metadata(&pdf).map(|m| m.len()).unwrap_or(0);
-        assert!(size > 1000, "{} didn't open: {status:?}", path.display());
+    // With comments removed (the default) and kept anonymized.
+    for (mode, extra) in [("removed", None), ("kept", Some("--keep=comments"))] {
+        let out = dir.path().join(mode);
+        let mut args = vec![
+            "clean".as_ref(),
+            "-q".as_ref(),
+            "-o".as_ref(),
+            out.as_os_str(),
+        ];
+        args.extend(extra.map(std::ffi::OsStr::new));
+        args.extend(originals.iter().map(|p| p.as_os_str()));
+        assert_eq!(metascrub(&args).status.code(), Some(0), "{mode}");
+
+        let pdfs = dir.path().join("pdf").join(mode);
+        for entry in fs::read_dir(&out).unwrap() {
+            let path = entry.unwrap().path();
+            let status = Command::new("soffice")
+                .args([
+                    profile.as_str(),
+                    "--headless",
+                    "--convert-to",
+                    "pdf",
+                    "--outdir",
+                ])
+                .arg(&pdfs)
+                .arg(&path)
+                .output()
+                .unwrap();
+            let pdf = pdfs.join(path.with_extension("pdf").file_name().unwrap());
+            let size = fs::metadata(&pdf).map(|m| m.len()).unwrap_or(0);
+            assert!(size > 1000, "{} didn't open: {status:?}", path.display());
+        }
     }
 }
 

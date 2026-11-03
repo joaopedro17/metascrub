@@ -93,6 +93,7 @@ fn options(keep: &KeepArgs) -> Options {
         keep_color_profile: keep.keep.contains(&KeepItem::ColorProfile),
         keep_file_times: keep.keep.contains(&KeepItem::FileTimes),
         strip_orientation: keep.strip_orientation,
+        keep_comments: keep.keep.contains(&KeepItem::Comments),
     }
 }
 

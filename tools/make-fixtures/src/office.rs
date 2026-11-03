@@ -19,6 +19,7 @@ pub struct Files {
     pub tracked_changes_docx: Vec<u8>,
     pub comments_docx: Vec<u8>,
     pub budget_xlsx: Vec<u8>,
+    pub comments_xlsx: Vec<u8>,
 }
 
 pub fn files(photo: &[u8], thumbnail: &[u8]) -> Files {
@@ -48,6 +49,7 @@ pub fn files(photo: &[u8], thumbnail: &[u8]) -> Files {
             true,
         ),
         budget_xlsx: xlsx(),
+        comments_xlsx: comments_xlsx(),
     }
 }
 
@@ -348,6 +350,131 @@ fn xlsx() -> Vec<u8> {
             ("xl/printerSettings/printerSettings1.bin".into(), printer),
             ("docProps/core.xml".into(), CORE.as_bytes().to_vec()),
             ("docProps/app.xml".into(), APP_EXCEL.as_bytes().to_vec()),
+        ],
+        true,
+    )
+}
+
+/// A note on A1 and a threaded comment with a reply on B2, as Excel writes
+/// them: the threaded comment also has a stand-in note for older versions.
+fn comments_xlsx() -> Vec<u8> {
+    const TC: &str = "http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments";
+    const MS: &str = "http://schemas.microsoft.com/office/2017/10/relationships";
+    let types = [
+        override_(
+            "/xl/workbook.xml",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
+        ),
+        override_(
+            "/xl/worksheets/sheet1.xml",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml",
+        ),
+        override_(
+            "/xl/comments1.xml",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml",
+        ),
+        override_(
+            "/xl/threadedComments/threadedComment1.xml",
+            "application/vnd.ms-excel.threadedcomments+xml",
+        ),
+        override_(
+            "/xl/persons/person.xml",
+            "application/vnd.ms-excel.person+xml",
+        ),
+        default_(
+            "vml",
+            "application/vnd.openxmlformats-officedocument.vmlDrawing",
+        ),
+    ];
+    let workbook = format!(
+        r#"{DECLARATION}<workbook xmlns="{S}" xmlns:r="{DOC_RELS}"><sheets><sheet name="Budget" sheetId="1" r:id="rId1"/></sheets></workbook>"#
+    );
+    let sheet = format!(
+        r#"{DECLARATION}<worksheet xmlns="{S}" xmlns:r="{DOC_RELS}"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Travel</t></is></c><c r="B1"><v>1250</v></c></row><row r="2"><c r="A2" t="inlineStr"><is><t>Hotel</t></is></c><c r="B2"><v>980</v></c></row></sheetData><pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/><legacyDrawing r:id="rId2"/></worksheet>"#
+    );
+    let notes = format!(
+        r#"{DECLARATION}<comments xmlns="{S}"><authors><author>Jane Doe</author><author>tc={{8D2C6F1A-0E4B-4F7A-9D3C-5B1E2A7F9C41}}</author></authors><commentList><comment ref="A1" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><rFont val="Tahoma"/></rPr><t>Jane Doe:</t></r><r><rPr><sz val="9"/><rFont val="Tahoma"/></rPr><t xml:space="preserve">
+Booked through Acme Travel.</t></r></text></comment><comment ref="B2" authorId="1" shapeId="0"><text><t xml:space="preserve">[Threaded comment]
+
+Your version of Excel allows you to read this threaded comment; however, any edits to it will get removed if the file is opened in a newer version of Excel. Learn more: https://go.microsoft.com/fwlink/?linkid=870924
+
+Comment:
+    Is this the final price?
+Reply:
+    Yes, confirmed with the hotel.</t></text></comment></commentList></comments>"#
+    );
+    let threaded = format!(
+        r#"{DECLARATION}<ThreadedComments xmlns="{TC}" xmlns:x="{S}"><threadedComment ref="B2" dT="2026-03-14T09:30:12.34" personId="{{5F1C2E9A-0B7D-4C3E-9A61-2D8F4B7E1C03}}" id="{{8D2C6F1A-0E4B-4F7A-9D3C-5B1E2A7F9C41}}"><text>Is this the final price?</text></threadedComment><threadedComment ref="B2" dT="2026-03-14T10:02:45.67" personId="{{6A2D3F0B-1C8E-4D4F-8B72-3E9A5C8F2D14}}" id="{{9E3D7A2B-1F5C-4A8B-8E4D-6C2F3B8A0D52}}" parentId="{{8D2C6F1A-0E4B-4F7A-9D3C-5B1E2A7F9C41}}"><text>Yes, confirmed with the hotel.</text></threadedComment></ThreadedComments>"#
+    );
+    let persons = format!(
+        r#"{DECLARATION}<personList xmlns="{TC}" xmlns:x="{S}"><person displayName="Jane Doe" id="{{5F1C2E9A-0B7D-4C3E-9A61-2D8F4B7E1C03}}" userId="jane.doe@example.com" providerId="AD"/><person displayName="John Roe" id="{{6A2D3F0B-1C8E-4D4F-8B72-3E9A5C8F2D14}}" userId="S::john.roe@example.com::7c1e" providerId="AD"/></personList>"#
+    );
+    let note_shape = |id: u32, row: u32, column: u32| {
+        format!(
+            r##"<v:shape id="_x0000_s{id}" type="#_x0000_t202" style="position:absolute;margin-left:59.25pt;margin-top:1.5pt;width:108pt;height:59.25pt;z-index:1;visibility:hidden" fillcolor="#ffffe1" o:insetmode="auto"><v:fill color2="#ffffe1"/><v:shadow on="t" color="black" obscured="t"/><v:path o:connecttype="none"/><v:textbox style="mso-direction-alt:auto"><div style="text-align:left"></div></v:textbox><x:ClientData ObjectType="Note"><x:MoveWithCells/><x:SizeWithCells/><x:Anchor>1, 15, 0, 2, 3, 15, 4, 4</x:Anchor><x:AutoFill>False</x:AutoFill><x:Row>{row}</x:Row><x:Column>{column}</x:Column></x:ClientData></v:shape>"##
+        )
+    };
+    let vml = format!(
+        r##"<xml xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><o:shapelayout v:ext="edit"><o:idmap v:ext="edit" data="1"/></o:shapelayout><v:shapetype id="_x0000_t202" coordsize="21600,21600" o:spt="202" path="m,l,21600r21600,l21600,xe"><v:stroke joinstyle="miter"/><v:path gradientshapeok="t" o:connecttype="rect"/></v:shapetype>{}{}</xml>"##,
+        note_shape(1025, 0, 0),
+        note_shape(1026, 1, 1)
+    );
+    zip(
+        &[
+            ("[Content_Types].xml".into(), content_types(&types)),
+            (
+                "_rels/.rels".into(),
+                rels(&[rel(
+                    "rId1",
+                    &format!("{DOC_RELS}/officeDocument"),
+                    "xl/workbook.xml",
+                    false,
+                )]),
+            ),
+            ("xl/workbook.xml".into(), workbook.into_bytes()),
+            (
+                "xl/_rels/workbook.xml.rels".into(),
+                rels(&[
+                    rel(
+                        "rId1",
+                        &format!("{DOC_RELS}/worksheet"),
+                        "worksheets/sheet1.xml",
+                        false,
+                    ),
+                    rel("rId2", &format!("{MS}/person"), "persons/person.xml", false),
+                ]),
+            ),
+            ("xl/worksheets/sheet1.xml".into(), sheet.into_bytes()),
+            (
+                "xl/worksheets/_rels/sheet1.xml.rels".into(),
+                rels(&[
+                    rel(
+                        "rId1",
+                        &format!("{DOC_RELS}/comments"),
+                        "../comments1.xml",
+                        false,
+                    ),
+                    rel(
+                        "rId2",
+                        &format!("{DOC_RELS}/vmlDrawing"),
+                        "../drawings/vmlDrawing1.vml",
+                        false,
+                    ),
+                    rel(
+                        "rId3",
+                        &format!("{MS}/threadedComment"),
+                        "../threadedComments/threadedComment1.xml",
+                        false,
+                    ),
+                ]),
+            ),
+            ("xl/comments1.xml".into(), notes.into_bytes()),
+            ("xl/drawings/vmlDrawing1.vml".into(), vml.into_bytes()),
+            (
+                "xl/threadedComments/threadedComment1.xml".into(),
+                threaded.into_bytes(),
+            ),
+            ("xl/persons/person.xml".into(), persons.into_bytes()),
         ],
         true,
     )
