@@ -21,8 +21,9 @@ fmt-check:
 lint:
     cargo clippy --workspace --all-targets --locked -- -D warnings
 
-# Run all tests; like CI, fails if exiftool isn't installed
-test $METASCRUB_REQUIRE_EXIFTOOL="1":
+# Run all tests; like CI, fails if exiftool isn't installed or the
+# temporary folder doesn't allow extended attributes
+test $METASCRUB_REQUIRE_EXIFTOOL="1" $METASCRUB_REQUIRE_FS_ATTRIBUTES="1":
     cargo test --workspace --locked
 
 # Check dependency licenses, advisories and sources (needs cargo-deny)
@@ -34,7 +35,7 @@ fixtures $METASCRUB_BLESS="1":
     cargo run -q -p make-fixtures
     cargo test -q -p metascrub-cli --test golden
 
-# Fuzz a target (inspect, jpeg, png, webp, clean), seeded with the fixtures; needs nightly and cargo-fuzz, Linux or macOS
+# Fuzz a target (inspect, jpeg, png, webp, clean, attributes), seeded with the fixtures; needs nightly and cargo-fuzz, Linux or macOS
 [working-directory: 'fuzz']
 fuzz target seconds="180":
     mkdir -p corpus/{{target}}

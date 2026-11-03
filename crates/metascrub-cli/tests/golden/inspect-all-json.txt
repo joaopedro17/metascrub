@@ -3989,6 +3989,7 @@ exit: 1
     "failed": 3,
     "inspected": 32,
     "remaining_metadata": 0,
+    "removed": 0,
     "skipped": 4,
     "verified": 0
   },

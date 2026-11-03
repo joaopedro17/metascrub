@@ -46,8 +46,17 @@ fn main() -> ExitCode {
             dry_run,
             accept_changes,
             reject_changes,
+            remove_junk,
+            rename,
             keep,
         } => {
+            if remove_junk && output.is_none() && !in_place {
+                usage_error(
+                    "--remove-junk needs --in-place (to delete junk files) or --output \
+                     (to leave them out of the copy). Without them, MetaScrub never \
+                     changes your folders.",
+                );
+            }
             let tracked_changes = match (accept_changes, reject_changes) {
                 (true, _) => TrackedChanges::Accept,
                 (_, true) => TrackedChanges::Reject,
@@ -65,6 +74,8 @@ fn main() -> ExitCode {
                     output,
                     dry_run,
                     recursive,
+                    remove_junk,
+                    rename,
                     ..Request::new(CoreCommand::Clean, paths)
                 },
             )
@@ -135,16 +146,17 @@ fn print(report: &RunReport, settings: &Settings, json: bool) -> io::Result<()> 
 
 fn reject_folders(paths: &[PathBuf]) {
     if let Some(folder) = paths.iter().find(|p| p.is_dir()) {
-        Cli::command()
-            .error(
-                ErrorKind::InvalidValue,
-                format!(
-                    "'{}' is a folder. Use -r to process folders and everything inside them.",
-                    render::messages::path(folder)
-                ),
-            )
-            .exit();
+        usage_error(&format!(
+            "'{}' is a folder. Use -r to process folders and everything inside them.",
+            render::messages::path(folder)
+        ));
     }
+}
+
+fn usage_error(message: &str) -> ! {
+    Cli::command()
+        .error(ErrorKind::InvalidValue, message)
+        .exit()
 }
 
 /// The first Ctrl+C lets the files in progress finish, so no output is left

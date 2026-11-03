@@ -27,12 +27,18 @@ pub fn finding(kind: FindingKind) -> &'static str {
         EarlierVersions => "Earlier versions of the document (may include removed text)",
         FormData => "Values typed into form fields",
         HiddenContent => "Hidden content (hidden text, sheets or slides, or speaker notes)",
+        JunkFile => {
+            "A junk file left by the operating system (may hold thumbnails, file names \
+             or download addresses)"
+        }
         Description => "A title, caption or keywords",
         Organization => "A company or organization name",
         CustomProperty => "A custom property (extra details added by a program or person)",
+        FileAttribute => "Extra data the file system stores with the file",
         DeviceModel => "Make and model of a device (camera, phone, printer)",
         Software => "Software or app used",
         Timestamp => "Date and time",
+        FileName => "The file name (shows when it was made, or which phone or app made it)",
         DocumentId => "A unique ID that can link copies of this file",
         UnknownMetadata => "Metadata MetaScrub doesn't recognize",
         ColorProfile => "Color profile",
@@ -67,6 +73,7 @@ pub fn disposition(disposition: Disposition, tense: Tense) -> &'static str {
             "kept: a standard profile that reveals nothing"
         }
         (Disposition::Keep(KeepReason::UserRequested), _) => "kept: you asked to keep it",
+        (Disposition::Keep(KeepReason::NotWritten), _) => "kept: no copy of this file is written",
         (Disposition::Warn, _) => "can't be fixed automatically",
         (Disposition::Blocks(_), _) => "needs your decision",
     }
@@ -76,6 +83,14 @@ pub const COPIED: &str = "copied without cleaning: MetaScrub can't read this typ
                           so it may still contain hidden information";
 pub const WOULD_COPY: &str = "would be copied without cleaning: MetaScrub can't read this type \
                               of file, so it may still contain hidden information";
+pub const ATTRIBUTES_HINT: &str = "With --in-place or --output, MetaScrub removes what the \
+                                   file system stores with it, even though it can't read the file.";
+pub const JUNK_HINT: &str = "Junk files can be removed with --remove-junk, together with \
+                             --in-place or --output.";
+pub const NAME_HINT: &str = "File names that show a date, phone or app can be replaced with \
+                             neutral ones (like image-001.jpg) with --rename.";
+pub const REMOVED: &str = "removed: a junk file left by the operating system";
+pub const WOULD_REMOVE: &str = "would be removed: a junk file left by the operating system";
 pub const VERIFIED: &str = "no hidden metadata left";
 pub const REMAINING: &str = "still contains hidden metadata";
 pub const LIMITATIONS: &str = "MetaScrub removes hidden metadata only. It can't remove what's \
@@ -189,6 +204,7 @@ pub fn format(format: FormatId) -> &'static str {
         FormatId::Pptx => "PowerPoint presentation",
         FormatId::Zip => "ZIP archive",
         FormatId::Compound => "old-format or password-protected Office file",
+        FormatId::Folder => "folder",
         _ => "file",
     }
 }

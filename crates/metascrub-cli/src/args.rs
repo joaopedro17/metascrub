@@ -66,6 +66,17 @@ pub enum Command {
         #[arg(long)]
         reject_changes: bool,
 
+        /// Delete junk files the operating system leaves in folders
+        /// (.DS_Store, Thumbs.db, desktop.ini, ._ files, __MACOSX) with
+        /// --in-place, or leave them out of the --output folder.
+        #[arg(long)]
+        remove_junk: bool,
+
+        /// Give files whose names show a date, phone or app (IMG_20261102_143512.jpg,
+        /// WhatsApp Image …) a neutral name such as image-001.jpg.
+        #[arg(long)]
+        rename: bool,
+
         #[command(flatten)]
         keep: KeepArgs,
     },

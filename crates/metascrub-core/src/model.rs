@@ -42,14 +42,24 @@ pub enum FindingKind {
     /// Values typed into form fields.
     FormData,
     HiddenContent,
+    /// A file the operating system leaves in folders (`.DS_Store`,
+    /// `Thumbs.db`, …), which can hold thumbnails, file names or download
+    /// addresses.
+    JunkFile,
     Description,
     /// A company or organization (Office "Company").
     Organization,
     /// Extra properties any program or person can add (Office custom properties).
     CustomProperty,
+    /// Data the file system keeps next to the file (extended attributes,
+    /// alternate data streams) that MetaScrub doesn't recognize.
+    FileAttribute,
     DeviceModel,
     Software,
     Timestamp,
+    /// A file name that shows when or with what the file was made
+    /// (`IMG_20261102_143512.jpg`, `WhatsApp Image …`).
+    FileName,
     DocumentId,
     UnknownMetadata,
     ColorProfile,
@@ -76,14 +86,17 @@ impl FindingKind {
             | Self::Macros
             | Self::EarlierVersions
             | Self::FormData
-            | Self::HiddenContent => Risk::High,
+            | Self::HiddenContent
+            | Self::JunkFile => Risk::High,
 
             Self::Description
             | Self::Organization
             | Self::CustomProperty
+            | Self::FileAttribute
             | Self::DeviceModel
             | Self::Software
             | Self::Timestamp
+            | Self::FileName
             | Self::DocumentId
             | Self::UnknownMetadata => Risk::Medium,
 
@@ -183,6 +196,8 @@ pub enum KeepReason {
     StandardColorProfile,
     /// The user asked to keep it (`--keep …`).
     UserRequested,
+    /// Nothing is written for this file, so the original keeps it.
+    NotWritten,
 }
 
 /// A choice only the user can make, because every option changes the content.
@@ -247,6 +262,9 @@ pub enum FormatId {
     /// An OLE compound file: an old-format Office file (`.doc`, `.xls`,
     /// `.ppt`) or a password-protected Office file.
     Compound,
+    /// Not a file format: a folder, of which only what the file system
+    /// stores with it is inspected.
+    Folder,
 }
 
 /// What happened to one file.
@@ -267,6 +285,11 @@ pub enum Outcome {
     Copied,
     /// `clean --dry-run`: the file would be copied; nothing was written.
     WouldCopy,
+    /// A junk file deleted (`--in-place`) or left out of the output folder
+    /// (`--remove-junk`).
+    Removed,
+    /// `clean --dry-run`: the junk file would be removed.
+    WouldRemove,
     Skipped(SkipReason),
     /// Not cleaned until the user decides (counts as a failure).
     NeedsDecision(Decision),
@@ -335,9 +358,15 @@ pub struct RunReport {
 }
 
 impl RunReport {
+    /// Folders are listed for what the file system stores with them, but
+    /// they aren't files: they count only when they fail or fail `verify`.
     pub fn summary(&self) -> Summary {
         let mut summary = Summary::default();
         for file in &self.files {
+            let problem = file.outcome.is_failure() || file.outcome == Outcome::RemainingMetadata;
+            if file.format == Some(FormatId::Folder) && !problem {
+                continue;
+            }
             match &file.outcome {
                 Outcome::Failed(f) if f.kind == FailureKind::Cancelled => summary.cancelled += 1,
                 Outcome::Inspected => summary.inspected += 1,
@@ -345,6 +374,7 @@ impl RunReport {
                 Outcome::Verified => summary.verified += 1,
                 Outcome::RemainingMetadata => summary.remaining_metadata += 1,
                 Outcome::Copied | Outcome::WouldCopy => summary.copied += 1,
+                Outcome::Removed | Outcome::WouldRemove => summary.removed += 1,
                 Outcome::Skipped(_) => summary.skipped += 1,
                 Outcome::NeedsDecision(_) | Outcome::Failed(_) => summary.failed += 1,
             }
@@ -361,10 +391,27 @@ pub struct Summary {
     pub verified: usize,
     pub remaining_metadata: usize,
     pub copied: usize,
+    /// Junk files removed.
+    pub removed: usize,
     pub skipped: usize,
     pub failed: usize,
     /// Not processed because the run was stopped; not counted in `failed`.
     pub cancelled: usize,
+}
+
+impl Summary {
+    /// Every file counted.
+    pub const fn total(&self) -> usize {
+        self.inspected
+            + self.cleaned
+            + self.verified
+            + self.remaining_metadata
+            + self.copied
+            + self.removed
+            + self.skipped
+            + self.failed
+            + self.cancelled
+    }
 }
 
 #[cfg(test)]
@@ -461,6 +508,32 @@ mod tests {
                 ..Summary::default()
             }
         );
+    }
+
+    #[test]
+    fn folders_count_only_with_problems() {
+        let folder = |outcome| FileReport {
+            path: PathBuf::from("photos"),
+            format: Some(FormatId::Folder),
+            findings: Vec::new(),
+            outcome,
+            output: None,
+        };
+        let report = RunReport {
+            files: vec![
+                folder(Outcome::Cleaned),
+                folder(Outcome::Removed),
+                folder(Outcome::RemainingMetadata),
+                folder(Outcome::Failed(Failure {
+                    kind: FailureKind::Io,
+                    detail: String::new(),
+                })),
+            ],
+        };
+        let summary = report.summary();
+        assert_eq!(summary.remaining_metadata, 1);
+        assert_eq!(summary.failed, 1);
+        assert_eq!(summary.total(), 2);
     }
 
     #[test]

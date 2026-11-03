@@ -14,7 +14,7 @@ pub fn exit_code(report: &RunReport) -> ExitCode {
     let summary = report.summary();
     if summary.cancelled > 0 {
         ExitCode::from(INTERRUPTED)
-    } else if summary.failed > 0 && summary.failed == report.files.len() {
+    } else if summary.failed > 0 && summary.failed == summary.total() {
         ExitCode::from(ALL_FAILED)
     } else if summary.failed > 0 {
         ExitCode::from(SOME_FAILED)
