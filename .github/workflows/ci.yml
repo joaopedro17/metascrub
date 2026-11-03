@@ -89,6 +89,10 @@ jobs:
             echo "::error::Tag $GITHUB_REF_NAME points to a commit that isn't on main."
             exit 1
           fi
+          if ! grep -q "^## $version " CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## $version — date' section."
+            exit 1
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
   licenses:
@@ -168,7 +172,7 @@ jobs:
           path: "${{ env.ARCHIVE }}"
       - name: Package
         run: |
-          cp README.md LICENSE-MIT LICENSE-APACHE "$ARCHIVE"/
+          cp README.md CHANGELOG.md LICENSE-MIT LICENSE-APACHE "$ARCHIVE"/
           if [[ "${{ matrix.target }}" == *windows* ]]; then
             cp "target/${{ matrix.target }}/release/metascrub.exe" "$ARCHIVE"/
             7z a "$ARCHIVE.zip" "$ARCHIVE" > /dev/null
