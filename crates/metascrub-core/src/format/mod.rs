@@ -3,14 +3,18 @@
 mod archive;
 mod bytes;
 mod exif;
+mod gzip;
 mod icc;
 mod iptc;
 mod jpeg;
 mod office;
 mod pdf;
 mod png;
+mod tar_archive;
+mod unpack;
 mod webp;
 mod xmp;
+mod zip_archive;
 
 use std::cell::Cell;
 use std::fmt;
@@ -62,17 +66,28 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
         Some(FormatId::Webp)
     } else if head.starts_with(b"%PDF-") {
         Some(FormatId::Pdf)
+    } else if head.starts_with(&[0x1F, 0x8B, 0x08]) {
+        Some(FormatId::Gzip)
     } else {
         None
     }
 }
 
 /// Like [`sniff`], but looks inside ZIP files to recognize Word, Excel and
-/// PowerPoint documents. Leaves `input` at the start.
+/// PowerPoint documents (and apps and e-books, which aren't archives), and
+/// further into the file for TAR archives. Leaves `input` at the start.
 pub fn detect(head: &[u8], input: &mut dyn ReadSeek) -> Result<Option<FormatId>, FormatError> {
     let format = match sniff(head) {
-        Some(FormatId::Zip) => Some(office::identify(input)?),
-        other => other,
+        Some(FormatId::Zip) => match office::identify(input)? {
+            FormatId::Zip if zip_archive::is_package(input)? => None,
+            format => Some(format),
+        },
+        Some(other) => Some(other),
+        None => {
+            let mut block = Vec::with_capacity(512);
+            (&mut *input).take(512).read_to_end(&mut block)?;
+            tar_archive::is_tar(&block).then_some(FormatId::Tar)
+        }
     };
     input.seek(SeekFrom::Start(0))?;
     Ok(format)
@@ -86,7 +101,10 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         FormatId::Webp => Some(&webp::Webp),
         FormatId::Docx | FormatId::Xlsx | FormatId::Pptx => Some(&office::Office),
         FormatId::Pdf => Some(&pdf::Pdf),
-        FormatId::Zip | FormatId::Compound | FormatId::Folder => None,
+        FormatId::Zip => Some(&zip_archive::Zip),
+        FormatId::Tar => Some(&tar_archive::Tar),
+        FormatId::Gzip => Some(&gzip::Gzip),
+        FormatId::Compound | FormatId::Folder => None,
     }
 }
 
@@ -101,6 +119,8 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::Pptx => &["pptx", "pptm", "potx", "potm", "ppsx", "ppsm", "ppam"],
         FormatId::Pdf => &["pdf"],
         FormatId::Zip => &["zip"],
+        FormatId::Tar => &["tar"],
+        FormatId::Gzip => &["gz", "tgz"],
         // Password-protected Office files keep their usual extension.
         FormatId::Compound => &[
             "doc", "dot", "xls", "xlt", "ppt", "pot", "pps", "docx", "docm", "xlsx", "xlsm",

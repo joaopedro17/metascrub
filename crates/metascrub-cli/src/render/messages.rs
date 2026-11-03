@@ -25,6 +25,11 @@ pub fn finding(kind: FindingKind) -> &'static str {
         EmbeddedFile => "Another file embedded inside it",
         Macros => "Macros or scripts (programs that can run when the file is opened)",
         EarlierVersions => "Earlier versions of the document (may include removed text)",
+        UnreadFile => {
+            "A file inside that MetaScrub can't read, kept as it is (it may still contain \
+             hidden information)"
+        }
+        SymbolicLink => "A shortcut (symbolic link) inside, kept and not followed",
         FormData => "Values typed into form fields",
         HiddenContent => "Hidden content (hidden text, sheets or slides, or speaker notes)",
         JunkFile => {
@@ -203,6 +208,8 @@ pub fn format(format: FormatId) -> &'static str {
         FormatId::Xlsx => "Excel workbook",
         FormatId::Pptx => "PowerPoint presentation",
         FormatId::Zip => "ZIP archive",
+        FormatId::Tar => "TAR archive",
+        FormatId::Gzip => "gzip-compressed file",
         FormatId::Compound => "old-format or password-protected Office file",
         FormatId::Folder => "folder",
         _ => "file",

@@ -1,5 +1,6 @@
 //! ZIP containers: reading with limits, and writing in a fixed, neutral form.
-//! Office files are ZIPs; archives (v0.6) will reuse this.
+//! Office files are ZIPs read whole into memory; ZIP archives, which can be
+//! much larger, are read one file at a time instead (`zip_archive`).
 
 use std::collections::HashSet;
 use std::io::{Cursor, Read, Write};
@@ -96,16 +97,14 @@ pub(crate) fn read(data: &[u8]) -> Result<Archive, FormatError> {
 }
 
 /// Entry names must be relative paths that stay inside the archive.
-fn check_name(name: &str) -> Result<(), FormatError> {
+pub(super) fn check_name(name: &str) -> Result<(), FormatError> {
     let unsafe_name = name.is_empty()
         || name.starts_with('/')
         || name.contains('\\')
         || name.contains(':')
         || name.split('/').any(|part| part == "..");
     if unsafe_name {
-        return Err(FormatError::malformed(format!(
-            "unsafe ZIP entry name {name}"
-        )));
+        return Err(FormatError::malformed(format!("unsafe entry name {name}")));
     }
     Ok(())
 }
