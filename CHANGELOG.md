@@ -2,9 +2,9 @@
 
 What changed in each release of MetaScrub, newest first. From 1.0, versions follow [Semantic Versioning](https://semver.org); the [README](README.md#stability) says what that promises.
 
-## Unreleased
+## 1.0.0 — 2026-11-03
 
-Everything since 0.3.0. It will be released as 1.0.0.
+Everything since 0.3.0. From this release, the command-line options, exit codes and JSON report are stable.
 
 ### Added
 

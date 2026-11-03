@@ -26,7 +26,7 @@ The binaries aren't signed with an Apple or Microsoft certificate, so the first 
 Or build it with Rust:
 
 ```bash
-cargo install --git https://github.com/joaopedro17/metascrub --tag v0.3.0 --locked metascrub-cli
+cargo install --git https://github.com/joaopedro17/metascrub --tag v1.0.0 --locked metascrub-cli
 ```
 
 ### Tab completion and manual pages
