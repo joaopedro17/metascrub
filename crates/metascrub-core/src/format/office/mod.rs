@@ -3,6 +3,7 @@
 //! from the package root and keeps only the parts that make up the
 //! document; everything else is removed.
 
+mod comments;
 mod package;
 mod props;
 mod xml;
@@ -35,6 +36,11 @@ const P: &[&str] = &[
     "http://purl.oclc.org/ooxml/presentationml/main",
 ];
 const P14: &[&str] = &["http://schemas.microsoft.com/office/powerpoint/2010/main"];
+const S: &[&str] = &[
+    "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+    "http://purl.oclc.org/ooxml/spreadsheetml/main",
+];
+const P188: &[&str] = &["http://schemas.microsoft.com/office/powerpoint/2018/8/main"];
 
 /// Word elements that record tracked changes.
 const TRACKED_CHANGES: &[&str] = &[
@@ -148,6 +154,8 @@ enum Role {
     Keep,
     Image,
     Remove(Removed),
+    /// Depends on the format and on `--keep comments`.
+    Comments,
     Refuse(&'static str),
 }
 
@@ -161,6 +169,7 @@ enum Removed {
     PrinterSettings,
     People,
     SensitivityLabels,
+    Comments,
     /// Only reachable from another removed part.
     Dependent,
 }
@@ -246,8 +255,8 @@ fn role(kind: &str) -> Role {
         "printerSettings" => Role::Remove(Removed::PrinterSettings),
         "people" => Role::Remove(Removed::People),
         "classificationlabels" => Role::Remove(Removed::SensitivityLabels),
-        "comments" | "commentsExtended" | "commentsIds" | "commentsExtensible"
-        | "threadedComment" | "person" | "commentAuthors" | "authors" => Role::Refuse("comments"),
+        "comments" | "commentsExtended" | "commentsIds" | "commentsExtensible" => Role::Comments,
+        "threadedComment" | "person" | "commentAuthors" | "authors" => Role::Comments,
         "revisionHeaders" | "revisionLog" | "usernames" => Role::Refuse("tracked changes"),
         "vbaProject" | "wordVbaData" | "keyMapCustomizations" | "vbaProjectSignature" => {
             Role::Refuse("macros")
@@ -348,7 +357,7 @@ fn analyze(data: &[u8], options: &Options) -> Result<Analysis, FormatError> {
             .data,
     )?;
 
-    let walk = walk(&package)?;
+    let walk = walk(&package, &types, options)?;
     findings.extend(walk.findings.iter().cloned());
     for (name, removed) in &walk.removed {
         if let Some(entry) = package.get(name) {
@@ -394,7 +403,7 @@ fn analyze(data: &[u8], options: &Options) -> Result<Analysis, FormatError> {
                 .unwrap_or_default()
                 .to_ascii_lowercase();
             let removed_ids = walk.removed_ids.get(&name);
-            match rewrite(entry, &content_type, removed_ids, &mut findings)? {
+            match rewrite(entry, &content_type, removed_ids, options, &mut findings)? {
                 Some(data) => data,
                 None => entry.data.clone(),
             }
@@ -449,12 +458,27 @@ fn analyze(data: &[u8], options: &Options) -> Result<Analysis, FormatError> {
 
 /// Follows the relationships from the package root, deciding for each part
 /// whether it stays. Refuses documents with parts not handled yet.
-fn walk(package: &Package<'_>) -> Result<Walk, FormatError> {
+fn walk(
+    package: &Package<'_>,
+    types: &ContentTypes,
+    options: &Options,
+) -> Result<Walk, FormatError> {
     let mut walk = Walk::default();
     let mut queue = VecDeque::from([String::new()]);
     while let Some(source) = queue.pop_front() {
         let mut kept_relationships = Vec::new();
-        for relationship in package.relationships(&source)? {
+        let relationships = package.relationships(&source)?;
+        let drops_notes = !options.keep_comments
+            && relationships.iter().any(|r| {
+                !r.external
+                    && r.short_kind() == "comments"
+                    && package::resolve(&source, &r.target)
+                        .and_then(|t| types.of(&t))
+                        .is_some_and(|ct| {
+                            ct.to_ascii_lowercase().contains("spreadsheetml.comments")
+                        })
+            });
+        for relationship in relationships {
             let kind = relationship.short_kind();
             if relationship.external {
                 match kind {
@@ -482,9 +506,16 @@ fn walk(package: &Package<'_>) -> Result<Walk, FormatError> {
                 continue;
             };
             let target_name = target.to_lowercase();
-            match role(kind) {
+            let role = match role(kind) {
+                Role::Comments => comment_role(types.of(&target), options),
+                Role::Keep if kind == "vmlDrawing" && drops_notes => {
+                    notes_layer_role(package.get(&target).map(|e| e.data.as_slice()))
+                }
+                other => other,
+            };
+            match role {
                 Role::Keep | Role::Image => {
-                    if role(kind) == Role::Image {
+                    if role == Role::Image {
                         walk.images.insert(target_name.clone());
                     }
                     kept_relationships.push(relationship);
@@ -497,6 +528,7 @@ fn walk(package: &Package<'_>) -> Result<Walk, FormatError> {
                     removed_id(&mut walk, &source, &relationship.id);
                     remove(&mut walk, package, &target, removed)?;
                 }
+                Role::Comments => return Err(refuse("comments")),
                 Role::Refuse(what) => {
                     return Err(if what == "unrecognized parts" {
                         FormatError::Unsupported(format!("Office part type {}", relationship.kind))
@@ -510,6 +542,30 @@ fn walk(package: &Package<'_>) -> Result<Walk, FormatError> {
             .insert(source.to_lowercase(), kept_relationships);
     }
     Ok(walk)
+}
+
+/// Comment parts are recognized by content type: Word, Excel and
+/// PowerPoint all call their relationship `comments`.
+fn comment_role(content_type: Option<&str>, options: &Options) -> Role {
+    match (
+        content_type.is_some_and(comments::is_comment_part),
+        options.keep_comments,
+    ) {
+        (false, _) => Role::Refuse("comments"),
+        (true, true) => Role::Keep,
+        (true, false) => Role::Remove(Removed::Comments),
+    }
+}
+
+/// Excel shows notes through a drawing layer. When the notes go, a layer
+/// holding only notes goes too; one with form controls as well can't be
+/// split safely.
+fn notes_layer_role(data: Option<&[u8]>) -> Role {
+    match data.and_then(comments::vml_shapes) {
+        Some(shapes) if shapes.notes == 0 => Role::Keep,
+        Some(shapes) if shapes.others == 0 => Role::Remove(Removed::Dependent),
+        _ => Role::Refuse("notes next to form controls"),
+    }
 }
 
 fn refuse(what: &str) -> FormatError {
@@ -561,6 +617,7 @@ fn removed_findings(name: &str, data: &[u8], removed: Removed) -> Vec<Finding> {
         Removed::App => props::app(data, &location),
         Removed::Custom => props::custom(data, &location),
         Removed::People => props::people(data, &location),
+        Removed::Comments => comments::findings(data, &location),
         Removed::Thumbnail => whole(FindingKind::Thumbnail),
         Removed::CustomXml | Removed::SensitivityLabels => whole(FindingKind::CustomProperty),
         Removed::PrinterSettings => whole(FindingKind::DeviceModel),
@@ -574,12 +631,14 @@ fn rewrite(
     entry: &Entry,
     content_type: &str,
     removed_ids: Option<&HashSet<String>>,
+    options: &Options,
     findings: &mut Vec<Finding>,
 ) -> Result<Option<Vec<u8>>, FormatError> {
     let word = content_type.contains("wordprocessingml");
     let excel = content_type.contains("spreadsheetml");
     let powerpoint = content_type.contains("presentationml");
-    if !(word || excel || powerpoint) || !content_type.ends_with("xml") {
+    let comment_part = comments::is_comment_part(content_type);
+    if !(word || excel || powerpoint || comment_part) || !content_type.ends_with("xml") {
         return Ok(None);
     }
     let mut nodes = xml::parse(&entry.data)?;
@@ -597,37 +656,33 @@ fn rewrite(
         }
     }
 
-    let mut removed_attributes = 0;
-    let mut revision_ids = 0;
-    xml::for_each_element(&mut nodes, &mut |e| {
-        if let Some(ids) = removed_ids {
-            removed_attributes +=
-                e.remove_attributes(|ns, _, value| R.contains(&ns) && ids.contains(value));
-        }
-        if word {
-            revision_ids +=
-                e.remove_attributes(|ns, local, _| W.contains(&ns) && local.starts_with("rsid"));
-        }
-    });
-    changed |= removed_attributes + revision_ids > 0;
-    if revision_ids > 0 {
-        found.push(
-            Finding::new(
-                FindingKind::DocumentId,
-                location.child("rsid"),
-                Disposition::Remove,
-            )
-            .with_value(Value::Integer(revision_ids as i64)),
-        );
+    if comment_part && options.keep_comments {
+        changed |= comments::anonymize(&mut nodes, &location, &mut found);
     }
 
+    let points_to_removed = |e: &Element| {
+        removed_ids.is_some_and(|ids| e.attribute(R, "id").is_some_and(|id| ids.contains(id)))
+    };
     let removed = xml::remove_elements(&mut nodes, &mut |e: &Element| {
-        (word
-            && (e.is(W, "rsids")
-                || e.is(W, "attachedTemplate")
-                || e.is(W, "docVars")
-                || e.is(W14, "docId")
-                || e.is(W15, "docId")))
+        // Without the comments, their markers point nowhere: in Word's
+        // text, Excel's link to the notes layer, PowerPoint's link to the
+        // slide's modern comments.
+        (excel && e.is(S, "legacyDrawing") && points_to_removed(e))
+            || (powerpoint
+                && !options.keep_comments
+                && e.is(P, "ext")
+                && e.find(P188, "commentRel").is_some())
+            || (word
+                && !options.keep_comments
+                && (e.is(W, "commentRangeStart")
+                    || e.is(W, "commentRangeEnd")
+                    || e.is(W, "commentReference")))
+            || (word
+                && (e.is(W, "rsids")
+                    || e.is(W, "attachedTemplate")
+                    || e.is(W, "docVars")
+                    || e.is(W14, "docId")
+                    || e.is(W15, "docId")))
             || (excel
                 && ((e.is(MC, "AlternateContent") && e.find(X15AC, "absPath").is_some())
                     || e.is(XR, "revisionPtr")))
@@ -678,9 +733,34 @@ fn rewrite(
                     Value::Text(id.to_owned()),
                 )
             }
-            // `attachedTemplate` was reported with its relationship.
+            // `attachedTemplate` was reported with its relationship, comment
+            // markers and links with the comments.
             _ => continue,
         });
+    }
+
+    let mut removed_attributes = 0;
+    let mut revision_ids = 0;
+    xml::for_each_element(&mut nodes, &mut |e| {
+        if let Some(ids) = removed_ids {
+            removed_attributes +=
+                e.remove_attributes(|ns, _, value| R.contains(&ns) && ids.contains(value));
+        }
+        if word {
+            revision_ids +=
+                e.remove_attributes(|ns, local, _| W.contains(&ns) && local.starts_with("rsid"));
+        }
+    });
+    changed |= removed_attributes + revision_ids > 0;
+    if revision_ids > 0 {
+        found.push(
+            Finding::new(
+                FindingKind::DocumentId,
+                location.child("rsid"),
+                Disposition::Remove,
+            )
+            .with_value(Value::Integer(revision_ids as i64)),
+        );
     }
 
     findings.extend(found);
@@ -696,6 +776,8 @@ mod tests {
     use super::*;
     use crate::format::archive::tests::zip_of;
     use crate::format::inspect_bytes;
+    use crate::model::KeepReason;
+    use comments::W16CEX;
     use std::io::Cursor;
 
     const RELS: &str = "http://schemas.openxmlformats.org/package/2006/relationships";
@@ -1028,6 +1110,328 @@ mod tests {
             .find(|f| f.kind == FindingKind::DocumentId)
             .unwrap();
         assert_eq!(id.value, Some(Value::Text("2731249867".into())));
+    }
+
+    /// A minimal Word document with one comment, its markers and its
+    /// extended parts.
+    fn commented_docx() -> Vec<u8> {
+        let w = W[0];
+        let types = format!(
+            r#"<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="{WORD_MAIN}"/><Override PartName="/word/comments.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"/><Override PartName="/word/commentsExtensible.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.commentsExtensible+xml"/></Types>"#
+        );
+        let document = format!(
+            r#"<w:document xmlns:w="{w}"><w:body><w:p><w:commentRangeStart w:id="0"/><w:r><w:t>Draft</w:t></w:r><w:commentRangeEnd w:id="0"/><w:r><w:commentReference w:id="0"/></w:r></w:p></w:body></w:document>"#
+        );
+        let comments = format!(
+            r#"<w:comments xmlns:w="{w}"><w:comment w:id="0" w:author="Jane Doe" w:date="2026-03-14T09:30:00Z" w:initials="JD"><w:p><w:r><w:t>Check with Acme.</w:t></w:r></w:p></w:comment></w:comments>"#
+        );
+        let extensible = format!(
+            r#"<w16cex:commentsExtensible xmlns:w16cex="{}"><w16cex:commentExtensible w16cex:durableId="1A2B" w16cex:dateUtc="2026-03-14T12:30:00Z"/></w16cex:commentsExtensible>"#,
+            W16CEX[0]
+        );
+        zip_of(&[
+            ("[Content_Types].xml", types.as_bytes()),
+            ("_rels/.rels", relationships(&[("rId1", "officeDocument", "word/document.xml")]).as_bytes()),
+            ("word/document.xml", document.as_bytes()),
+            (
+                "word/_rels/document.xml.rels",
+                relationships(&[
+                    ("rId1", "comments", "comments.xml"),
+                    ("rId2", "http://schemas.microsoft.com/office/2018/08/relationships/commentsExtensible", "commentsExtensible.xml"),
+                ])
+                .as_bytes(),
+            ),
+            ("word/comments.xml", comments.as_bytes()),
+            ("word/commentsExtensible.xml", extensible.as_bytes()),
+        ])
+    }
+
+    fn clean_with(data: &[u8], options: &Options) -> (Vec<u8>, Vec<Finding>) {
+        let mut out = Vec::new();
+        let findings = Office
+            .clean(&mut Cursor::new(data), &mut out, options)
+            .unwrap();
+        (out, findings)
+    }
+
+    #[test]
+    fn word_comments_are_removed_with_their_markers() {
+        let (cleaned, findings) = clean_with(&commented_docx(), &Options::default());
+        assert_eq!(
+            names(&cleaned),
+            ["[Content_Types].xml", "_rels/.rels", "word/document.xml"]
+        );
+        let document = entry(&cleaned, "word/document.xml");
+        assert!(!document.contains("comment"), "{document}");
+        assert!(document.contains("Draft"));
+        let values: Vec<_> = findings
+            .iter()
+            .filter(|f| {
+                f.location
+                    .parts()
+                    .first()
+                    .is_some_and(|p| p == "word/comments.xml")
+            })
+            .map(|f| (f.kind, f.value.clone()))
+            .collect();
+        assert_eq!(
+            values,
+            [
+                (
+                    FindingKind::Comment,
+                    Some(Value::Text("Check with Acme.".into()))
+                ),
+                (
+                    FindingKind::PersonName,
+                    Some(Value::Text("Jane Doe".into()))
+                ),
+                (FindingKind::PersonName, Some(Value::Text("JD".into()))),
+                (
+                    FindingKind::Timestamp,
+                    Some(Value::Text("2026-03-14T09:30:00Z".into()))
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn kept_comments_lose_their_author_initials_and_dates() {
+        let keep = Options {
+            keep_comments: true,
+            ..Options::default()
+        };
+        let (cleaned, findings) = clean_with(&commented_docx(), &keep);
+        let comments = entry(&cleaned, "word/comments.xml");
+        assert!(comments.contains(r#"w:author="Author""#), "{comments}");
+        assert!(
+            !comments.contains("Jane") && !comments.contains("JD") && !comments.contains("w:date")
+        );
+        assert!(comments.contains("Check with Acme."));
+        assert!(!entry(&cleaned, "word/commentsExtensible.xml").contains("dateUtc"));
+        assert!(entry(&cleaned, "word/document.xml").contains("commentReference"));
+        let comment = findings
+            .iter()
+            .find(|f| f.kind == FindingKind::Comment)
+            .unwrap();
+        assert_eq!(
+            comment.disposition,
+            Disposition::Keep(KeepReason::UserRequested)
+        );
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.disposition == Disposition::Normalize)
+        );
+
+        // Already anonymized: nothing left to change.
+        let (again, findings) = clean_with(&cleaned, &keep);
+        assert_eq!(again, cleaned);
+        assert!(
+            findings
+                .iter()
+                .all(|f| f.disposition.is_acceptable_after_cleaning())
+        );
+    }
+
+    /// A workbook with a note, a threaded comment and its author, and the
+    /// drawing layer that shows the note. `layer` holds the shape types.
+    fn commented_xlsx(layer: &[&str]) -> Vec<u8> {
+        let types = r#"<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Default Extension="vml" ContentType="application/vnd.openxmlformats-officedocument.vmlDrawing"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/comments1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml"/><Override PartName="/xl/threadedComments/threadedComment1.xml" ContentType="application/vnd.ms-excel.threadedcomments+xml"/><Override PartName="/xl/persons/person.xml" ContentType="application/vnd.ms-excel.person+xml"/></Types>"#;
+        let shapes: String = layer
+            .iter()
+            .map(|t| format!(r#"<v:shape><x:ClientData ObjectType="{t}"/></v:shape>"#))
+            .collect();
+        let vml = format!(
+            r#"<xml xmlns:v="urn:schemas-microsoft-com:vml" xmlns:x="urn:schemas-microsoft-com:office:excel">{shapes}</xml>"#
+        );
+        let sheet = format!(
+            r#"<worksheet xmlns="{}" xmlns:r="{DOC_RELS}"><sheetData/><legacyDrawing r:id="rId2"/></worksheet>"#,
+            S[0]
+        );
+        let tc = "http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments";
+        let threaded = format!(
+            r#"<ThreadedComments xmlns="{tc}"><threadedComment ref="B2" dT="2026-03-14T09:30:00.00" personId="{{P1}}" id="{{C1}}"><text>Is this final?</text></threadedComment></ThreadedComments>"#
+        );
+        let persons = format!(
+            r#"<personList xmlns="{tc}"><person displayName="Jane Doe" id="{{P1}}" userId="jane.doe@example.com" providerId="AD"/></personList>"#
+        );
+        let notes = format!(
+            r#"<comments xmlns="{}"><authors><author>Jane Doe</author></authors><commentList><comment ref="A1" authorId="0"><text><r><t>Jane Doe:</t></r><r><t>Check.</t></r></text></comment></commentList></comments>"#,
+            S[0]
+        );
+        let ms = "http://schemas.microsoft.com/office/2017/10/relationships";
+        zip_of(&[
+            ("[Content_Types].xml", types.as_bytes()),
+            (
+                "_rels/.rels",
+                relationships(&[("rId1", "officeDocument", "xl/workbook.xml")]).as_bytes(),
+            ),
+            (
+                "xl/workbook.xml",
+                format!(r#"<workbook xmlns="{}"/>"#, S[0]).as_bytes(),
+            ),
+            (
+                "xl/_rels/workbook.xml.rels",
+                relationships(&[
+                    ("rId1", "worksheet", "worksheets/sheet1.xml"),
+                    ("rId2", &format!("{ms}/person"), "persons/person.xml"),
+                ])
+                .as_bytes(),
+            ),
+            ("xl/worksheets/sheet1.xml", sheet.as_bytes()),
+            (
+                "xl/worksheets/_rels/sheet1.xml.rels",
+                relationships(&[
+                    ("rId1", "comments", "../comments1.xml"),
+                    ("rId2", "vmlDrawing", "../drawings/vmlDrawing1.vml"),
+                    (
+                        "rId3",
+                        &format!("{ms}/threadedComment"),
+                        "../threadedComments/threadedComment1.xml",
+                    ),
+                ])
+                .as_bytes(),
+            ),
+            ("xl/comments1.xml", notes.as_bytes()),
+            ("xl/drawings/vmlDrawing1.vml", vml.as_bytes()),
+            (
+                "xl/threadedComments/threadedComment1.xml",
+                threaded.as_bytes(),
+            ),
+            ("xl/persons/person.xml", persons.as_bytes()),
+        ])
+    }
+
+    #[test]
+    fn excel_notes_and_threaded_comments_are_removed() {
+        let (cleaned, findings) = clean_with(&commented_xlsx(&["Note"]), &Options::default());
+        assert_eq!(
+            names(&cleaned),
+            [
+                "[Content_Types].xml",
+                "_rels/.rels",
+                "xl/workbook.xml",
+                "xl/worksheets/sheet1.xml",
+                "xl/_rels/workbook.xml.rels",
+            ]
+        );
+        assert!(!entry(&cleaned, "xl/worksheets/sheet1.xml").contains("legacyDrawing"));
+        let comments: Vec<_> = findings
+            .iter()
+            .filter(|f| f.kind == FindingKind::Comment)
+            .collect();
+        assert_eq!(comments.len(), 2);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.value == Some(Value::Text("jane.doe@example.com".into())))
+        );
+    }
+
+    #[test]
+    fn excel_comments_kept_lose_names_and_accounts() {
+        let keep = Options {
+            keep_comments: true,
+            ..Options::default()
+        };
+        let (cleaned, _) = clean_with(&commented_xlsx(&["Note"]), &keep);
+        assert!(entry(&cleaned, "xl/worksheets/sheet1.xml").contains("legacyDrawing"));
+        for part in [
+            "xl/comments1.xml",
+            "xl/persons/person.xml",
+            "xl/threadedComments/threadedComment1.xml",
+        ] {
+            let xml = entry(&cleaned, part);
+            assert!(
+                !xml.contains("Jane") && !xml.contains("jane") && !xml.contains("2026"),
+                "{xml}"
+            );
+        }
+        assert_eq!(clean_with(&cleaned, &keep).0, cleaned);
+    }
+
+    #[test]
+    fn notes_sharing_a_layer_with_form_controls_are_refused() {
+        let mixed = commented_xlsx(&["Note", "Checkbox"]);
+        assert!(matches!(clean(&mixed), Err(FormatError::Unsupported(_))));
+        let keep = Options {
+            keep_comments: true,
+            ..Options::default()
+        };
+        let mut out = Vec::new();
+        assert!(
+            Office
+                .clean(&mut Cursor::new(&mixed), &mut out, &keep)
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn powerpoint_modern_comments_are_removed_with_their_link() {
+        let (p, p188) = (P[0], P188[0]);
+        let types = r#"<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/><Override PartName="/ppt/comments/modernComment_100_1.xml" ContentType="application/vnd.ms-powerpoint.comments+xml"/><Override PartName="/ppt/authors.xml" ContentType="application/vnd.ms-powerpoint.authors+xml"/></Types>"#;
+        let slide = format!(
+            r#"<p:sld xmlns:p="{p}" xmlns:r="{DOC_RELS}"><p:cSld/><p:extLst><p:ext uri="{{6950BFC3-D8DA-4A85-94F7-54DA5524770B}}"><p188:commentRel xmlns:p188="{p188}" r:id="rId1"/></p:ext></p:extLst></p:sld>"#
+        );
+        let comments = format!(
+            r#"<p188:cmLst xmlns:p188="{p188}" xmlns:a="urn:a"><p188:cm id="{{C1}}" authorId="{{A1}}" created="2026-03-14T09:30:00.000"><p188:txBody><a:p><a:r><a:t>Shorter title?</a:t></a:r></a:p></p188:txBody></p188:cm></p188:cmLst>"#
+        );
+        let authors = format!(
+            r#"<p188:authorLst xmlns:p188="{p188}"><p188:author id="{{A1}}" name="Jane Doe" initials="JD" userId="jane.doe@example.com" providerId="AD"/></p188:authorLst>"#
+        );
+        let ms = "http://schemas.microsoft.com/office/2018/10/relationships";
+        let data = zip_of(&[
+            ("[Content_Types].xml", types.as_bytes()),
+            (
+                "_rels/.rels",
+                relationships(&[("rId1", "officeDocument", "ppt/presentation.xml")]).as_bytes(),
+            ),
+            (
+                "ppt/presentation.xml",
+                format!(r#"<p:presentation xmlns:p="{p}"/>"#).as_bytes(),
+            ),
+            (
+                "ppt/_rels/presentation.xml.rels",
+                relationships(&[
+                    ("rId1", "slide", "slides/slide1.xml"),
+                    ("rId2", &format!("{ms}/authors"), "authors.xml"),
+                ])
+                .as_bytes(),
+            ),
+            ("ppt/slides/slide1.xml", slide.as_bytes()),
+            (
+                "ppt/slides/_rels/slide1.xml.rels",
+                relationships(&[(
+                    "rId1",
+                    &format!("{ms}/comments"),
+                    "../comments/modernComment_100_1.xml",
+                )])
+                .as_bytes(),
+            ),
+            ("ppt/comments/modernComment_100_1.xml", comments.as_bytes()),
+            ("ppt/authors.xml", authors.as_bytes()),
+        ]);
+        let (cleaned, findings) = clean_with(&data, &Options::default());
+        assert!(
+            !names(&cleaned)
+                .iter()
+                .any(|n| n.contains("omment") || n.contains("authors"))
+        );
+        let slide = entry(&cleaned, "ppt/slides/slide1.xml");
+        assert!(slide.contains("<p:extLst></p:extLst>"), "{slide}");
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.value == Some(Value::Text("Shorter title?".into())))
+        );
+
+        let keep = Options {
+            keep_comments: true,
+            ..Options::default()
+        };
+        let (cleaned, _) = clean_with(&data, &keep);
+        assert!(entry(&cleaned, "ppt/slides/slide1.xml").contains("commentRel"));
+        assert!(!entry(&cleaned, "ppt/authors.xml").contains("jane"));
     }
 
     #[test]

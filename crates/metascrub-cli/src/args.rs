@@ -90,6 +90,8 @@ pub enum KeepItem {
     ColorProfile,
     /// The current date on output files, instead of 1980-01-01.
     FileTimes,
+    /// Comments in Office documents, with every author shown as "Author".
+    Comments,
 }
 
 #[derive(Debug, Args)]

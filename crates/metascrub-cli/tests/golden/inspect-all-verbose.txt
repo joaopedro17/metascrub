@@ -1,4 +1,4 @@
-$ metascrub inspect -v --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub inspect -v --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 fixtures/generated/jpeg/camera.jpg (JPEG image)
@@ -98,8 +98,31 @@ fixtures/generated/office/clean.docx (Word document)
   Medium risk
     • A unique ID that can link copies of this file: 5 fields — will be removed [word/document.xml > rsid]
 
-fixtures/generated/office/comments.docx failed: the file uses a feature MetaScrub can't handle safely, so it was left alone
-  unsupported feature: Office documents with comments aren't supported yet
+fixtures/generated/office/comments.docx (Word document)
+  High risk
+    • A comment: Check the numbers with Acme first. — will be removed [word/comments.xml > comment]
+    • A person's name (author, artist or owner): Jane Doe — will be removed [word/comments.xml > comment > author]
+    • A person's name (author, artist or owner): JD — will be removed [word/comments.xml > comment > initials]
+  Medium risk
+    • Date and time: 2026-03-14 09:26:52 — will be removed [ZIP > File dates]
+    • Date and time: 2026-03-14T09:30:00Z — will be removed [word/comments.xml > comment > date]
+    • A unique ID that can link copies of this file: 1 field — will be removed [word/document.xml > rsid]
+
+fixtures/generated/office/comments.xlsx (Excel workbook)
+  High risk
+    • A person's name (author, artist or owner): Jane Doe — will be removed [xl/persons/person.xml > person > displayName]
+    • A person's name (author, artist or owner): jane.doe@example.com — will be removed [xl/persons/person.xml > person > userId]
+    • A person's name (author, artist or owner): John Roe — will be removed [xl/persons/person.xml > person > displayName]
+    • A person's name (author, artist or owner): S::john.roe@example.com::7c1e — will be removed [xl/persons/person.xml > person > userId]
+    • A person's name (author, artist or owner): Jane Doe — will be removed [xl/comments1.xml > author > author]
+    • A comment: Jane Doe: Booked through Acme Travel. — will be removed [xl/comments1.xml > comment]
+    • A comment: [Threaded comment] Your version of Excel allows you to read this threaded comme… — will be removed [xl/comments1.xml > comment]
+    • A comment: Is this the final price? — will be removed [xl/threadedComments/threadedComment1.xml > threadedComment]
+    • A comment: Yes, confirmed with the hotel. — will be removed [xl/threadedComments/threadedComment1.xml > threadedComment]
+  Medium risk
+    • Date and time: 2026-03-14 09:26:52 — will be removed [ZIP > File dates]
+    • Date and time: 2026-03-14T09:30:12.34 — will be removed [xl/threadedComments/threadedComment1.xml > threadedComment > dT]
+    • Date and time: 2026-03-14T10:02:45.67 — will be removed [xl/threadedComments/threadedComment1.xml > threadedComment > dT]
 
 fixtures/generated/office/report.docx (Word document)
   High risk
@@ -265,4 +288,4 @@ fixtures/generated/webp/trailing.webp (WebP image)
 fixtures/generated/webp/truncated.webp failed: the file is damaged or not what it claims to be
   malformed file: unexpected end of data
 
-23 files inspected, 16 with hidden metadata, 3 skipped, 5 failed
+25 files inspected, 18 with hidden metadata, 3 skipped, 4 failed

@@ -5,7 +5,7 @@ use std::borrow::Cow;
 
 use quick_xml::NsReader;
 use quick_xml::events::attributes::Attribute;
-use quick_xml::events::{BytesEnd, BytesStart, Event};
+use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::name::{QName, ResolveResult};
 use quick_xml::{Writer, XmlVersion};
 
@@ -157,6 +157,32 @@ impl Element {
         removed
     }
 
+    /// Replaces the value of an existing attribute; returns the old value.
+    pub(super) fn set_attribute(
+        &mut self,
+        ns: &[&str],
+        local: &str,
+        value: &str,
+    ) -> Option<String> {
+        let attribute = self
+            .attributes
+            .iter_mut()
+            .find(|a| a.local == local && ns.contains(&a.ns.as_str()))?;
+        let old = std::mem::replace(&mut attribute.value, value.to_owned());
+        attribute.raw = quick_xml::escape::escape(value).into_owned();
+        self.changed = true;
+        Some(old)
+    }
+
+    /// Replaces everything inside the element with `text`.
+    pub(super) fn set_text(&mut self, text: &str) {
+        self.children = vec![Node::Other(Event::Text(BytesText::new(text).into_owned()))];
+        if self.end.is_none() {
+            let name = self.start.name();
+            self.end = Some(BytesEnd::new(AsRef::<str>::as_ref(&name).to_owned()));
+        }
+    }
+
     /// All text inside the element, with entities resolved.
     pub(super) fn text(&self) -> String {
         let mut text = String::new();
@@ -296,6 +322,20 @@ mod tests {
         assert_eq!(
             String::from_utf8(write(&nodes).unwrap()).unwrap(),
             "<w:doc xmlns:w=\"urn:w\"><w:p w:x=\"1\">t</w:p></w:doc>"
+        );
+    }
+
+    #[test]
+    fn replaces_attribute_values() {
+        let mut nodes = parse(b"<w:c xmlns:w=\"urn:w\" w:author=\"Jane\" w:id=\"0\"/>").unwrap();
+        let mut old = None;
+        for_each_element(&mut nodes, &mut |e| {
+            old = e.set_attribute(&[W], "author", "A & B")
+        });
+        assert_eq!(old.as_deref(), Some("Jane"));
+        assert_eq!(
+            String::from_utf8(write(&nodes).unwrap()).unwrap(),
+            "<w:c xmlns:w=\"urn:w\" w:author=\"A &amp; B\" w:id=\"0\"/>"
         );
     }
 

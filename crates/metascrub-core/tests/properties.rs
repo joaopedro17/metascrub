@@ -43,7 +43,7 @@ fn clean(data: &[u8], options: &Options) -> Cleaned {
     clean_bytes(data, options).unwrap().unwrap()
 }
 
-fn option_sets() -> [Options; 3] {
+fn option_sets() -> [Options; 4] {
     [
         Options::default(),
         Options {
@@ -52,6 +52,10 @@ fn option_sets() -> [Options; 3] {
         },
         Options {
             strip_orientation: true,
+            ..Options::default()
+        },
+        Options {
+            keep_comments: true,
             ..Options::default()
         },
     ]
