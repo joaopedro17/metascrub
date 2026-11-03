@@ -81,7 +81,12 @@ fn render_file(file: &FileReport, settings: &Settings, out: &mut dyn Write) -> i
                 out,
                 "{BOLD}{path}{BOLD:#} {DIM}({kind}){DIM:#} {ERROR}needs your decision{ERROR:#}"
             )?;
-            render_findings(&file.findings, settings, out)?;
+            // Nothing was written, so say what cleaning will do once decided.
+            let tense = match settings.mode {
+                Mode::Clean { dry_run: true } => Tense::Conditional,
+                _ => Tense::Future,
+            };
+            render_findings_in(&file.findings, tense, settings, out)?;
             writeln!(out, "  {}", messages::decision(*decision))
         }
         Outcome::Copied => writeln!(
@@ -141,6 +146,15 @@ fn render_findings(
         Mode::Clean { dry_run: true } => Tense::Conditional,
         Mode::Clean { dry_run: false } => Tense::Past,
     };
+    render_findings_in(findings, tense, settings, out)
+}
+
+fn render_findings_in(
+    findings: &[Finding],
+    tense: Tense,
+    settings: &Settings,
+    out: &mut dyn Write,
+) -> io::Result<()> {
     let verbose = settings.verbosity == Verbosity::Verbose;
     for (risk, label, style) in [
         (Risk::High, "High risk", HIGH),
@@ -157,11 +171,12 @@ fn render_findings(
             if settings.show_values && !line.values.is_empty() {
                 write!(out, ": {}", line.values.join("; "))?;
             }
-            write!(
-                out,
-                " {DIM}— {}{DIM:#}",
+            let disposition = if line.also_reset {
+                messages::removed_or_reset(tense)
+            } else {
                 messages::disposition(line.kind, line.disposition, tense)
-            )?;
+            };
+            write!(out, " {DIM}— {disposition}{DIM:#}")?;
             if let Some(location) = line.location {
                 write!(
                     out,
@@ -179,12 +194,16 @@ fn render_findings(
 struct Line<'a> {
     kind: FindingKind,
     disposition: Disposition,
+    /// Some of the merged findings are reset rather than removed.
+    also_reset: bool,
     values: Vec<String>,
     location: Option<&'a Location>,
 }
 
 /// One line per finding in verbose mode. Otherwise findings that read the same
-/// ("Date and time — will be removed") are merged and their values joined.
+/// ("Date and time — will be removed") are merged and their values joined, as
+/// are removed and reset findings of one kind, which would otherwise read like
+/// the same thing listed twice.
 fn lines<'a>(findings: &[&'a Finding], verbose: bool) -> Vec<Line<'a>> {
     let mut lines: Vec<Line<'a>> = Vec::new();
     for finding in findings {
@@ -192,8 +211,12 @@ fn lines<'a>(findings: &[&'a Finding], verbose: bool) -> Vec<Line<'a>> {
         if !verbose
             && let Some(line) = lines
                 .iter_mut()
-                .find(|l| l.kind == finding.kind && l.disposition == finding.disposition)
+                .find(|l| l.kind == finding.kind && merges(l.disposition, finding.disposition))
         {
+            if line.disposition != finding.disposition {
+                line.disposition = Disposition::Remove;
+                line.also_reset = true;
+            }
             if let Some(value) = value
                 && !line.values.contains(&value)
             {
@@ -204,11 +227,17 @@ fn lines<'a>(findings: &[&'a Finding], verbose: bool) -> Vec<Line<'a>> {
         lines.push(Line {
             kind: finding.kind,
             disposition: finding.disposition,
+            also_reset: false,
             values: value.into_iter().collect(),
             location: verbose.then_some(&finding.location),
         });
     }
     lines
+}
+
+fn merges(a: Disposition, b: Disposition) -> bool {
+    let changed = |d| matches!(d, Disposition::Remove | Disposition::Normalize);
+    a == b || (changed(a) && changed(b))
 }
 
 fn render_summary(report: &RunReport, settings: &Settings, out: &mut dyn Write) -> io::Result<()> {
@@ -260,18 +289,18 @@ fn render_summary(report: &RunReport, settings: &Settings, out: &mut dyn Write) 
             summary.remaining_metadata
         )],
     };
-    parts.extend(problems(&summary));
+    parts.extend(problems(report, &summary));
     writeln!(out, "{BOLD}{}{BOLD:#}", parts.join(", "))?;
 
     if settings.verbosity == Verbosity::Quiet {
         return Ok(());
     }
-    let has_hidden_values = !settings.show_values
-        && report
-            .files
-            .iter()
-            .flat_map(|f| &f.findings)
-            .any(|f| f.value.is_some());
+    let shown: Vec<&Finding> = report
+        .files
+        .iter()
+        .flat_map(|f| shown(f, settings))
+        .collect();
+    let has_hidden_values = !settings.show_values && shown.iter().any(|f| f.value.is_some());
     if has_hidden_values {
         writeln!(
             out,
@@ -279,10 +308,8 @@ fn render_summary(report: &RunReport, settings: &Settings, out: &mut dyn Write) 
         )?;
     }
     let left = |kind| {
-        report
-            .files
+        shown
             .iter()
-            .flat_map(|f| &f.findings)
             .any(|f| f.kind == kind && f.disposition == Disposition::Warn)
     };
     if left(FindingKind::JunkFile) {
@@ -297,13 +324,42 @@ fn render_summary(report: &RunReport, settings: &Settings, out: &mut dyn Write) 
     Ok(())
 }
 
-fn problems(summary: &Summary) -> Vec<String> {
+/// The findings `render_file` lists for a file.
+fn shown<'a>(file: &'a FileReport, settings: &Settings) -> Vec<&'a Finding> {
+    match file.outcome {
+        Outcome::Verified if settings.verbosity != Verbosity::Verbose => Vec::new(),
+        Outcome::RemainingMetadata => file
+            .findings
+            .iter()
+            .filter(|f| !f.disposition.is_acceptable_after_cleaning())
+            .collect(),
+        Outcome::Failed(_)
+        | Outcome::Copied
+        | Outcome::WouldCopy
+        | Outcome::Removed
+        | Outcome::WouldRemove => Vec::new(),
+        _ => file.findings.iter().collect(),
+    }
+}
+
+fn problems(report: &RunReport, summary: &Summary) -> Vec<String> {
     let mut parts = Vec::new();
     if summary.skipped > 0 {
         parts.push(format!("{} skipped", summary.skipped));
     }
-    if summary.failed > 0 {
-        parts.push(format!("{} failed", summary.failed));
+    // Counted as failed in JSON, but nothing went wrong.
+    let decisions = report
+        .files
+        .iter()
+        .filter(|f| matches!(f.outcome, Outcome::NeedsDecision(_)))
+        .count();
+    if decisions > 0 {
+        let verb = if decisions == 1 { "needs" } else { "need" };
+        parts.push(format!("{decisions} {verb} your decision"));
+    }
+    let failed = summary.failed - decisions;
+    if failed > 0 {
+        parts.push(format!("{failed} failed"));
     }
     if summary.cancelled > 0 {
         parts.push(format!(

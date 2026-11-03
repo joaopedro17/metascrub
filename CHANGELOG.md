@@ -30,6 +30,9 @@ Everything since 0.3.0. It will be released as 1.0.0.
 - Office files with parts whose paths lead outside them now fail as `unsafe_path` (in JSON) instead of `malformed`, with a message that says why.
 - Junk files and leaking file names say which option fixes them, instead of "can't be fixed automatically".
 - "Data after the end of the image" is now "data added after the file's content", since it also applies to videos and documents.
+- A Word document that needs a decision about tracked changes says what will be removed once you decide, and the summary counts it as needing your decision instead of failed. In JSON it's still counted in `summary.failed`.
+- Dates that are removed and dates that are reset in the same file are listed once.
+- Reports that list nothing no longer end with hints about hidden values or `--rename`.
 
 ### JSON report
 

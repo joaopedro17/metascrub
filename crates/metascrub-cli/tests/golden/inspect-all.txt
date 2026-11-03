@@ -188,9 +188,8 @@ fixtures/generated/media/iphone.mov (QuickTime video)
     • Location where it was created — will be removed
   Medium risk
     • Software or app used — will be removed
-    • Date and time — will be reset to a neutral value
+    • Date and time — will be removed or reset to a neutral value
     • Make and model of a device (camera, phone, printer) — will be removed
-    • Date and time — will be removed
     • A unique ID that can link copies of this file — will be removed
 
 fixtures/generated/media/phone.mp4 (MP4 video)

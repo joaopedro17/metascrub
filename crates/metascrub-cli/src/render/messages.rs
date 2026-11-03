@@ -95,6 +95,14 @@ pub fn disposition(kind: FindingKind, disposition: Disposition, tense: Tense) ->
     }
 }
 
+pub fn removed_or_reset(tense: Tense) -> &'static str {
+    match tense {
+        Tense::Future => "will be removed or reset to a neutral value",
+        Tense::Conditional => "would be removed or reset to a neutral value",
+        Tense::Past => "removed or reset to a neutral value",
+    }
+}
+
 pub const COPIED: &str = "copied without cleaning: MetaScrub can't read this type of file, \
                           so it may still contain hidden information";
 pub const WOULD_COPY: &str = "would be copied without cleaning: MetaScrub can't read this type \
