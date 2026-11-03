@@ -103,6 +103,10 @@ fn junk_files_are_reported_and_removed_when_asked() {
 
     let inspect = metascrub(&["inspect".as_ref(), "-r".as_ref(), folder.as_ref()]);
     assert!(text(&inspect).contains("A junk file"), "{inspect:?}");
+    assert!(
+        text(&inspect).contains("left alone: --remove-junk removes it"),
+        "{inspect:?}"
+    );
 
     let clean = metascrub(&[
         "clean".as_ref(),
@@ -124,7 +128,10 @@ fn leaking_names_are_replaced_with_rename() {
     fs::copy(fixtures.join("jpeg/camera.jpg"), &photo).unwrap();
 
     let clean = metascrub(&["clean".as_ref(), photo.as_ref()]);
-    assert!(text(&clean).contains("--rename"), "{clean:?}");
+    assert!(
+        text(&clean).contains("left alone: --rename replaces it"),
+        "{clean:?}"
+    );
 
     let out = dir.path().join("out");
     let clean = metascrub(&[

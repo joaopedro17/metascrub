@@ -236,6 +236,9 @@ pub enum FormatError {
     },
     /// MetaScrub never asks for passwords, so encrypted files are skipped.
     Encrypted,
+    /// A file inside (an archive's, or an Office file's part) whose path
+    /// leads outside it, like `../`: extracting it could overwrite other files.
+    UnsafePath(String),
 }
 
 impl FormatError {
@@ -253,6 +256,7 @@ impl fmt::Display for FormatError {
             Self::TooLarge { limit } => write!(f, "larger than the {limit}-byte limit"),
             Self::TooDeep { limit } => write!(f, "files nested more than {limit} levels deep"),
             Self::Encrypted => f.write_str("encrypted"),
+            Self::UnsafePath(name) => write!(f, "unsafe path {name}"),
         }
     }
 }

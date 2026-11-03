@@ -7,9 +7,9 @@ fixtures/generated/archive/bomb.zip failed: the file exceeds MetaScrub's safety 
 
 fixtures/generated/archive/encrypted.zip skipped: it's encrypted
 
-fixtures/generated/archive/traversal.tar failed: the file is damaged or not what it claims to be
+fixtures/generated/archive/traversal.tar failed: it contains a file whose path leads outside it (like ../), which could overwrite other files when extracted, so it was left alone
 
-fixtures/generated/archive/traversal.zip failed: the file is damaged or not what it claims to be
+fixtures/generated/archive/traversal.zip failed: it contains a file whose path leads outside it (like ../), which could overwrite other files when extracted, so it was left alone
 
 fixtures/generated/jpeg/truncated.jpg failed: the file is damaged or not what it claims to be
 

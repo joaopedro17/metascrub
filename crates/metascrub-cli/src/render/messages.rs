@@ -66,8 +66,15 @@ pub enum Tense {
     Past,
 }
 
-pub fn disposition(disposition: Disposition, tense: Tense) -> &'static str {
+pub fn disposition(kind: FindingKind, disposition: Disposition, tense: Tense) -> &'static str {
     match (disposition, tense) {
+        // Left alone only because the option that fixes them wasn't given.
+        (Disposition::Warn, _) if kind == FindingKind::JunkFile => {
+            "left alone: --remove-junk removes it"
+        }
+        (Disposition::Warn, _) if kind == FindingKind::FileName => {
+            "left alone: --rename replaces it"
+        }
         (Disposition::Remove, Tense::Future) => "will be removed",
         (Disposition::Remove, Tense::Conditional) => "would be removed",
         (Disposition::Remove, Tense::Past) => "removed",
@@ -249,6 +256,10 @@ pub fn failure(kind: FailureKind) -> &'static str {
         FailureKind::LimitExceeded => "the file exceeds MetaScrub's safety limits",
         FailureKind::Unsupported => {
             "the file uses a feature MetaScrub can't handle safely, so it was left alone"
+        }
+        FailureKind::UnsafePath => {
+            "it contains a file whose path leads outside it (like ../), which could \
+             overwrite other files when extracted, so it was left alone"
         }
         FailureKind::Cancelled => "cancelled before it finished",
     }

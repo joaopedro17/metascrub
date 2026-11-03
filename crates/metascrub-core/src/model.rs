@@ -361,6 +361,9 @@ pub enum FailureKind {
     LimitExceeded,
     /// The file uses a feature MetaScrub can't handle without risking breaking it.
     Unsupported,
+    /// An archive holds a file whose path leads outside it (`../evil.txt`),
+    /// which could overwrite other files when extracted.
+    UnsafePath,
     /// The run was cancelled before this file finished.
     Cancelled,
 }

@@ -82,9 +82,9 @@ fixtures/generated/archive/photos.zip (ZIP archive)
     • Rotation setting — kept: needed to display correctly
     • Technical details (encoding, settings, statistics) — would be removed
 
-fixtures/generated/archive/traversal.tar failed: the file is damaged or not what it claims to be
+fixtures/generated/archive/traversal.tar failed: it contains a file whose path leads outside it (like ../), which could overwrite other files when extracted, so it was left alone
 
-fixtures/generated/archive/traversal.zip failed: the file is damaged or not what it claims to be
+fixtures/generated/archive/traversal.zip failed: it contains a file whose path leads outside it (like ../), which could overwrite other files when extracted, so it was left alone
 
 fixtures/generated/jpeg/camera.jpg (JPEG image)
   High risk
