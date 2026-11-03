@@ -21,6 +21,7 @@ Everything since 0.3.0. It will be released as 1.0.0.
 - **HEIC and AVIF photos.** EXIF is rewritten with only the orientation and XMP emptied, in place. Previews, depth maps and HDR gain maps are kept and reported as low risk.
 - **Tab completion and manual pages.** `metascrub completions <shell>` prints a completion script for Bash, Zsh, Fish or PowerShell, and `metascrub man [command]` a manual page. Both are included in the release downloads.
 - The full `--help` lists the exit codes.
+- **Verifiable downloads.** Every archive has a build attestation, so `gh attestation verify` can show it was built by this project's GitHub workflow from its source, and a software bill of materials (`.cdx.json`, CycloneDX) listing every library in it.
 
 ### Changed
 
