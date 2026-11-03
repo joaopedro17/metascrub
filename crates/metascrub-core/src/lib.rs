@@ -4,6 +4,7 @@
 //! structured results ([`model`]) that a user interface (the CLI today, a GUI
 //! later) turns into text.
 
+mod budget;
 pub mod format;
 mod fsmeta;
 pub mod limits;

@@ -26,6 +26,7 @@ Everything since 0.3.0. It will be released as 1.0.0.
 ### Changed
 
 - Files are streamed through cleaning instead of being held in memory, so large files use little memory.
+- Large images, PDFs and Office files wait for each other instead of being processed together, so memory stays around 2 GB at most (four 400 MB PDFs used 6.9 GB before).
 - Office files with parts whose paths lead outside them now fail as `unsafe_path` (in JSON) instead of `malformed`, with a message that says why.
 - Junk files and leaking file names say which option fixes them, instead of "can't be fixed automatically".
 - "Data after the end of the image" is now "data added after the file's content", since it also applies to videos and documents.
