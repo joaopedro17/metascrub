@@ -8,7 +8,7 @@ use std::path::Path;
 
 use zip::extra_fields::ExtraField;
 use zip::write::SimpleFileOptions;
-use zip::{CompressionMethod, DateTime, ZipArchive, ZipWriter};
+use zip::{CompressionMethod, DateTime, System, ZipArchive, ZipWriter};
 
 use super::archive::{check_name, zip_error};
 use super::unpack::{self, Allowance, Spool};
@@ -277,12 +277,15 @@ pub(super) fn link(name: &str, target: &str) -> Finding {
 }
 
 /// The same for every entry, so the same files always give the same bytes.
+/// Always marked as made on Unix: the zip crate picks DOS on Windows, which
+/// drops the permissions and changes the bytes.
 fn entry_options(method: CompressionMethod, mode: u32, size: u64) -> SimpleFileOptions {
     let level = (method == CompressionMethod::Deflated).then_some(6);
     SimpleFileOptions::default()
         .compression_method(method)
         .compression_level(level)
         .last_modified_time(DateTime::default())
+        .system(System::Unix)
         .unix_permissions(mode)
         .large_file(size >= u64::from(u32::MAX))
 }
