@@ -8,6 +8,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
 mod office;
+mod pdf;
 
 use std::fs;
 use std::io::Write;
@@ -26,8 +27,16 @@ fn main() {
     let png_dir = root.join("png");
     let webp_dir = root.join("webp");
     let office_dir = root.join("office");
+    let pdf_dir = root.join("pdf");
     let other_dir = root.join("other");
-    for dir in [&jpeg_dir, &png_dir, &webp_dir, &office_dir, &other_dir] {
+    for dir in [
+        &jpeg_dir,
+        &png_dir,
+        &webp_dir,
+        &office_dir,
+        &pdf_dir,
+        &other_dir,
+    ] {
         fs::create_dir_all(dir).unwrap();
     }
 
@@ -261,6 +270,15 @@ fn main() {
     write(&office_dir, "budget.xlsx", &office.budget_xlsx);
     write(&office_dir, "comments.xlsx", &office.comments_xlsx);
     write(&office_dir, "linked.xlsx", &office.linked_xlsx);
+
+    // PDF
+    let pdfs = pdf::files(&camera, &thumbnail, XMP);
+    write(&pdf_dir, "clean.pdf", &pdfs.clean);
+    write(&pdf_dir, "report.pdf", &pdfs.report);
+    write(&pdf_dir, "comments.pdf", &pdfs.comments);
+    write(&pdf_dir, "attachments.pdf", &pdfs.attachments);
+    write(&pdf_dir, "form.pdf", &pdfs.form);
+    write(&pdf_dir, "encrypted.pdf", &pdfs.encrypted);
 
     // Other
     write(&other_dir, "notes.txt", b"Not an image.\n");

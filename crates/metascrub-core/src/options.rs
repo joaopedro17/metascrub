@@ -7,8 +7,10 @@ pub struct Options {
     pub keep_file_times: bool,
     /// Remove the Orientation tag even when the image is rotated (`--strip-orientation`).
     pub strip_orientation: bool,
-    /// Keep Office comments, with authors replaced by a neutral name (`--keep comments`).
+    /// Keep Office and PDF comments, with authors replaced by a neutral name (`--keep comments`).
     pub keep_comments: bool,
+    /// Keep files attached to PDFs, cleaned where possible (`--keep attachments`).
+    pub keep_attachments: bool,
     pub tracked_changes: TrackedChanges,
 }
 

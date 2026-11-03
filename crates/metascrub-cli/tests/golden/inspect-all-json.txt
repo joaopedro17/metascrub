@@ -1,4 +1,4 @@
-$ metascrub inspect --json --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub inspect --json --show-values fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 {
@@ -2009,6 +2009,795 @@ exit: 1
       "path": "fixtures/generated/other/notes.txt"
     },
     {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "embedded_file",
+          "location": [
+            "Page 1",
+            "Annotation"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "contract.txt"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Page 1",
+            "Annotation",
+            "T"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Page 1",
+            "Annotation",
+            "M"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 09:30:00 UTC"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "embedded_file",
+          "location": [
+            "Attachments",
+            "notes.txt"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "notes.txt"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "embedded_file",
+          "location": [
+            "Attachments",
+            "photo.jpg"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "photo.jpg"
+          }
+        }
+      ],
+      "format": "pdf",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/pdf/attachments.pdf"
+    },
+    {
+      "findings": [],
+      "format": "pdf",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/pdf/clean.pdf"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "comment",
+          "location": [
+            "Page 1",
+            "Annotation"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Check the totals with Acme."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Page 1",
+            "Annotation",
+            "T"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Page 1",
+            "Annotation",
+            "M"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 09:30:00 UTC"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Page 1",
+            "Annotation",
+            "CreationDate"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 09:30:00 UTC"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "comment",
+          "location": [
+            "Page 1",
+            "Annotation"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Highlight"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Page 1",
+            "Annotation",
+            "T"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Page 1",
+            "Annotation",
+            "M"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-15 10:15:00 UTC"
+          }
+        }
+      ],
+      "format": "pdf",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/pdf/comments.pdf"
+    },
+    {
+      "findings": [],
+      "format": "pdf",
+      "outcome": {
+        "detail": "encrypted",
+        "status": "skipped"
+      },
+      "output": null,
+      "path": "fixtures/generated/pdf/encrypted.pdf"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "warn"
+          },
+          "kind": "macros",
+          "location": [
+            "JavaScript"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "warn"
+          },
+          "kind": "form_data",
+          "location": [
+            "Form fields"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Name: Jane Doe"
+          }
+        }
+      ],
+      "format": "pdf",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/pdf/form.pdf"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "earlier_versions",
+          "location": [
+            "Incremental updates"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Info",
+            "Author"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "Info",
+            "Creator"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Microsoft Word"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "Info",
+            "Producer"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Fictional PDF Library 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Info",
+            "CreationDate"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 09:26:52 +01:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "custom_property",
+          "location": [
+            "Info",
+            "Client"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Client: Acme Corporation"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "Info",
+            "Title"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Final budget"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Info",
+            "ModDate"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-16 11:00:00 +01:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "Document",
+            "XMP",
+            "xmp:CreatorTool"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "Document",
+            "XMP",
+            "photoshop:City"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Paris"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "Document",
+            "XMP",
+            "exif:GPSLatitude"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "48,51.504N"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "Document",
+            "XMP",
+            "xmpMM:DocumentID"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "xmp.did:5f1c2e9a-0b7d-4c3e-9a61-2d8f4b7e1c03"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Document",
+            "XMP",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "Document",
+            "XMP",
+            "stRef:filePath"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "C:\\Users\\jane\\Pictures\\holiday.psd"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "Document",
+            "XMP"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "Document",
+            "XMP"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "Page 1",
+            "PieceInfo"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Illustrator"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "thumbnail",
+          "location": [
+            "Page 1",
+            "Thumb"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 648
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Page 1",
+            "LastModified"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-15 10:00:00 UTC"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "Image 8",
+            "EXIF",
+            "Make"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Fictional Camera Co."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "Image 8",
+            "EXIF",
+            "Model"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC-100"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "orientation",
+          "location": [
+            "Image 8",
+            "EXIF",
+            "Orientation"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 6
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "Image 8",
+            "EXIF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Image 8",
+            "EXIF",
+            "DateTime"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Image 8",
+            "EXIF",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Image 8",
+            "EXIF",
+            "Copyright"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Copyright Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Image 8",
+            "EXIF",
+            "DateTimeOriginal"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "Image 8",
+            "EXIF",
+            "BodySerialNumber"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "SN-0042-7781"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "Image 8",
+            "EXIF",
+            "LensModel"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC 24-70mm"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "Image 8",
+            "EXIF",
+            "GPS"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "coordinates",
+            "value": {
+              "latitude": 48.8584,
+              "longitude": 2.2944999999999998
+            }
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "thumbnail",
+          "location": [
+            "Image 8",
+            "EXIF",
+            "Thumbnail"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 648
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "Image 8",
+            "EXIF"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 2
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "Trailer",
+            "ID"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "3f2504e04f8911d39a0c0305e82c3301"
+          }
+        }
+      ],
+      "format": "pdf",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/pdf/report.pdf"
+    },
+    {
       "findings": [],
       "format": "png",
       "outcome": {
@@ -3198,9 +3987,9 @@ exit: 1
     "cleaned": 0,
     "copied": 0,
     "failed": 3,
-    "inspected": 27,
+    "inspected": 32,
     "remaining_metadata": 0,
-    "skipped": 3,
+    "skipped": 4,
     "verified": 0
   },
   "values_shown": true

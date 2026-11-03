@@ -4,7 +4,7 @@
 
 MetaScrub is a cross-platform command-line tool that inspects and removes hidden metadata (location, device, author, dates, download sources) from files and folders, so you can share them without leaking personal information.
 
-**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG and WebP images, Word, Excel and PowerPoint documents, and whole folders (`-r`); more formats are coming.
+**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG and WebP images, Word, Excel, PowerPoint and PDF documents, and whole folders (`-r`); more formats are coming.
 
 ## Install
 
@@ -44,6 +44,7 @@ Reports hide metadata values so they're safe to share; `--show-values` shows the
 | JPEG | EXIF (GPS, camera, serial numbers, dates, names), thumbnails, XMP, IPTC and Photoshop data, comments, MPF secondary images, data after the image (such as Motion Photo videos), unknown segments | Image data, JFIF and Adobe color information |
 | PNG | Text chunks, EXIF, XMP, timestamps, unknown chunks, data after the image | Image data, transparency, gamma and color chunks, HDR chunks, APNG animation |
 | WebP | EXIF, XMP, unknown chunks, data after the image | Image data, transparency, animation |
+| PDF | Document information (author, title, dates, software), XMP, the document ID (replaced by one computed from the cleaned file), page thumbnails, application data, comments, attachments, earlier versions left by incremental saves, unused objects, data after the end | Pages and their content; photos inside are cleaned like JPEG |
 | Word, Excel, PowerPoint | Document properties (author, company, dates, custom properties), thumbnail, revision and document IDs, template and folder paths, printer settings, people lists, sensitivity labels, comments, unknown parts, ZIP dates | The document's content; images inside are cleaned like the formats above |
 
 By default, two things that affect how the image looks are kept:
@@ -60,6 +61,15 @@ By default, two things that affect how the image looks are kept:
 - **Embedded documents** (such as the workbook behind a chart) are cleaned with the same rules. Other embedded files (OLE objects, PDFs) and **macros** are kept and reported, since MetaScrub can't look inside them.
 - **Links to other workbooks** keep only the file name, not the folder it was in.
 - **Hidden content** (hidden text, hidden sheets or slides, speaker notes) is reported but left alone: it's part of the document.
+
+### PDF documents
+
+Every cleaned PDF is written anew from what the document still uses, so text from earlier versions saved at the end of the file can't survive.
+
+- **Comments** (sticky notes, highlights, drawings, stamps) are removed. `--keep comments` keeps them, with every author shown as "Author" and the dates removed. Links and form fields are never touched.
+- **Attachments** are removed. `--keep attachments` keeps them, cleaned with the same rules when MetaScrub can read them (a photo or Word document attached to a PDF), with only their file name and no dates.
+- **Scripts** (JavaScript) and **filled-in form fields** are reported but left alone.
+- **Encrypted** PDFs are skipped, since MetaScrub never asks for passwords. **Digitally signed** PDFs are refused: rewriting them would break the signature.
 
 Output files get the date 1980-01-01 and the original's permissions. `--keep file-times` leaves the current date instead.
 
@@ -82,9 +92,10 @@ MetaScrub removes **hidden metadata**. It does not:
 - Remove invisible watermarks or steganography, or defeat camera sensor fingerprinting.
 - Guarantee anonymity.
 - Securely delete originals. With `--in-place`, the original bytes may still be recoverable from the disk, and other hard links to the file keep the original.
-- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP and Office documents; HEIC, PDF, archives and video are planned.
+- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, Office and PDF documents; HEIC, archives and video are planned.
+- Clean encrypted or digitally signed PDFs. They're skipped or refused and reported.
 - Clean old-format (`.doc`, `.xls`, `.ppt`) or password-protected Office files, Excel workbooks with change history (shared workbooks), or documents linked to files outside them (linked images or objects). These are skipped or refused and reported.
-- Remove what Office documents contain as content: text, hidden text, speaker notes, cached values from linked workbooks, or what's inside macros and embedded files it can't read.
+- Remove what documents contain as content: text, hidden text, speaker notes, cached values from linked workbooks, form values, scripts, or what's inside macros and embedded files it can't read.
 - Keep HDR in "Ultra HDR" photos: their gain map is a hidden image and is removed, so the photo shows in standard range.
 - Report filesystem metadata yet, such as extended attributes or Windows alternate data streams that hold a download URL. Outputs are always written as new files, so they don't carry these. On Linux, a file's change time (ctime) can't be set by normal programs.
 
@@ -101,7 +112,7 @@ Then run `just` to list the commands. The main ones:
 | Command | What it does |
 |---|---|
 | `just check` | Everything CI checks: formatting, lints, tests, dependency policy |
-| `just test` | All tests (needs [exiftool](https://exiftool.org), as in CI; [LibreOffice](https://www.libreoffice.org) is used when installed to check cleaned Office files still open) |
+| `just test` | All tests (needs [exiftool](https://exiftool.org), as in CI; when installed, [LibreOffice](https://www.libreoffice.org) checks cleaned Office files still open, and [qpdf](https://qpdf.sourceforge.io) and poppler's `pdftoppm` that cleaned PDFs are valid and render) |
 | `just fmt` | Format the code |
 | `just run inspect photo.jpg` | Run MetaScrub from the source |
 | `just fixtures` | Regenerate the test fixtures and the expected test output |

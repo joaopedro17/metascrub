@@ -103,6 +103,7 @@ fn options(keep: &KeepArgs, tracked_changes: TrackedChanges) -> Options {
         keep_file_times: keep.keep.contains(&KeepItem::FileTimes),
         strip_orientation: keep.strip_orientation,
         keep_comments: keep.keep.contains(&KeepItem::Comments),
+        keep_attachments: keep.keep.contains(&KeepItem::Attachments),
         tracked_changes,
     }
 }

@@ -14,6 +14,7 @@ fuzz_target!(|input: &[u8]| {
         keep_color_profile: input.len() % 2 == 1,
         strip_orientation: input.len() % 4 >= 2,
         keep_comments: input.len() % 8 >= 4,
+        keep_attachments: input.len() % 16 >= 8,
         tracked_changes: match input.len() % 3 {
             0 => TrackedChanges::Undecided,
             1 => TrackedChanges::Accept,

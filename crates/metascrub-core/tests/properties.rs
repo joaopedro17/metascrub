@@ -61,6 +61,7 @@ fn option_sets() -> [Options; 5] {
         },
         Options {
             tracked_changes: TrackedChanges::Accept,
+            keep_attachments: true,
             ..Options::default()
         },
     ]

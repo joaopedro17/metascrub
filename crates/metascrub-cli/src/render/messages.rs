@@ -23,7 +23,9 @@ pub fn finding(kind: FindingKind) -> &'static str {
         TrackedChanges => "Tracked changes (may contain deleted text)",
         Comment => "A comment",
         EmbeddedFile => "Another file embedded inside it",
-        Macros => "Macros (programs that can run when the file is opened)",
+        Macros => "Macros or scripts (programs that can run when the file is opened)",
+        EarlierVersions => "Earlier versions of the document (may include removed text)",
+        FormData => "Values typed into form fields",
         HiddenContent => "Hidden content (hidden text, sheets or slides, or speaker notes)",
         Description => "A title, caption or keywords",
         Organization => "A company or organization name",
@@ -102,6 +104,10 @@ pub fn value(finding: &Finding) -> Option<String> {
                 format!("{n} field{}", if *n == 1 { "" } else { "s" })
             }
             FindingKind::TrackedChanges => format!("{n} change{}", if *n == 1 { "" } else { "s" }),
+            FindingKind::EarlierVersions => {
+                format!("{n} earlier version{}", if *n == 1 { "" } else { "s" })
+            }
+            FindingKind::Macros => format!("{n} script{}", if *n == 1 { "" } else { "s" }),
             _ => n.to_string(),
         },
         Value::Coordinates {
@@ -177,6 +183,7 @@ pub fn format(format: FormatId) -> &'static str {
         FormatId::Jpeg => "JPEG image",
         FormatId::Png => "PNG image",
         FormatId::Webp => "WebP image",
+        FormatId::Pdf => "PDF document",
         FormatId::Docx => "Word document",
         FormatId::Xlsx => "Excel workbook",
         FormatId::Pptx => "PowerPoint presentation",

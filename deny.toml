@@ -17,6 +17,8 @@ allow = [
     "Unicode-3.0",
     # kamadak-exif and mutate_once (EXIF reading).
     "BSD-2-Clause",
+    # encoding_rs and brotli's allocators (PDF reading, through lopdf).
+    "BSD-3-Clause",
 ]
 confidence-threshold = 0.9
 

@@ -27,7 +27,7 @@ fn metascrub(args: &[&std::ffi::OsStr]) -> Output {
 
 fn clean_all_into(out: &Path) -> Vec<PathBuf> {
     let mut fixtures = Vec::new();
-    for dir in ["jpeg", "png", "webp", "office"] {
+    for dir in ["jpeg", "png", "webp", "office", "pdf"] {
         for entry in fs::read_dir(fixture(dir)).unwrap() {
             fixtures.push(entry.unwrap().path());
         }
@@ -80,6 +80,8 @@ fn allowed_extras(name: &str) -> &'static [&'static str] {
         "icc-standard.jpg" | "icc.png" => ICC,
         "camera.webp" => WEBP_ORIENTATION,
         "icc.webp" => WEBP_ICC,
+        // The form is kept (its values are only reported).
+        "form.pdf" => &["[PDF]HasXFA"],
         _ if name.ends_with(".webp") => &["[RIFF]"],
         _ => &[],
     }
@@ -95,6 +97,8 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
     let base_webp = exiftool_tags(&fixture("webp/clean.webp")).unwrap();
     // Every Office file shows its ZIP structure: entry names, sizes, dates.
     let base_office = exiftool_tags(&fixture("office/clean.docx")).unwrap();
+    // A PDF shows its version and page count.
+    let base_pdf = exiftool_tags(&fixture("pdf/clean.pdf")).unwrap();
     // Sanity check that the oracle sees what we planted.
     let original = exiftool_tags(&fixture("jpeg/camera.jpg")).unwrap();
     assert!(
@@ -110,6 +114,8 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
         let name = path.file_name().unwrap().to_string_lossy().into_owned();
         let base = if name.ends_with(".docx") || name.ends_with(".xlsx") {
             &base_office
+        } else if name.ends_with(".pdf") {
+            &base_pdf
         } else if name.ends_with(".webp") {
             &base_webp
         } else if name.ends_with(".png") && name != "jpeg-named.png" {
@@ -196,6 +202,74 @@ fn cleaned_office_files_still_open() {
             let size = fs::metadata(&pdf).map(|m| m.len()).unwrap_or(0);
             assert!(size > 1000, "{} didn't open: {status:?}", path.display());
         }
+    }
+}
+
+/// Cleaned PDFs must be valid (`qpdf --check`) and every page must still
+/// render (`pdftoppm`). Skipped when the tools aren't installed, unless
+/// METASCRUB_REQUIRE_PDF_TOOLS is set (as in CI on Linux).
+#[test]
+fn cleaned_pdfs_are_valid_and_render() {
+    let required = std::env::var_os("METASCRUB_REQUIRE_PDF_TOOLS").is_some_and(|v| !v.is_empty());
+    let installed = ["qpdf", "pdftoppm"]
+        .iter()
+        .all(|tool| Command::new(tool).arg("--version").output().is_ok());
+    if !installed {
+        assert!(!required, "qpdf and pdftoppm are required but couldn't run");
+        eprintln!("qpdf or pdftoppm not installed; skipping");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let originals: Vec<PathBuf> = fs::read_dir(fixture("pdf"))
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .filter(|p| !p.ends_with("encrypted.pdf"))
+        .collect();
+    for (mode, extra) in [
+        ("removed", [].as_slice()),
+        ("kept", ["--keep=comments", "--keep=attachments"].as_slice()),
+    ] {
+        let out = dir.path().join(mode);
+        let mut args = vec![
+            "clean".as_ref(),
+            "-q".as_ref(),
+            "-o".as_ref(),
+            out.as_os_str(),
+        ];
+        args.extend(extra.iter().map(std::ffi::OsStr::new));
+        args.extend(originals.iter().map(|p| p.as_os_str()));
+        assert_eq!(metascrub(&args).status.code(), Some(0), "{mode}");
+
+        let mut checked = 0;
+        for entry in fs::read_dir(&out).unwrap() {
+            let path = entry.unwrap().path();
+            let check = Command::new("qpdf")
+                .arg("--check")
+                .arg(&path)
+                .output()
+                .unwrap();
+            let report = String::from_utf8_lossy(&check.stdout);
+            assert!(
+                check.status.success() && !report.contains("WARNING"),
+                "{} isn't valid: {report}",
+                path.display()
+            );
+            let image = dir.path().join("page");
+            let render = Command::new("pdftoppm")
+                .args(["-r", "20", "-png", "-singlefile"])
+                .arg(&path)
+                .arg(&image)
+                .output()
+                .unwrap();
+            assert!(
+                render.status.success(),
+                "{} didn't render: {render:?}",
+                path.display()
+            );
+            assert!(fs::metadata(image.with_extension("png")).unwrap().len() > 100);
+            checked += 1;
+        }
+        assert_eq!(checked, originals.len(), "{mode}");
     }
 }
 
