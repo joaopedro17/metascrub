@@ -10,7 +10,15 @@ MetaScrub is a cross-platform command-line tool that inspects and removes hidden
 
 Download the archive for your system from the [releases page](https://github.com/joaopedro17/metascrub/releases), extract it and put `metascrub` (`metascrub.exe` on Windows) somewhere on your `PATH`. Each release lists SHA-256 checksums in `SHA256SUMS`.
 
-The binaries aren't signed yet, so the first run needs one extra step:
+To check that a download was built by this project's GitHub workflow from its source, and not changed since, use the [GitHub CLI](https://cli.github.com):
+
+```bash
+gh attestation verify metascrub-v1.0.0-x86_64-unknown-linux-musl.tar.gz --repo joaopedro17/metascrub
+```
+
+Next to each archive, `.cdx.json` is its software bill of materials: every library in that binary, in [CycloneDX](https://cyclonedx.org) format. It's attested too (add `--predicate-type https://cyclonedx.org/bom` to check it).
+
+The binaries aren't signed with an Apple or Microsoft certificate, so the first run needs one extra step:
 
 - **macOS:** `xattr -d com.apple.quarantine metascrub`, or allow it in System Settings → Privacy & Security.
 - **Windows:** SmartScreen may warn about an unknown publisher; choose *More info* → *Run anyway*.

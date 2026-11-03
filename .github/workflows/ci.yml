@@ -136,9 +136,42 @@ jobs:
           path: generated
           if-no-files-found: error
 
+  # A CycloneDX list of every crate in each target's binary. Picking a
+  # target only filters dependencies, so one Linux job writes them all.
+  sbom:
+    name: Software bill of materials
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - run: cargo install cargo-cyclonedx --locked --version 0.5.9
+      - name: Generate
+        run: |
+          mkdir sbom
+          for target in x86_64-unknown-linux-musl aarch64-unknown-linux-musl \
+                        x86_64-pc-windows-msvc aarch64-pc-windows-msvc \
+                        x86_64-apple-darwin aarch64-apple-darwin; do
+            cargo cyclonedx --format json --spec-version 1.5 --no-build-deps \
+              --target "$target" --override-filename sbom
+            mv crates/metascrub-cli/sbom.json "sbom/metascrub-v$VERSION-$target.cdx.json"
+          done
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sbom
+          path: sbom
+          if-no-files-found: error
+
   build:
     name: Build (${{ matrix.target }})
-    needs: [version, licenses, docs]
+    needs: [version, licenses, docs, sbom]
+    # Attestations are signed with the workflow's identity (Sigstore) and
+    # stored on GitHub, where `gh attestation verify` checks them.
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     strategy:
       # Let every platform finish, so a failure only needs that one job re-run.
       fail-fast: false
@@ -180,6 +213,22 @@ jobs:
             cp "target/${{ matrix.target }}/release/metascrub" "$ARCHIVE"/
             tar czf "$ARCHIVE.tar.gz" "$ARCHIVE"
           fi
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: sbom
+          path: sbom
+      - name: Pick this target's SBOM
+        run: |
+          mv "sbom/$ARCHIVE.cdx.json" .
+          if [[ "${{ matrix.target }}" == *windows* ]]; then ext=zip; else ext=tar.gz; fi
+          echo "SUBJECT=$ARCHIVE.$ext" >> "$GITHUB_ENV"
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ env.SUBJECT }}
+      - uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: ${{ env.SUBJECT }}
+          sbom-path: ${{ env.ARCHIVE }}.cdx.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ env.ARCHIVE }}
@@ -210,7 +259,7 @@ jobs:
   # publish the draft again to rerun everything.
   unpublish:
     name: Turn the release back into a draft
-    needs: [test, dependencies, version, licenses, docs, build, release]
+    needs: [test, dependencies, version, licenses, docs, sbom, build, release]
     if: failure() && github.event_name == 'release'
     runs-on: ubuntu-latest
     permissions:
