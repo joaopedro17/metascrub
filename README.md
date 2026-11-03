@@ -156,6 +156,12 @@ Then run `just` to list the commands. The main ones:
 
 `just check` also needs [cargo-deny](https://github.com/EmbarkStudios/cargo-deny) (`cargo install cargo-deny --locked`).
 
+## Support
+
+MetaScrub is free and always will be. If it's kept something private for you
+and you feel like saying thanks, you can [buy me a coffee](https://buymeacoffee.com/joaopedro.luz17)
+— entirely optional, hugely appreciated.
+
 ## License
 
 Licensed under either of
