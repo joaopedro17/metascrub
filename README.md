@@ -129,6 +129,17 @@ Some information isn't inside a file at all, but stored next to it by the operat
 | 4 | `verify` found metadata that cleaning would remove |
 | 130 | Stopped with Ctrl+C |
 
+### Stability
+
+From 1.0, MetaScrub follows [Semantic Versioning](https://semver.org). Within 1.x, scripts that use it keep working:
+
+- **Commands, options and exit codes** keep their names and meaning. New ones may be added.
+- **The JSON report** (`--json`) keeps its fields, their meaning and `"schema_version": 1`. New fields and new values (formats, kinds of findings, outcomes, reasons) may be added in any 1.x release, so a script should ignore fields it doesn't know and treat values it doesn't know as "something else".
+- **What is found** may grow: a later release may find, and remove, more than an earlier one, and may judge a finding's risk differently.
+- **The text report** is written for people and may be reworded in any release. Scripts should use `--json` and the exit codes, not the text.
+
+Anything else would need 2.0, with a new `schema_version` for JSON changes. Before 1.0, anything could change. [CHANGELOG.md](CHANGELOG.md) lists what changed in each release.
+
 ## Limitations
 
 MetaScrub removes **hidden metadata**. It does not:
