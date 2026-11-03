@@ -8,7 +8,16 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
     version,
     about = "Remove hidden metadata from your files.",
     after_help = "MetaScrub removes hidden metadata. It does not remove what is visible in the \
-                  file itself (faces, places, text), and it can't guarantee anonymity."
+                  file itself (faces, places, text), and it can't guarantee anonymity.",
+    after_long_help = "MetaScrub removes hidden metadata. It does not remove what is visible in \
+                       the file itself (faces, places, text), and it can't guarantee anonymity.\n\n\
+                       Exit codes:\n  \
+                       0    success (skipped and copied files aren't failures)\n  \
+                       1    some files failed\n  \
+                       2    invalid usage\n  \
+                       3    all files failed\n  \
+                       4    verify found metadata that cleaning would remove\n  \
+                       130  stopped with Ctrl+C"
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -32,8 +41,10 @@ pub enum Command {
         #[command(flatten)]
         keep: KeepArgs,
     },
-    /// Remove hidden metadata. Writes `name.clean.ext` next to each file
-    /// unless --output or --in-place is given; originals are never changed by default.
+    /// Remove hidden metadata.
+    ///
+    /// Writes `name.clean.ext` next to each file unless --output or
+    /// --in-place is given; originals are never changed by default.
     Clean {
         #[arg(required = true, value_name = "PATH")]
         paths: Vec<PathBuf>,
@@ -92,6 +103,40 @@ pub enum Command {
         #[command(flatten)]
         keep: KeepArgs,
     },
+    /// Print a completion script for your shell.
+    ///
+    /// With it installed, Tab completes MetaScrub's commands and options.
+    /// For example, in Bash:
+    /// `metascrub completions bash > ~/.local/share/bash-completion/completions/metascrub`
+    Completions {
+        #[arg(value_enum)]
+        shell: Shell,
+    },
+    /// Print the manual page, or a command's.
+    ///
+    /// For example: `metascrub man clean > metascrub-clean.1`
+    Man {
+        #[arg(value_enum, value_name = "COMMAND")]
+        page: Option<Page>,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum Shell {
+    Bash,
+    Zsh,
+    Fish,
+    Powershell,
+}
+
+/// The commands that have their own manual page.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum Page {
+    Inspect,
+    Clean,
+    Verify,
+    Completions,
+    Man,
 }
 
 #[derive(Debug, Args)]

@@ -21,6 +21,19 @@ Or build it with Rust:
 cargo install --git https://github.com/joaopedro17/metascrub --tag v0.3.0 --locked metascrub-cli
 ```
 
+### Tab completion and manual pages
+
+The archives include completion scripts for Bash, Zsh, Fish and PowerShell in `completions/`, and manual pages in `man/`. `metascrub completions <shell>` and `metascrub man [command]` print the same files, so they also work when MetaScrub was installed another way. To install them:
+
+| Shell | Command |
+|---|---|
+| Bash | `metascrub completions bash > ~/.local/share/bash-completion/completions/metascrub` |
+| Zsh | `metascrub completions zsh > ~/.zfunc/_metascrub`, with `fpath+=~/.zfunc` before `compinit` in `~/.zshrc` |
+| Fish | `metascrub completions fish > ~/.config/fish/completions/metascrub.fish` |
+| PowerShell | Add `metascrub completions powershell \| Out-String \| Invoke-Expression` to your profile (`notepad $PROFILE`) |
+
+For the manual pages on Linux or macOS, copy `man/*.1` into `~/.local/share/man/man1/` (or `/usr/local/share/man/man1/`); then `man metascrub` and `man metascrub-clean` work.
+
 ## Usage
 
 ```bash
