@@ -4,7 +4,7 @@
 
 MetaScrub is a cross-platform command-line tool that inspects and removes hidden metadata (location, device, author, dates, download sources) from files and folders, so you can share them without leaking personal information.
 
-**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG and WebP images, Word, Excel, PowerPoint and PDF documents, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`); video and HEIC are coming.
+**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, HEIC and AVIF images, MP4 and QuickTime videos, M4A audio, Word, Excel, PowerPoint and PDF documents, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
 
 ## Install
 
@@ -48,6 +48,8 @@ Reports hide metadata values so they're safe to share; `--show-values` shows the
 | WebP | EXIF, XMP, unknown chunks, data after the image | Image data, transparency, animation |
 | PDF | Document information (author, title, dates, software), XMP, the document ID (replaced by one computed from the cleaned file), page thumbnails, application data, comments, attachments, earlier versions left by incremental saves, unused objects, data after the end | Pages and their content; photos inside are cleaned like JPEG |
 | Word, Excel, PowerPoint | Document properties (author, company, dates, custom properties), thumbnail, revision and document IDs, template and folder paths, printer settings, people lists, sensitivity labels, comments, unknown parts, ZIP dates | The document's content; images inside are cleaned like the formats above |
+| HEIC, AVIF | EXIF (rebuilt with only the orientation), XMP, data after the image | Image data, previews, depth and HDR gain maps (see below) |
+| MP4, MOV, M4A | Location, device make and model, software and encoder names, titles, names, comments, cover art and other tags (QuickTime user data, Apple and iTunes metadata, XMP), dates in the headers (set to zero), timecodes and GPS or sensor tracks (zeroed), leftover data in free space, data after the end | Picture and sound |
 | ZIP, TAR, gzip | Dates, owner names and IDs, permissions (reset to 644, or 755 for folders and programs), comments, extra fields and PAX records (including saved download addresses), gzip's original file name, junk files | Every file inside, cleaned like the formats above; files MetaScrub can't read are kept as they are |
 
 By default, two things that affect how the image looks are kept:
@@ -74,6 +76,16 @@ Every cleaned PDF is written anew from what the document still uses, so text fro
 - **Scripts** (JavaScript) and **filled-in form fields** are reported but left alone.
 - **Encrypted** PDFs are skipped, since MetaScrub never asks for passwords. **Digitally signed** PDFs are refused: rewriting them would break the signature.
 
+### Videos, music and HEIC photos
+
+MP4, QuickTime (`.mov`), M4A and HEIC/AVIF files are cleaned in place: nothing is moved, so every video frame and image stays exactly where it was. Metadata blocks become empty space of the same size, dates and recorded data are set to zero, and the photo's EXIF and XMP are overwritten at their own size.
+
+- **GPS and sensor tracks** that some cameras record next to the picture (GoPro, DJI, Google's camera motion track, Apple's timed metadata) are zeroed; the video still plays. Data tracks MetaScrub doesn't recognize are reported but left alone, and a video split into fragments with such a track is refused.
+- **Subtitles and chapter titles** aren't checked: they're reported when a video has them.
+- **Previews, depth maps and HDR gain maps** in HEIC and AVIF photos are kept: they show only what the photo shows, and removing them would break how the photo displays. They're listed as low risk.
+- **Music** loses its tags too: title, artist, album and cover art are removed along with everything else.
+- 3GP videos, camera raw files (`.cr3`) and other formats that share this structure aren't cleaned.
+
 ### Archives
 
 ZIP, TAR and gzip-compressed files (`.tar.gz`, `.tgz`, `.gz`) are treated like a folder inside a file: every file in them is cleaned with the same rules, and the result is a new archive. Archives inside archives are cleaned too, up to 3 levels deep.
@@ -91,7 +103,7 @@ Some information isn't inside a file at all, but stored next to it by the operat
 - **Download addresses and tags.** Browsers record where a file was downloaded from: in extended attributes on Linux and macOS (`user.xdg.origin.url`, `com.apple.metadata:kMDItemWhereFroms`, `com.apple.quarantine`), and in the `Zone.Identifier` stream on Windows. Finder tags and comments live there too. MetaScrub reports them for files and folders. Its outputs are new files, so they never carry them; with `--in-place` they're removed, even from files MetaScrub can't read (whose content stays as it is).
 - **Dates.** Output files and folders get the date 1980-01-01, and keep the original's permissions. With `--in-place -r`, so do the cleaned folder and the folders in it; with `-o`, the folders created in the output (not the output folder itself). `--keep file-times` leaves the current date instead. Cleaning next to the originals leaves folders alone.
 - **Junk files** that the operating system leaves in folders (`.DS_Store`, `Thumbs.db`, `desktop.ini`, `._` files, `__MACOSX` folders) can hold thumbnails, file names and download addresses. They're reported; `--remove-junk` deletes them with `--in-place`, or leaves them out of the `-o` copy.
-- **File names** like `IMG_20261102_143512.jpg`, `PXL_…`, `Screenshot 2026-11-02 …` or `WhatsApp Image …` show when a file was made and on which phone or with which app. They're reported; `--rename` gives such files a neutral name: `image-001.jpg`, `video-001.mp4`, `document-001.pdf` or `file-001.zip`, numbered per folder. Names without a date or a known camera or app pattern stay as they are.
+- **File names** like `IMG_20261102_143512.jpg`, `PXL_…`, `Screenshot 2026-11-02 …` or `WhatsApp Image …` show when a file was made and on which phone or with which app. They're reported; `--rename` gives such files a neutral name: `image-001.jpg`, `video-001.mp4`, `audio-001.m4a`, `document-001.pdf` or `file-001.zip`, numbered per folder. Names without a date or a known camera or app pattern stay as they are.
 
 ### Exit codes
 
@@ -112,7 +124,8 @@ MetaScrub removes **hidden metadata**. It does not:
 - Remove invisible watermarks or steganography, or defeat camera sensor fingerprinting.
 - Guarantee anonymity.
 - Securely delete originals. With `--in-place`, the original bytes may still be recoverable from the disk, and other hard links to the file keep the original.
-- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, Office and PDF documents, and ZIP, TAR and gzip archives; HEIC and video are planned.
+- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, HEIC and AVIF images, MP4, MOV and M4A files, Office and PDF documents, and ZIP, TAR and gzip archives.
+- Check subtitles, chapter titles or what's in the sound itself, or clean MKV, WebM, AVI or 3GP videos.
 - Clean 7z or RAR archives, ZIP files compressed with methods other than Deflate (such as LZMA or Zstandard), or TAR archives with sparse files or device files. These are refused and reported.
 - Clean encrypted or digitally signed PDFs. They're skipped or refused and reported.
 - Clean old-format (`.doc`, `.xls`, `.ppt`) or password-protected Office files, Excel workbooks with change history (shared workbooks), or documents linked to files outside them (linked images or objects). These are skipped or refused and reported.
@@ -135,10 +148,10 @@ Then run `just` to list the commands. The main ones:
 | Command | What it does |
 |---|---|
 | `just check` | Everything CI checks: formatting, lints, tests, dependency policy |
-| `just test` | All tests (needs [exiftool](https://exiftool.org), as in CI; when installed, [LibreOffice](https://www.libreoffice.org) checks cleaned Office files still open, and [qpdf](https://qpdf.sourceforge.io) and poppler's `pdftoppm` that cleaned PDFs are valid and render) |
+| `just test` | All tests (needs [exiftool](https://exiftool.org), as in CI; when installed, [LibreOffice](https://www.libreoffice.org) checks cleaned Office files still open, [qpdf](https://qpdf.sourceforge.io) and poppler's `pdftoppm` that cleaned PDFs are valid and render, and [ffmpeg](https://ffmpeg.org) and libheif's `heif-convert` that cleaned videos and photos still play and decode) |
 | `just fmt` | Format the code |
 | `just run inspect photo.jpg` | Run MetaScrub from the source |
-| `just fixtures` | Regenerate the test fixtures and the expected test output |
+| `just fixtures` | Regenerate the test fixtures and the expected test output (needs ffmpeg, and libheif's `heif-enc` with its x265 and aom plugins) |
 | `just fuzz jpeg 600` | Fuzz a parser for 10 minutes (Linux/macOS, nightly Rust) |
 
 `just check` also needs [cargo-deny](https://github.com/EmbarkStudios/cargo-deny) (`cargo install cargo-deny --locked`).

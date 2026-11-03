@@ -19,7 +19,7 @@ pub fn finding(kind: FindingKind) -> &'static str {
         DownloadUrl => "The web address it was downloaded from",
         Thumbnail => "A small preview image (may show the original before cropping or edits)",
         HiddenImage => "Extra hidden images (such as depth maps)",
-        TrailingData => "Hidden data after the end of the image (such as a Motion Photo video)",
+        TrailingData => "Hidden data added after the file's content (such as a Motion Photo video)",
         TrackedChanges => "Tracked changes (may contain deleted text)",
         Comment => "A comment",
         EmbeddedFile => "Another file embedded inside it",
@@ -31,6 +31,7 @@ pub fn finding(kind: FindingKind) -> &'static str {
         }
         SymbolicLink => "A shortcut (symbolic link) inside, kept and not followed",
         FormData => "Values typed into form fields",
+        TextTrack => "Subtitles or chapter titles, which MetaScrub doesn't check",
         HiddenContent => "Hidden content (hidden text, sheets or slides, or speaker notes)",
         JunkFile => {
             "A junk file left by the operating system (may hold thumbnails, file names \
@@ -79,6 +80,9 @@ pub fn disposition(disposition: Disposition, tense: Tense) -> &'static str {
         }
         (Disposition::Keep(KeepReason::UserRequested), _) => "kept: you asked to keep it",
         (Disposition::Keep(KeepReason::NotWritten), _) => "kept: no copy of this file is written",
+        (Disposition::Keep(KeepReason::PartOfImage), _) => {
+            "kept: part of the picture, shows nothing the picture doesn't"
+        }
         (Disposition::Warn, _) => "can't be fixed automatically",
         (Disposition::Blocks(_), _) => "needs your decision",
     }
@@ -210,6 +214,11 @@ pub fn format(format: FormatId) -> &'static str {
         FormatId::Zip => "ZIP archive",
         FormatId::Tar => "TAR archive",
         FormatId::Gzip => "gzip-compressed file",
+        FormatId::Mp4 => "MP4 video",
+        FormatId::Mov => "QuickTime video",
+        FormatId::M4a => "MPEG-4 audio",
+        FormatId::Heic => "HEIC image",
+        FormatId::Avif => "AVIF image",
         FormatId::Compound => "old-format or password-protected Office file",
         FormatId::Folder => "folder",
         _ => "file",

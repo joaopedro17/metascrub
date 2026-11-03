@@ -30,16 +30,17 @@ test $METASCRUB_REQUIRE_EXIFTOOL="1" $METASCRUB_REQUIRE_FS_ATTRIBUTES="1":
 deny:
     cargo deny check
 
-# Regenerate the fixtures and the expected test output
+# Regenerate the fixtures and the expected test output; needs ffmpeg and
+# heif-enc with the x265 and aom plugins
 fixtures $METASCRUB_BLESS="1":
     cargo run -q -p make-fixtures
     cargo test -q -p metascrub-cli --test golden
 
-# Fuzz a target (inspect, jpeg, png, webp, clean, attributes), seeded with the fixtures; needs nightly and cargo-fuzz, Linux or macOS
+# Fuzz a target (inspect, jpeg, png, webp, clean, media, attributes), seeded with the fixtures; needs nightly and cargo-fuzz, Linux or macOS
 [working-directory: 'fuzz']
 fuzz target seconds="180":
     mkdir -p corpus/{{target}}
-    cargo +nightly fuzz run {{target}} corpus/{{target}} ../fixtures/generated/jpeg ../fixtures/generated/png ../fixtures/generated/webp ../fixtures/generated/office ../fixtures/generated/pdf ../fixtures/generated/archive -- -max_total_time={{seconds}}
+    cargo +nightly fuzz run {{target}} corpus/{{target}} ../fixtures/generated/jpeg ../fixtures/generated/png ../fixtures/generated/webp ../fixtures/generated/office ../fixtures/generated/pdf ../fixtures/generated/archive ../fixtures/generated/media -- -max_total_time={{seconds}}
 
 # Run MetaScrub, e.g. `just run inspect photo.jpg`
 run *args:

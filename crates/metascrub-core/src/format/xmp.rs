@@ -160,6 +160,18 @@ impl Collector {
     }
 }
 
+/// An XMP packet with nothing in it, padded with spaces to exactly `len`
+/// bytes (packets are padded so they can be edited in place). `None` when
+/// it doesn't fit.
+pub(super) fn empty_packet(len: usize) -> Option<Vec<u8>> {
+    const HEAD: &str = "<?xpacket begin=\"\u{feff}\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>\
+        <x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF \
+        xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"/></x:xmpmeta>";
+    const TAIL: &str = "<?xpacket end=\"w\"?>";
+    let padding = len.checked_sub(HEAD.len() + TAIL.len())?;
+    Some([HEAD.as_bytes(), &vec![b' '; padding], TAIL.as_bytes()].concat())
+}
+
 pub(super) fn inspect(data: &[u8], location: &Location) -> Vec<Finding> {
     let mut collector = Collector::default();
     if parse(data, location, &mut collector).is_err() {

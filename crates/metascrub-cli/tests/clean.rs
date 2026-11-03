@@ -494,3 +494,141 @@ fn cleaned_archives_still_extract() {
     let verify = metascrub(&["verify".as_ref(), "-r".as_ref(), out.as_os_str()]);
     assert_eq!(verify.status.code(), Some(0), "{verify:?}");
 }
+
+fn media_fixtures() -> Vec<PathBuf> {
+    let mut files: Vec<_> = fs::read_dir(fixture("media"))
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .collect();
+    files.sort();
+    files
+}
+
+fn clean_media_into(out: &Path) -> Vec<PathBuf> {
+    let originals = media_fixtures();
+    let mut args = vec![
+        "clean".as_ref(),
+        "-q".as_ref(),
+        "-o".as_ref(),
+        out.as_os_str(),
+    ];
+    args.extend(originals.iter().map(|p| p.as_os_str()));
+    let output = metascrub(&args);
+    assert_eq!(output.status.code(), Some(0), "{output:?}");
+    originals
+}
+
+/// Cleaned videos and music must still play to the end, and photos still
+/// decode, with nothing moved: only trailing data makes a file shorter.
+/// Skipped when ffmpeg or heif-convert isn't installed, unless
+/// METASCRUB_REQUIRE_MEDIA_TOOLS is set (as in CI on Linux).
+#[test]
+fn cleaned_media_still_play() {
+    let required = std::env::var_os("METASCRUB_REQUIRE_MEDIA_TOOLS").is_some_and(|v| !v.is_empty());
+    let installed = ["ffmpeg", "heif-convert"]
+        .iter()
+        .all(|tool| Command::new(tool).arg("-version").output().is_ok());
+    if !installed {
+        assert!(
+            !required,
+            "ffmpeg and heif-convert are required but couldn't run"
+        );
+        eprintln!("ffmpeg or heif-convert not installed; skipping");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let out = dir.path().join("out");
+    let originals = clean_media_into(&out);
+    assert!(originals.len() >= 8);
+    for original in originals {
+        let name = original.file_name().unwrap();
+        let cleaned = out.join(name);
+        let name = name.to_string_lossy();
+        let shorter = if name == "trailing.mp4" { 24 } else { 0 };
+        assert_eq!(
+            fs::metadata(&cleaned).unwrap().len() + shorter,
+            fs::metadata(&original).unwrap().len(),
+            "{name}"
+        );
+        let decoded = if name.ends_with(".heic") || name.ends_with(".avif") {
+            Command::new("heif-convert")
+                .arg(&cleaned)
+                .arg(dir.path().join(format!("{name}.png")))
+                .output()
+        } else {
+            Command::new("ffmpeg")
+                .args(["-v", "error", "-xerror", "-i"])
+                .arg(&cleaned)
+                .args(["-f", "null", "-"])
+                .output()
+        }
+        .unwrap();
+        assert!(
+            decoded.status.success() && decoded.stderr.is_empty(),
+            "{name}: {}",
+            String::from_utf8_lossy(&decoded.stderr)
+        );
+    }
+    let verify = metascrub(&["verify".as_ref(), "-r".as_ref(), out.as_os_str()]);
+    assert_eq!(verify.status.code(), Some(0), "{verify:?}");
+}
+
+/// What exiftool, reading with its own parser, finds in a video or photo
+/// beyond its structure (sizes, codecs, tracks), zeroed dates and the
+/// orientation MetaScrub keeps.
+fn exiftool_media_leftovers(path: &Path) -> Vec<String> {
+    const GROUPS: &[&str] = &[
+        "[Keys]",
+        "[ItemList]",
+        "[UserData]",
+        "[GPS]",
+        "[XMP",
+        "[ExifIFD]",
+        "[IFD1]",
+        "[Composite]GPS",
+    ];
+    const TAGS: &[&str] = &["VendorID", "Encoder", "Software", "Make", "Model", "Artist"];
+    let output = Command::new("exiftool")
+        .args(["-G1", "-a", "-u", "-s", "-q"])
+        .arg(path)
+        .output()
+        .unwrap();
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter(|line| {
+            let (tag, value) = line.split_once(':').unwrap_or((line, ""));
+            let tag: String = tag.split_whitespace().collect();
+            let value = value.trim();
+            let name = tag.rsplit(']').next().unwrap_or_default();
+            let named = GROUPS.iter().any(|g| tag.starts_with(g))
+                || TAGS.contains(&name)
+                || (name == "CompressorName" && !value.is_empty());
+            let dated = tag.contains("Date")
+                && !tag.starts_with("[System]")
+                && value != "0000:00:00 00:00:00";
+            named || dated
+        })
+        .map(str::to_owned)
+        .collect()
+}
+
+#[test]
+fn exiftool_finds_no_media_metadata() {
+    if exiftool_tags(&fixture("jpeg/clean.jpg")).is_none() {
+        eprintln!("exiftool not installed; skipping");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    for original in clean_media_into(dir.path()) {
+        let name = original.file_name().unwrap();
+        let found = exiftool_media_leftovers(&original);
+        let clean = name.to_string_lossy().starts_with("clean.") || name == "trailing.mp4";
+        assert_eq!(
+            found.is_empty(),
+            clean,
+            "{name:?}: the oracle sees {found:?}"
+        );
+        let left = exiftool_media_leftovers(&dir.path().join(name));
+        assert!(left.is_empty(), "{name:?}: exiftool still finds {left:?}");
+    }
+}
