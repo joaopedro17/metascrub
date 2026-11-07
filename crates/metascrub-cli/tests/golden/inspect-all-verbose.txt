@@ -389,9 +389,10 @@ fixtures/generated/media/voice.m4a (MPEG-4 audio)
   High risk
     • A person's name (author, artist or owner): Jane Doe — will be removed [User data > ©ART]
     • A comment: Call with the lawyer — will be removed [User data > ©cmt]
-    • Another file embedded inside it: 396 bytes — will be removed [User data > covr]
   Medium risk
     • A title, caption or keywords: Voice memo — will be removed [User data > ©nam]
+  Low risk
+    • Cover picture (album or audiobook art): 396 bytes — will be removed [User data > covr]
 
 fixtures/generated/media/xmp.avif (AVIF image)
   High risk

@@ -7,6 +7,7 @@ What changed in each release of MetaScrub, newest first. From 1.0, versions foll
 ### Added
 
 - **`--checksums`** shows the SHA-256 of each file read and each file written (the cleaned file or the copy), in the text report and as `sha256` in `--json`.
+- **Cover art** in M4A files is reported as its own kind (`cover_art`, low risk) instead of "Another file embedded inside it". It's still removed.
 
 ### Changed
 

@@ -49,6 +49,7 @@ pub fn finding(kind: FindingKind) -> &'static str {
         UnknownMetadata => "Metadata MetaScrub doesn't recognize",
         ColorProfile => "Color profile",
         Orientation => "Rotation setting",
+        CoverArt => "Cover picture (album or audiobook art)",
         TechnicalInfo => "Technical details (encoding, settings, statistics)",
         ExtensionMismatch => "The file name's extension doesn't match the real file type",
         _ => "Other metadata",

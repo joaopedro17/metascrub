@@ -71,6 +71,9 @@ pub enum FindingKind {
     UnknownMetadata,
     ColorProfile,
     Orientation,
+    /// Album or cover artwork in a music or audio file. Players show it,
+    /// so it isn't hidden, but it can be a personal photo.
+    CoverArt,
     TechnicalInfo,
     ExtensionMismatch,
 }
@@ -112,6 +115,7 @@ impl FindingKind {
 
             Self::ColorProfile
             | Self::Orientation
+            | Self::CoverArt
             | Self::TechnicalInfo
             | Self::ExtensionMismatch => Risk::Low,
         }

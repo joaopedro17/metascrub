@@ -187,9 +187,10 @@ fixtures/generated/media/voice.m4a (MPEG-4 audio) still contains hidden metadata
   High risk
     • A person's name (author, artist or owner) — will be removed
     • A comment — will be removed
-    • Another file embedded inside it — will be removed
   Medium risk
     • A title, caption or keywords — will be removed
+  Low risk
+    • Cover picture (album or audiobook art) — will be removed
 
 fixtures/generated/media/xmp.avif (AVIF image) still contains hidden metadata
   High risk

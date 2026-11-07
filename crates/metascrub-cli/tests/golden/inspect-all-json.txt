@@ -4908,12 +4908,12 @@ exit: 1
           "disposition": {
             "action": "remove"
           },
-          "kind": "embedded_file",
+          "kind": "cover_art",
           "location": [
             "User data",
             "covr"
           ],
-          "risk": "high",
+          "risk": "low",
           "value": {
             "type": "bytes",
             "value": 396
