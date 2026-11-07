@@ -71,6 +71,9 @@ pub enum FindingKind {
     UnknownMetadata,
     ColorProfile,
     Orientation,
+    /// Album or cover artwork in a music or audio file. Players show it,
+    /// so it isn't hidden, but it can be a personal photo.
+    CoverArt,
     TechnicalInfo,
     ExtensionMismatch,
 }
@@ -112,6 +115,7 @@ impl FindingKind {
 
             Self::ColorProfile
             | Self::Orientation
+            | Self::CoverArt
             | Self::TechnicalInfo
             | Self::ExtensionMismatch => Risk::Low,
         }
@@ -366,6 +370,9 @@ pub enum FailureKind {
     UnsafePath,
     /// The run was cancelled before this file finished.
     Cancelled,
+    /// The cleaned copy still held something that should have been removed,
+    /// so it was thrown away: a bug in MetaScrub.
+    Incomplete,
 }
 
 /// The result for one file.
@@ -377,6 +384,17 @@ pub struct FileReport {
     pub outcome: Outcome,
     /// Where the cleaned or copied file was written, if anywhere.
     pub output: Option<PathBuf>,
+    /// Only when the request asks for them.
+    pub checksums: Option<Checksums>,
+}
+
+/// SHA-256 of a file as it was read and as it was written, in lowercase
+/// hex, so people can show exactly which file they shared.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Checksums {
+    pub original: String,
+    /// The file written, if one was: the cleaned file, or the copy.
+    pub output: Option<String>,
 }
 
 /// The result of a whole run.
@@ -507,6 +525,7 @@ mod tests {
             findings: Vec::new(),
             outcome,
             output: None,
+            checksums: None,
         };
         let report = RunReport {
             files: vec![
@@ -546,6 +565,7 @@ mod tests {
             findings: Vec::new(),
             outcome,
             output: None,
+            checksums: None,
         };
         let report = RunReport {
             files: vec![

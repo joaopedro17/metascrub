@@ -2,6 +2,17 @@
 
 What changed in each release of MetaScrub, newest first. From 1.0, versions follow [Semantic Versioning](https://semver.org); the [README](README.md#stability) says what that promises.
 
+## 1.1.0 — 2026-11-07
+
+### Added
+
+- **`--checksums`** shows the SHA-256 of each file read and each file written (the cleaned file or the copy), in the text report and as `sha256` in `--json`.
+- **Cover art** in M4A files is reported as its own kind (`cover_art`, low risk) instead of "Another file embedded inside it". It's still removed.
+
+### Changed
+
+- **Every cleaned file is checked before it's kept.** MetaScrub reads it back as `verify` would; if anything it should have removed is left, nothing is written and the file fails with the new reason `incomplete` (in JSON). Cleaning takes up to about 20% longer; PDFs not at all, since their cleaning already read the result back.
+
 ## 1.0.0 — 2026-11-03
 
 Everything since 0.3.0. From this release, the command-line options, exit codes and JSON report are stable.

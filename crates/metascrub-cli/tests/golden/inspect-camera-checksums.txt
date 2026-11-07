@@ -1,0 +1,23 @@
+$ metascrub inspect --checksums fixtures/generated/jpeg/camera.jpg fixtures/generated/other/notes.txt
+exit: 0
+
+fixtures/generated/jpeg/camera.jpg (JPEG image)
+  High risk
+    • A person's name (author, artist or owner) — will be removed
+    • Serial number of the camera or device — will be removed
+    • Location where it was created — will be removed
+    • A small preview image (may show the original before cropping or edits) — will be removed
+  Medium risk
+    • Make and model of a device (camera, phone, printer) — will be removed
+    • Software or app used — will be removed
+    • Date and time — will be removed
+  Low risk
+    • Rotation setting — kept: needed to display correctly
+    • Technical details (encoding, settings, statistics) — will be removed
+  SHA-256: 8d2c79e67979d4ca0c1517525b4615e9d74455c3bb522868832e795e62be35bb
+
+fixtures/generated/other/notes.txt skipped: MetaScrub can't read this type of file
+  SHA-256: b121eab4c718b8a9ccea425d1472001274093fd628b66851f874a9a5b8577e7a
+
+1 file inspected, 1 with hidden metadata, 1 skipped
+Values are hidden so this report is safe to share. Use --show-values to see them.

@@ -450,7 +450,7 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "metascrub-core"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "flate2",
  "kamadak-exif",
@@ -459,6 +459,7 @@ dependencies = [
  "quick-xml",
  "rayon",
  "serde",
+ "sha2",
  "tar",
  "tempfile",
  "walkdir",

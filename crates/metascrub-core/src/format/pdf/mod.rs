@@ -14,7 +14,8 @@ use lopdf::{Dictionary, Document, LoadOptions, Object, ObjectId, StringFormat};
 use md5::{Digest, Md5};
 
 use super::{
-    Depth, FormatError, FormatHandler, ReadSeek, clean_embedded, drop_all, read_image, xmp,
+    Depth, FormatError, FormatHandler, ReadSeek, clean_embedded, drop_all, ensure_clean,
+    read_image, xmp,
 };
 use crate::limits::MAX_PDF_STREAM_BYTES;
 use crate::model::{Disposition, Finding, FindingKind, Location, Value};
@@ -56,19 +57,25 @@ impl FormatHandler for Pdf {
         output.write_all(&settled(analysis.output, options)?)?;
         Ok(analysis.findings)
     }
+
+    fn checks_its_output(&self) -> bool {
+        true
+    }
 }
 
 /// The PDF library can write something from a damaged file that it then
 /// reads differently, so the output is cleaned again until nothing
 /// changes: what's written always reads back as itself, and cleaning it
-/// again is a no-op.
+/// again is a no-op. That last reading doubles as the check that nothing
+/// was left, which would otherwise read a large PDF once more.
 fn settled(mut output: Vec<u8>, options: &Options) -> Result<Vec<u8>, FormatError> {
     for _ in 0..3 {
-        let again = analyze_safely(&output, options)?.output;
-        if again == output {
+        let again = analyze_safely(&output, options)?;
+        if again.output == output {
+            ensure_clean(&again.findings)?;
             return Ok(output);
         }
-        output = again;
+        output = again.output;
     }
     Err(FormatError::malformed(
         "the PDF couldn't be rewritten consistently",

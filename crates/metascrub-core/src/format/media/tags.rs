@@ -314,7 +314,7 @@ fn kind_of(kind: FourCc) -> Option<FindingKind> {
         | b"\xA9grp" | b"\xA9lyr" | b"\xA9dis" | b"desc" | b"ldes" | b"tvsh" | b"sonm"
         | b"soal" | b"keyw" | b"catg" | b"titl" | b"dscp" | b"gnre" | b"albm" | b"kywd"
         | b"clsf" | b"chpl" => Description,
-        b"covr" => EmbeddedFile,
+        b"covr" => CoverArt,
         b"cnID" | b"atID" | b"plID" | b"geID" | b"sfID" | b"cmID" | b"xid " | b"MUID" | b"GUMI" => {
             DocumentId
         }
@@ -543,7 +543,7 @@ pub(super) mod tests {
                 FindingKind::Description,
                 FindingKind::PersonName,
                 FindingKind::PersonName,
-                FindingKind::EmbeddedFile,
+                FindingKind::CoverArt,
                 FindingKind::TechnicalInfo,
             ]
         );

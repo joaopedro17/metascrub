@@ -43,6 +43,30 @@ pub trait FormatHandler: Send + Sync {
         output: &mut dyn Write,
         options: &Options,
     ) -> Result<Vec<Finding>, FormatError>;
+
+    /// Whether `clean` already reads back what it wrote, as `inspect` would,
+    /// and fails with [`FormatError::Incomplete`] if something is left, so
+    /// the pipeline doesn't read the output again.
+    fn checks_its_output(&self) -> bool {
+        false
+    }
+}
+
+/// Fails if a cleaned file's findings include anything cleaning should have removed.
+pub(crate) fn ensure_clean(findings: &[Finding]) -> Result<(), FormatError> {
+    let left: Vec<String> = findings
+        .iter()
+        .filter(|f| !f.disposition.is_acceptable_after_cleaning())
+        .map(|f| format!("{:?} at {}", f.kind, f.location))
+        .collect();
+    if left.is_empty() {
+        Ok(())
+    } else {
+        Err(FormatError::Incomplete(format!(
+            "the cleaned copy still has {}",
+            left.join(", ")
+        )))
+    }
 }
 
 /// How many leading bytes [`sniff`] needs.
@@ -239,6 +263,9 @@ pub enum FormatError {
     /// A file inside (an archive's, or an Office file's part) whose path
     /// leads outside it, like `../`: extracting it could overwrite other files.
     UnsafePath(String),
+    /// The cleaned copy, read back before it was kept, still held something
+    /// cleaning should have removed: a bug in MetaScrub, not in the file.
+    Incomplete(String),
 }
 
 impl FormatError {
@@ -257,6 +284,7 @@ impl fmt::Display for FormatError {
             Self::TooDeep { limit } => write!(f, "files nested more than {limit} levels deep"),
             Self::Encrypted => f.write_str("encrypted"),
             Self::UnsafePath(name) => write!(f, "unsafe path {name}"),
+            Self::Incomplete(detail) => write!(f, "cleaning was incomplete: {detail}"),
         }
     }
 }

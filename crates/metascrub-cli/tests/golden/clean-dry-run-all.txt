@@ -209,9 +209,10 @@ fixtures/generated/media/voice.m4a (MPEG-4 audio)
   High risk
     • A person's name (author, artist or owner) — would be removed
     • A comment — would be removed
-    • Another file embedded inside it — would be removed
   Medium risk
     • A title, caption or keywords — would be removed
+  Low risk
+    • Cover picture (album or audiobook art) — would be removed
 
 fixtures/generated/media/xmp.avif (AVIF image)
   High risk

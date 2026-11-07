@@ -49,6 +49,7 @@ pub fn finding(kind: FindingKind) -> &'static str {
         UnknownMetadata => "Metadata MetaScrub doesn't recognize",
         ColorProfile => "Color profile",
         Orientation => "Rotation setting",
+        CoverArt => "Cover picture (album or audiobook art)",
         TechnicalInfo => "Technical details (encoding, settings, statistics)",
         ExtensionMismatch => "The file name's extension doesn't match the real file type",
         _ => "Other metadata",
@@ -116,6 +117,9 @@ pub const NAME_HINT: &str = "File names that show a date, phone or app can be re
 pub const REMOVED: &str = "removed: a junk file left by the operating system";
 pub const WOULD_REMOVE: &str = "would be removed: a junk file left by the operating system";
 pub const VERIFIED: &str = "no hidden metadata left";
+pub const CHECKSUM: &str = "SHA-256";
+pub const CHECKSUM_BEFORE: &str = "SHA-256 before";
+pub const CHECKSUM_AFTER: &str = "SHA-256 after";
 pub const REMAINING: &str = "still contains hidden metadata";
 pub const LIMITATIONS: &str = "MetaScrub removes hidden metadata only. It can't remove what's \
                                visible in a file (faces, places, text), and it doesn't make you anonymous.";
@@ -270,6 +274,10 @@ pub fn failure(kind: FailureKind) -> &'static str {
              overwrite other files when extracted, so it was left alone"
         }
         FailureKind::Cancelled => "cancelled before it finished",
+        FailureKind::Incomplete => {
+            "MetaScrub checked the cleaned copy and it still had hidden information, so \
+             nothing was written. This is a bug in MetaScrub; please report it"
+        }
     }
 }
 

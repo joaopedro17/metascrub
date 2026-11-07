@@ -34,13 +34,18 @@ fn file(file: &FileReport, settings: &Settings) -> Value {
             value
         })
         .collect();
-    json!({
+    let mut value = json!({
         "path": path(&file.path),
         "format": file.format,
         "outcome": file.outcome,
         "findings": findings,
         "output": file.output.as_deref().map(path),
-    })
+    });
+    // Only with --checksums, so reports without it keep their shape.
+    if let (Some(checksums), Some(object)) = (&file.checksums, value.as_object_mut()) {
+        object.insert("sha256".into(), json!(checksums));
+    }
+    value
 }
 
 /// Paths that aren't valid Unicode are kept losslessly as raw hex
