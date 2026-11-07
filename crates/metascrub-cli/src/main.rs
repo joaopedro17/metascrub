@@ -26,7 +26,7 @@ fn main() -> ExitCode {
         anstream::ColorChoice::Never.write_global();
     }
 
-    let (mode, request) = match cli.command {
+    let (mode, mut request) = match cli.command {
         Command::Completions { shell } => {
             return printed(docs::completions(shell, &mut io::stdout().lock()));
         }
@@ -101,6 +101,7 @@ fn main() -> ExitCode {
     if !request.recursive {
         reject_folders(&request.paths);
     }
+    request.checksums = cli.output.checksums;
 
     let progress = Progress::new(!cli.output.quiet);
     let cancel = CancelToken::new();

@@ -7,14 +7,15 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use rayon::prelude::*;
+use sha2::{Digest, Sha256};
 
 use crate::budget::{self, Budget};
 use crate::format::{self, FormatError, FormatHandler, SNIFF_LEN};
 use crate::fsmeta::{self, Attribute};
 use crate::limits::{MAX_PARALLEL_FILES, MEMORY_BUDGET_BYTES};
 use crate::model::{
-    Decision, Disposition, Failure, FailureKind, FileReport, Finding, FindingKind, FormatId,
-    KeepReason, Location, Outcome, RunReport, SkipReason, Value,
+    Checksums, Decision, Disposition, Failure, FailureKind, FileReport, Finding, FindingKind,
+    FormatId, KeepReason, Location, Outcome, RunReport, SkipReason, Value,
 };
 use crate::options::Options;
 use crate::output;
@@ -55,6 +56,8 @@ pub struct Request {
     /// Give files whose names reveal a date, device or app a neutral name
     /// (`image-001.jpg`).
     pub rename: bool,
+    /// Report the SHA-256 of every file read and written.
+    pub checksums: bool,
 }
 
 impl Request {
@@ -69,6 +72,7 @@ impl Request {
             recursive: false,
             remove_junk: false,
             rename: false,
+            checksums: false,
         }
     }
 }
@@ -157,6 +161,7 @@ fn report(job: &Job, outcome: Outcome) -> FileReport {
         findings: Vec::new(),
         outcome,
         output: None,
+        checksums: None,
     }
 }
 
@@ -273,6 +278,13 @@ fn process_file(
 
     let mut file = File::open(path)?;
     ensure_same_file(&metadata, &file)?;
+    if request.checksums {
+        report.checksums = Some(Checksums {
+            original: sha256(&mut file)?,
+            output: None,
+        });
+        file.seek(SeekFrom::Start(0))?;
+    }
     let mut head = Vec::with_capacity(SNIFF_LEN);
     Read::by_ref(&mut file)
         .take(SNIFF_LEN as u64)
@@ -316,9 +328,12 @@ fn process_file(
             }
         }
         Command::Clean => {
-            let (output, findings) = clean(job, file, handler, request, &settings)?;
-            report.output = output;
-            report.findings = findings;
+            let cleaned = clean(job, file, handler, request, &settings)?;
+            report.output = cleaned.output;
+            report.findings = cleaned.findings;
+            if let Some(checksums) = &mut report.checksums {
+                checksums.output = cleaned.checksum;
+            }
             report.findings.extend(attributes);
             match decision_needed(&report.findings) {
                 Some(decision) => Outcome::NeedsDecision(decision),
@@ -397,7 +412,7 @@ fn clean(
     handler: &dyn FormatHandler,
     request: &Request,
     settings: &output::Settings,
-) -> Result<(Option<PathBuf>, Vec<Finding>), FormatError> {
+) -> Result<Cleaned, FormatError> {
     let mut draft = output::Draft::new(job.target.as_deref().unwrap_or(&job.path))?;
     let findings = {
         let mut input = BufReader::new(file);
@@ -408,11 +423,22 @@ fn clean(
         // The input is closed here: Windows can't replace a file that is still open.
     };
     if decision_needed(&findings).is_some() {
-        return Ok((None, findings));
+        return Ok(Cleaned {
+            output: None,
+            findings,
+            checksum: None,
+        });
     }
     if !handler.checks_its_output() {
         self_check(draft.file(), handler, &request.options)?;
     }
+    let checksum = if request.checksums {
+        let file = draft.file();
+        file.seek(SeekFrom::Start(0))?;
+        Some(sha256(file)?)
+    } else {
+        None
+    };
     let written = match &job.target {
         Some(target) => draft.finish_new(target, settings)?,
         None => {
@@ -425,7 +451,45 @@ fn clean(
     if job.renamed && request.output == OutputMode::InPlace {
         fs::remove_file(&job.path)?;
     }
-    Ok((Some(written), findings))
+    Ok(Cleaned {
+        output: Some(written),
+        findings,
+        checksum,
+    })
+}
+
+#[derive(Debug)]
+struct Cleaned {
+    /// `None` when nothing was written because the user must decide first.
+    output: Option<PathBuf>,
+    findings: Vec<Finding>,
+    /// Of the file written, with `--checksums`.
+    checksum: Option<String>,
+}
+
+fn sha256(input: &mut impl Read) -> io::Result<String> {
+    let mut hasher = Sha256::new();
+    let mut buffer = vec![0; 1 << 16];
+    loop {
+        match input.read(&mut buffer) {
+            Ok(0) => break,
+            Ok(n) => hasher.update(buffer.get(..n).unwrap_or_default()),
+            Err(e) if e.kind() == io::ErrorKind::Interrupted => {}
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(hasher
+        .finalize()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect())
+}
+
+/// A copy has the same bytes as the original.
+fn copied(report: &mut FileReport) {
+    if let Some(checksums) = &mut report.checksums {
+        checksums.output = Some(checksums.original.clone());
+    }
 }
 
 /// Reads the cleaned copy back as `verify` would, so a cleaner that missed
@@ -497,6 +561,7 @@ fn unsupported(
             })?;
             fsmeta::strip(&written)?;
             report.output = Some(written);
+            copied(report);
             Ok(Outcome::Copied)
         }
         (OutputMode::InPlace, target) => {
@@ -514,6 +579,7 @@ fn unsupported(
                     fsmeta::strip(&written)?;
                     fs::remove_file(&job.path)?;
                     report.output = Some(written);
+                    copied(report);
                 }
                 None => {
                     fsmeta::strip(&job.path)?;
@@ -964,6 +1030,57 @@ mod tests {
         let error = clean(&job, file, &leaky, &request, &settings).unwrap_err();
         assert_eq!(failure(error).kind, FailureKind::Incomplete);
         assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
+    }
+
+    const HELLO_SHA256: &str = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+
+    #[test]
+    fn checksums_only_when_asked() {
+        let dir = tempfile::tempdir().unwrap();
+        let original = copy_fixture(dir.path(), "jpeg/camera.jpg");
+        let report = run_one(Request::new(Command::Inspect, vec![original]));
+        assert_eq!(report.checksums, None);
+    }
+
+    #[test]
+    fn checksums_of_the_original_and_the_cleaned_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let original = copy_fixture(dir.path(), "jpeg/camera.jpg");
+        let before = sha256(&mut File::open(&original).unwrap()).unwrap();
+        let report = run_one(Request {
+            checksums: true,
+            ..Request::new(Command::Clean, vec![original])
+        });
+        let checksums = report.checksums.unwrap();
+        assert_eq!(checksums.original, before);
+        let after = sha256(&mut File::open(report.output.unwrap()).unwrap()).unwrap();
+        assert_eq!(checksums.output, Some(after));
+        assert_ne!(checksums.output, Some(before));
+    }
+
+    #[test]
+    fn a_copy_has_the_checksum_of_its_original() {
+        let dir = tempfile::tempdir().unwrap();
+        let text = dir.path().join("notes.txt");
+        fs::write(&text, "hello").unwrap();
+        let report = run_one(Request {
+            checksums: true,
+            output: OutputMode::Directory(dir.path().join("out")),
+            ..Request::new(Command::Clean, vec![text.clone()])
+        });
+        assert_eq!(report.outcome, Outcome::Copied);
+        let checksums = report.checksums.unwrap();
+        assert_eq!(checksums.original, HELLO_SHA256);
+        assert_eq!(checksums.output.as_deref(), Some(HELLO_SHA256));
+
+        // Nothing is written for it next to the original.
+        let report = run_one(Request {
+            checksums: true,
+            ..Request::new(Command::Clean, vec![text])
+        });
+        let checksums = report.checksums.unwrap();
+        assert_eq!(checksums.original, HELLO_SHA256);
+        assert_eq!(checksums.output, None);
     }
 
     const URL: &str = "https://example.com/camera.jpg";

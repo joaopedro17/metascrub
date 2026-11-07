@@ -459,6 +459,7 @@ dependencies = [
  "quick-xml",
  "rayon",
  "serde",
+ "sha2",
  "tar",
  "tempfile",
  "walkdir",

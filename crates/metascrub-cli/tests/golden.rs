@@ -120,3 +120,27 @@ fn clean_dry_run_all_fixtures() {
 fn verify_all_fixtures() {
     check("verify-all", &["verify"], true);
 }
+
+#[test]
+fn checksums_when_asked() {
+    check(
+        "inspect-camera-checksums",
+        &[
+            "inspect",
+            "--checksums",
+            "fixtures/generated/jpeg/camera.jpg",
+            "fixtures/generated/other/notes.txt",
+        ],
+        false,
+    );
+    check(
+        "inspect-camera-checksums-json",
+        &[
+            "inspect",
+            "--json",
+            "--checksums",
+            "fixtures/generated/jpeg/camera.jpg",
+        ],
+        false,
+    );
+}

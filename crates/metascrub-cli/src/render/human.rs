@@ -37,6 +37,7 @@ pub fn render(report: &RunReport, settings: &Settings, out: &mut dyn Write) -> i
             continue;
         }
         render_file(file, settings, out)?;
+        render_checksums(file, out)?;
         writeln!(out)?;
     }
     render_summary(report, settings, out)
@@ -133,6 +134,30 @@ fn render_file(file: &FileReport, settings: &Settings, out: &mut dyn Write) -> i
             }
             render_findings(&file.findings, settings, out)
         }
+    }
+}
+
+fn render_checksums(file: &FileReport, out: &mut dyn Write) -> io::Result<()> {
+    let Some(checksums) = &file.checksums else {
+        return Ok(());
+    };
+    match &checksums.output {
+        Some(output) => {
+            writeln!(
+                out,
+                "  {DIM}{}: {}{DIM:#}",
+                messages::CHECKSUM_BEFORE,
+                checksums.original
+            )?;
+            // Lined up under the value above.
+            writeln!(out, "  {DIM}{}:  {output}{DIM:#}", messages::CHECKSUM_AFTER)
+        }
+        None => writeln!(
+            out,
+            "  {DIM}{}: {}{DIM:#}",
+            messages::CHECKSUM,
+            checksums.original
+        ),
     }
 }
 

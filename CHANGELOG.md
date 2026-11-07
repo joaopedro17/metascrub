@@ -4,6 +4,10 @@ What changed in each release of MetaScrub, newest first. From 1.0, versions foll
 
 ## Unreleased
 
+### Added
+
+- **`--checksums`** shows the SHA-256 of each file read and each file written (the cleaned file or the copy), in the text report and as `sha256` in `--json`.
+
 ### Changed
 
 - **Every cleaned file is checked before it's kept.** MetaScrub reads it back as `verify` would; if anything it should have removed is left, nothing is written and the file fails with the new reason `incomplete` (in JSON). Cleaning takes up to about 20% longer; PDFs not at all, since their cleaning already read the result back.

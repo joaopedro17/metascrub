@@ -1,0 +1,179 @@
+$ metascrub inspect --json --checksums fixtures/generated/jpeg/camera.jpg
+exit: 0
+
+{
+  "command": "inspect",
+  "dry_run": false,
+  "files": [
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "EXIF",
+            "Make"
+          ],
+          "risk": "medium"
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "EXIF",
+            "Model"
+          ],
+          "risk": "medium"
+        },
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "required_to_render"
+          },
+          "kind": "orientation",
+          "location": [
+            "EXIF",
+            "Orientation"
+          ],
+          "risk": "low"
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "EXIF",
+            "Software"
+          ],
+          "risk": "medium"
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "EXIF",
+            "DateTime"
+          ],
+          "risk": "medium"
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "EXIF",
+            "Artist"
+          ],
+          "risk": "high"
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "EXIF",
+            "Copyright"
+          ],
+          "risk": "high"
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "EXIF",
+            "DateTimeOriginal"
+          ],
+          "risk": "medium"
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "EXIF",
+            "BodySerialNumber"
+          ],
+          "risk": "high"
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "EXIF",
+            "LensModel"
+          ],
+          "risk": "medium"
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "EXIF",
+            "GPS"
+          ],
+          "risk": "high"
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "thumbnail",
+          "location": [
+            "EXIF",
+            "Thumbnail"
+          ],
+          "risk": "high"
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "EXIF"
+          ],
+          "risk": "low"
+        }
+      ],
+      "format": "jpeg",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/jpeg/camera.jpg",
+      "sha256": {
+        "original": "8d2c79e67979d4ca0c1517525b4615e9d74455c3bb522868832e795e62be35bb",
+        "output": null
+      }
+    }
+  ],
+  "schema_version": 1,
+  "summary": {
+    "cancelled": 0,
+    "cleaned": 0,
+    "copied": 0,
+    "failed": 0,
+    "inspected": 1,
+    "remaining_metadata": 0,
+    "removed": 0,
+    "skipped": 0,
+    "verified": 0
+  },
+  "values_shown": false
+}

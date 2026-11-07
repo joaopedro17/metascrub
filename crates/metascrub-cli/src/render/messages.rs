@@ -116,6 +116,9 @@ pub const NAME_HINT: &str = "File names that show a date, phone or app can be re
 pub const REMOVED: &str = "removed: a junk file left by the operating system";
 pub const WOULD_REMOVE: &str = "would be removed: a junk file left by the operating system";
 pub const VERIFIED: &str = "no hidden metadata left";
+pub const CHECKSUM: &str = "SHA-256";
+pub const CHECKSUM_BEFORE: &str = "SHA-256 before";
+pub const CHECKSUM_AFTER: &str = "SHA-256 after";
 pub const REMAINING: &str = "still contains hidden metadata";
 pub const LIMITATIONS: &str = "MetaScrub removes hidden metadata only. It can't remove what's \
                                visible in a file (faces, places, text), and it doesn't make you anonymous.";

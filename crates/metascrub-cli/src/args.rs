@@ -183,4 +183,9 @@ pub struct OutputArgs {
     /// Only print the summary and problems.
     #[arg(short, long, global = true)]
     pub quiet: bool,
+
+    /// Show the SHA-256 checksum of each file read and each file written,
+    /// to prove exactly which file was shared.
+    #[arg(long, global = true)]
+    pub checksums: bool,
 }

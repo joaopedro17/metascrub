@@ -380,6 +380,17 @@ pub struct FileReport {
     pub outcome: Outcome,
     /// Where the cleaned or copied file was written, if anywhere.
     pub output: Option<PathBuf>,
+    /// Only when the request asks for them.
+    pub checksums: Option<Checksums>,
+}
+
+/// SHA-256 of a file as it was read and as it was written, in lowercase
+/// hex, so people can show exactly which file they shared.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Checksums {
+    pub original: String,
+    /// The file written, if one was: the cleaned file, or the copy.
+    pub output: Option<String>,
 }
 
 /// The result of a whole run.
@@ -510,6 +521,7 @@ mod tests {
             findings: Vec::new(),
             outcome,
             output: None,
+            checksums: None,
         };
         let report = RunReport {
             files: vec![
@@ -549,6 +561,7 @@ mod tests {
             findings: Vec::new(),
             outcome,
             output: None,
+            checksums: None,
         };
         let report = RunReport {
             files: vec![
