@@ -2,6 +2,12 @@
 
 What changed in each release of MetaScrub, newest first. From 1.0, versions follow [Semantic Versioning](https://semver.org); the [README](README.md#stability) says what that promises.
 
+## 1.1.1 — 2026-11-07
+
+### Fixed
+
+- **Memory with several large PDFs, Office files or images, when MetaScrub is built from source on Linux** (`cargo install`). The system's memory allocator kept what each file freed, so four 400 MB PDFs used 4.4 GB instead of about 2 GB. MetaScrub now hands that memory back after each large file. The release downloads weren't affected.
+
 ## 1.1.0 — 2026-11-07
 
 ### Added

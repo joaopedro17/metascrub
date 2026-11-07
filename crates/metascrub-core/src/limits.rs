@@ -10,6 +10,9 @@ pub const MAX_PARALLEL_FILES: usize = 4;
 /// Files read whole into memory (images, PDF, Office) may together take
 /// about this much while they're processed; larger ones wait their turn.
 pub const MEMORY_BUDGET_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+/// After a file estimated to take at least this much memory, the memory
+/// it freed is handed back to the system.
+pub const LARGE_FILE_MEMORY_BYTES: u64 = 256 * 1024 * 1024;
 
 /// ZIP containers and archives hold at most this many files, so a small file
 /// can't expand into millions (requirements §13.9).

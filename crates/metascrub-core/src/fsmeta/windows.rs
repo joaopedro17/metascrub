@@ -1,7 +1,7 @@
 //! Alternate data streams. Listing them needs `FindFirstStreamW`, which the
 //! standard library doesn't offer: this is the only place MetaScrub calls
-//! the operating system directly. Reading and deleting a stream works with
-//! ordinary file operations on `path:name`.
+//! Windows directly. Reading and deleting a stream works with ordinary file
+//! operations on `path:name`.
 #![allow(unsafe_code)]
 
 use std::ffi::{OsStr, OsString};

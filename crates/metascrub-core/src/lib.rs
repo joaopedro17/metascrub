@@ -8,6 +8,7 @@ mod budget;
 pub mod format;
 mod fsmeta;
 pub mod limits;
+mod memory;
 pub mod model;
 mod naming;
 mod options;
