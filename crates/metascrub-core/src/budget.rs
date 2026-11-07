@@ -5,6 +5,8 @@
 
 use std::sync::{Condvar, Mutex, PoisonError};
 
+use crate::limits::LARGE_FILE_MEMORY_BYTES;
+use crate::memory;
 use crate::model::FormatId;
 
 /// How many times its size a file of this format takes in memory, measured
@@ -77,6 +79,10 @@ impl Drop for Reservation<'_> {
             .available
             .lock()
             .unwrap_or_else(PoisonError::into_inner) += self.amount;
+        // The file's data is freed by now: it was held inside the handler.
+        if self.amount >= LARGE_FILE_MEMORY_BYTES {
+            memory::release_freed();
+        }
         self.budget.freed.notify_all();
     }
 }
