@@ -13,7 +13,7 @@ Download the archive for your system from the [releases page](https://github.com
 To check that a download was built by this project's GitHub workflow from its source, and not changed since, use the [GitHub CLI](https://cli.github.com):
 
 ```bash
-gh attestation verify metascrub-v1.0.0-x86_64-unknown-linux-musl.tar.gz --repo joaopedro17/metascrub
+gh attestation verify metascrub-v1.1.0-x86_64-unknown-linux-musl.tar.gz --repo joaopedro17/metascrub
 ```
 
 Next to each archive, `.cdx.json` is its software bill of materials: every library in that binary, in [CycloneDX](https://cyclonedx.org) format. It's attested too (add `--predicate-type https://cyclonedx.org/bom` to check it).
@@ -26,7 +26,7 @@ The binaries aren't signed with an Apple or Microsoft certificate, so the first 
 Or build it with Rust:
 
 ```bash
-cargo install --git https://github.com/joaopedro17/metascrub --tag v1.0.0 --locked metascrub-cli
+cargo install --git https://github.com/joaopedro17/metascrub --tag v1.1.0 --locked metascrub-cli
 ```
 
 ### Tab completion and manual pages
