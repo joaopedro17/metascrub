@@ -2,7 +2,7 @@
 
 What changed in each release of MetaScrub, newest first. From 1.0, versions follow [Semantic Versioning](https://semver.org); the [README](README.md#stability) says what that promises.
 
-## Unreleased
+## 1.1.1 — 2026-11-07
 
 ### Fixed
 
