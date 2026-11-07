@@ -58,6 +58,8 @@ metascrub clean -r --in-place --remove-junk --rename photos   # also tidy names 
 
 Originals are never changed unless you use `--in-place`. Existing files are never overwritten: a second output becomes `photo.clean-2.jpg`. Folders need `-r`; symbolic links aren't followed, and files that look already cleaned (`*.clean.*`) are skipped. With `-o`, files MetaScrub can't read are copied too, so the folder is complete, and reported as not cleaned.
 
+Before a cleaned file is kept, MetaScrub reads it back the way `verify` does. If anything it should have removed is still there, the file isn't written (or the original isn't replaced) and it's reported as failed: that would be a bug in MetaScrub, worth [reporting](https://github.com/joaopedro17/metascrub/issues).
+
 Reports hide metadata values so they're safe to share; `--show-values` shows them. `--json` prints machine-readable output, `-v` shows where in the file each finding is, and `-q` prints only problems and the summary.
 
 ### What is removed and what is kept

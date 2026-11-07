@@ -270,6 +270,10 @@ pub fn failure(kind: FailureKind) -> &'static str {
              overwrite other files when extracted, so it was left alone"
         }
         FailureKind::Cancelled => "cancelled before it finished",
+        FailureKind::Incomplete => {
+            "MetaScrub checked the cleaned copy and it still had hidden information, so \
+             nothing was written. This is a bug in MetaScrub; please report it"
+        }
     }
 }
 

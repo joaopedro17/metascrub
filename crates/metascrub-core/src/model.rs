@@ -366,6 +366,9 @@ pub enum FailureKind {
     UnsafePath,
     /// The run was cancelled before this file finished.
     Cancelled,
+    /// The cleaned copy still held something that should have been removed,
+    /// so it was thrown away: a bug in MetaScrub.
+    Incomplete,
 }
 
 /// The result for one file.

@@ -410,6 +410,9 @@ fn clean(
     if decision_needed(&findings).is_some() {
         return Ok((None, findings));
     }
+    if !handler.checks_its_output() {
+        self_check(draft.file(), handler, &request.options)?;
+    }
     let written = match &job.target {
         Some(target) => draft.finish_new(target, settings)?,
         None => {
@@ -423,6 +426,22 @@ fn clean(
         fs::remove_file(&job.path)?;
     }
     Ok((Some(written), findings))
+}
+
+/// Reads the cleaned copy back as `verify` would, so a cleaner that missed
+/// something fails instead of passing the file off as clean.
+fn self_check(
+    draft: &mut File,
+    handler: &dyn FormatHandler,
+    options: &Options,
+) -> Result<(), FormatError> {
+    draft.seek(SeekFrom::Start(0))?;
+    let findings = handler
+        .inspect(&mut BufReader::new(draft), options)
+        .map_err(|e| {
+            FormatError::Incomplete(format!("the cleaned copy can't be read back ({e})"))
+        })?;
+    format::ensure_clean(&findings)
 }
 
 fn verdict(findings: &[Finding]) -> Outcome {
@@ -564,6 +583,7 @@ fn failure(error: FormatError) -> Failure {
         FormatError::Unsupported(_) | FormatError::Encrypted => FailureKind::Unsupported,
         FormatError::UnsafePath(_) => FailureKind::UnsafePath,
         FormatError::TooLarge { .. } | FormatError::TooDeep { .. } => FailureKind::LimitExceeded,
+        FormatError::Incomplete(_) => FailureKind::Incomplete,
     };
     Failure {
         kind,
@@ -862,6 +882,87 @@ mod tests {
         let report = run_one(Request::new(Command::Clean, vec![broken]));
         assert!(matches!(report.outcome, Outcome::Failed(_)));
         assert_eq!(report.output, None);
+        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
+    }
+
+    /// A cleaner that copies the file unchanged and reads back whatever
+    /// `left` says is still there.
+    struct Leaky {
+        left: Option<Disposition>,
+    }
+
+    impl FormatHandler for Leaky {
+        fn inspect(
+            &self,
+            input: &mut dyn format::ReadSeek,
+            _options: &Options,
+        ) -> Result<Vec<Finding>, FormatError> {
+            let mut bytes = Vec::new();
+            input.read_to_end(&mut bytes)?;
+            if bytes.is_empty() {
+                return Err(FormatError::malformed("empty"));
+            }
+            Ok(self
+                .left
+                .map(|d| Finding::new(FindingKind::GpsLocation, Location::new(["EXIF"]), d))
+                .into_iter()
+                .collect())
+        }
+
+        fn clean(
+            &self,
+            input: &mut dyn format::ReadSeek,
+            output: &mut dyn Write,
+            _options: &Options,
+        ) -> Result<Vec<Finding>, FormatError> {
+            io::copy(input, output)?;
+            Ok(Vec::new())
+        }
+    }
+
+    fn check(handler: &Leaky, content: &[u8]) -> Result<(), FormatError> {
+        let mut draft = tempfile::tempfile().unwrap();
+        draft.write_all(content).unwrap();
+        self_check(&mut draft, handler, &Options::default())
+    }
+
+    #[test]
+    fn the_cleaned_copy_is_read_back_before_it_is_kept() {
+        assert!(check(&Leaky { left: None }, b"data").is_ok());
+        let kept = Leaky {
+            left: Some(Disposition::Keep(KeepReason::RequiredToRender)),
+        };
+        assert!(check(&kept, b"data").is_ok());
+        let leaky = Leaky {
+            left: Some(Disposition::Remove),
+        };
+        assert!(matches!(
+            check(&leaky, b"data"),
+            Err(FormatError::Incomplete(detail)) if detail.contains("GpsLocation at EXIF")
+        ));
+        // A copy that can't be read back is no better.
+        assert!(matches!(
+            check(&Leaky { left: None }, b""),
+            Err(FormatError::Incomplete(_))
+        ));
+    }
+
+    #[test]
+    fn a_copy_that_fails_the_check_is_thrown_away() {
+        let dir = tempfile::tempdir().unwrap();
+        let original = copy_fixture(dir.path(), "jpeg/camera.jpg");
+        let job = plan::plan(&Request::new(Command::Clean, vec![original.clone()])).remove(0);
+        let leaky = Leaky {
+            left: Some(Disposition::Remove),
+        };
+        let settings = output::Settings {
+            permissions: fs::metadata(&original).unwrap().permissions(),
+            neutral_times: true,
+        };
+        let request = Request::new(Command::Clean, vec![original.clone()]);
+        let file = File::open(&original).unwrap();
+        let error = clean(&job, file, &leaky, &request, &settings).unwrap_err();
+        assert_eq!(failure(error).kind, FailureKind::Incomplete);
         assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
     }
 
