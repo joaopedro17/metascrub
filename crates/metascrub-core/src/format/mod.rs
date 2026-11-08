@@ -92,6 +92,8 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
         Some(FormatId::Webp)
     } else if head.starts_with(b"%PDF-") {
         Some(FormatId::Pdf)
+    } else if head.starts_with(b"fLaC") {
+        Some(FormatId::Flac)
     } else if head.starts_with(&[0x1F, 0x8B, 0x08]) {
         Some(FormatId::Gzip)
     } else if head.get(4..8) == Some(b"ftyp") {
@@ -142,6 +144,7 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
             Some(&media::Media)
         }
         FormatId::Mp3 => Some(&audio::Mp3),
+        FormatId::Flac => Some(&audio::Flac),
         FormatId::Compound | FormatId::Folder => None,
     }
 }
@@ -166,6 +169,7 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::Heic => &["heic", "heif", "hif", "heics", "heifs"],
         FormatId::Avif => &["avif", "avifs"],
         FormatId::Mp3 => &["mp3", "mp2", "mpga"],
+        FormatId::Flac => &["flac"],
         // Password-protected Office files keep their usual extension.
         FormatId::Compound => &[
             "doc", "dot", "xls", "xlt", "ppt", "pot", "pps", "docx", "docm", "xlsx", "xlsm",
@@ -391,6 +395,9 @@ mod tests {
         let other = [b"ID3\x03\0\0\0\0\0\0".as_slice(), b"not sound at all"].concat();
         assert_eq!(detect_bytes(&other), None);
         assert_eq!(detect_bytes(&[0xFF; 64]), None);
+        let flac = [b"ID3\x03\0\0\0\0\0\0".as_slice(), b"fLaC"].concat();
+        assert_eq!(detect_bytes(&flac), Some(FormatId::Flac));
+        assert_eq!(detect_bytes(b"fLaC\0\0\0\x22"), Some(FormatId::Flac));
     }
 
     #[test]

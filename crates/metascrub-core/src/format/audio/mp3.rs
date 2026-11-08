@@ -6,7 +6,7 @@
 
 use std::io::{self, BufReader, Read, SeekFrom, Write};
 
-use super::{Tag, ape, id3, text};
+use super::{Tag, id3, text};
 use crate::format::{FormatError, FormatHandler, ReadSeek};
 use crate::model::{Disposition, Finding, FindingKind, KeepReason, Location};
 use crate::options::Options;
@@ -68,7 +68,7 @@ fn scan(input: &mut dyn ReadSeek) -> Result<Layout, FormatError> {
     let mut trailing: Vec<Tag> = Vec::new();
     let mut end = len;
     let frames = loop {
-        end = trailing_tags(input, start, end, &mut trailing)?;
+        end = super::trailing_tags(input, start, end, &mut trailing)?;
         let frames = walk(input, start, end)?;
         if frames.end == end {
             break frames;
@@ -93,31 +93,6 @@ fn scan(input: &mut dyn ReadSeek) -> Result<Layout, FormatError> {
         end: frames.end,
         findings,
     })
-}
-
-/// Tags that end at `end`, from the end inward, in whatever order they
-/// were added. Returns where the first of them starts.
-fn trailing_tags(
-    input: &mut dyn ReadSeek,
-    floor: u64,
-    mut end: u64,
-    trailing: &mut Vec<Tag>,
-) -> Result<u64, FormatError> {
-    loop {
-        let tag = match id3::v1_before(input, floor, end)? {
-            Some(tag) => Some(tag),
-            None => match ape::ape_before(input, floor, end)? {
-                Some(tag) => Some(tag),
-                None => match ape::lyrics_before(input, floor, end)? {
-                    Some(tag) => Some(tag),
-                    None => id3::v2_footer_before(input, floor, end)?,
-                },
-            },
-        };
-        let Some(tag) = tag else { return Ok(end) };
-        end = tag.start;
-        trailing.push(tag);
-    }
 }
 
 fn skip_zeros(input: &mut dyn ReadSeek, start: u64, len: u64) -> Result<u64, FormatError> {

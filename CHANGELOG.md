@@ -7,6 +7,7 @@ What changed in each release of MetaScrub, newest first. From 1.0, versions foll
 ### Added
 
 - **MP3 files.** ID3v2 (2.2 to 2.4, at the start or with a footer at the end), ID3v1 and "TAG+", APE and Lyrics3 tags are removed: titles, artists, dates, comments, lyrics, cover art, loudness levels and every other tag. The sound is kept byte for byte, with the first frame that holds the length and seek table. An MP3 with other data among its frames, or with less than three frames of sound, is refused.
+- **FLAC files.** Vorbis comments (every tag, and the encoder's name), pictures, application data, padding, and ID3 or APE tags added before or after are removed. The sound is kept byte for byte, with the stream description, seek table and cue sheet. Every frame's checksum is verified, so a file with other data among its frames is refused.
 - **Diagnostic log:** `--log <file>` writes what MetaScrub did with each file (format, each step with its duration, memory, full errors) to attach to a problem report. It never contains metadata values and numbers files instead of naming them, unless `--show-values` is given. Nothing is logged without it; `METASCRUB_LOG=<level>` prints the messages to the terminal instead.
 
 ### Changed

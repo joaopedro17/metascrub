@@ -247,6 +247,7 @@ pub fn format(format: FormatId) -> &'static str {
         FormatId::Mov => "QuickTime video",
         FormatId::M4a => "MPEG-4 audio",
         FormatId::Mp3 => "MP3 audio",
+        FormatId::Flac => "FLAC audio",
         FormatId::Heic => "HEIC image",
         FormatId::Avif => "AVIF image",
         FormatId::Compound => "old-format or password-protected Office file",

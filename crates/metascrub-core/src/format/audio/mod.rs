@@ -1,13 +1,16 @@
-//! Music and sound: MP3 for now. Tags sit before or after the sound and are
+//! Music and sound: MP3 and FLAC. Tags sit before or after the sound and are
 //! removed whole; the sound itself is copied byte for byte, so it plays
 //! exactly as before.
 
 mod ape;
+mod flac;
 mod id3;
 mod mp3;
+mod vorbis;
 
 use std::io::{Read, SeekFrom};
 
+pub(super) use flac::Flac;
 pub(super) use mp3::Mp3;
 
 use super::{FormatError, ReadSeek};
@@ -34,6 +37,9 @@ pub(super) fn detect(input: &mut dyn ReadSeek) -> Result<Option<FormatId>, Forma
     while let Some(end) = id3::v2_end(input, start, len)? {
         start = end;
         tagged = true;
+    }
+    if tagged && read_at(input, start, 4.min(len - start))? == b"fLaC" {
+        return Ok(Some(FormatId::Flac));
     }
     // Two frames after a tag, three without: a few bytes of bare frame
     // header can match other files by chance.
@@ -63,4 +69,29 @@ fn read_at(input: &mut dyn ReadSeek, pos: u64, len: u64) -> Result<Vec<u8>, Form
 fn text(value: &str) -> Option<Value> {
     let value = value.trim_matches(|c: char| c == '\0' || c.is_whitespace());
     (!value.is_empty()).then(|| Value::Text(value.chars().take(MAX_VALUE_CHARS).collect()))
+}
+
+/// Tags that end at `end`, from the end inward, in whatever order they
+/// were added. Returns where the first of them starts.
+fn trailing_tags(
+    input: &mut dyn ReadSeek,
+    floor: u64,
+    mut end: u64,
+    trailing: &mut Vec<Tag>,
+) -> Result<u64, FormatError> {
+    loop {
+        let tag = match id3::v1_before(input, floor, end)? {
+            Some(tag) => Some(tag),
+            None => match ape::ape_before(input, floor, end)? {
+                Some(tag) => Some(tag),
+                None => match ape::lyrics_before(input, floor, end)? {
+                    Some(tag) => Some(tag),
+                    None => id3::v2_footer_before(input, floor, end)?,
+                },
+            },
+        };
+        let Some(tag) = tag else { return Ok(end) };
+        end = tag.start;
+        trailing.push(tag);
+    }
 }

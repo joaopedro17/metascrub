@@ -1,4 +1,4 @@
-$ metascrub inspect --json --show-values fixtures/generated/archive/app.jar fixtures/generated/archive/bomb.zip fixtures/generated/archive/deep.zip fixtures/generated/archive/encrypted.zip fixtures/generated/archive/photos.tar fixtures/generated/archive/photos.tar.gz fixtures/generated/archive/photos.zip fixtures/generated/archive/traversal.tar fixtures/generated/archive/traversal.zip fixtures/generated/audio/appended.mp3 fixtures/generated/audio/clean.mp3 fixtures/generated/audio/footer.mp3 fixtures/generated/audio/spliced.mp3 fixtures/generated/audio/tagged.mp3 fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/media/camera.avif fixtures/generated/media/camera.heic fixtures/generated/media/clean.avif fixtures/generated/media/clean.mp4 fixtures/generated/media/iphone.mov fixtures/generated/media/phone.mp4 fixtures/generated/media/trailing.mp4 fixtures/generated/media/voice.m4a fixtures/generated/media/xmp.avif fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub inspect --json --show-values fixtures/generated/archive/app.jar fixtures/generated/archive/bomb.zip fixtures/generated/archive/deep.zip fixtures/generated/archive/encrypted.zip fixtures/generated/archive/photos.tar fixtures/generated/archive/photos.tar.gz fixtures/generated/archive/photos.zip fixtures/generated/archive/traversal.tar fixtures/generated/archive/traversal.zip fixtures/generated/audio/appended.mp3 fixtures/generated/audio/clean.flac fixtures/generated/audio/clean.mp3 fixtures/generated/audio/footer.mp3 fixtures/generated/audio/id3.flac fixtures/generated/audio/plain.flac fixtures/generated/audio/spliced.flac fixtures/generated/audio/spliced.mp3 fixtures/generated/audio/tagged.flac fixtures/generated/audio/tagged.mp3 fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/media/camera.avif fixtures/generated/media/camera.heic fixtures/generated/media/clean.avif fixtures/generated/media/clean.mp4 fixtures/generated/media/iphone.mov fixtures/generated/media/phone.mp4 fixtures/generated/media/trailing.mp4 fixtures/generated/media/voice.m4a fixtures/generated/media/xmp.avif fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 {
@@ -3617,6 +3617,15 @@ exit: 1
       "path": "fixtures/generated/audio/appended.mp3"
     },
     {
+      "findings": [],
+      "format": "flac",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/audio/clean.flac"
+    },
+    {
       "findings": [
         {
           "disposition": {
@@ -3697,6 +3706,99 @@ exit: 1
       "path": "fixtures/generated/audio/footer.mp3"
     },
     {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "ID3v2.3",
+            "TPE1"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "ID3v1",
+            "Title"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Holiday"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "ID3v1",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        }
+      ],
+      "format": "flac",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/audio/id3.flac"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "Vorbis comment",
+            "vendor"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "ffmpeg"
+          }
+        }
+      ],
+      "format": "flac",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/audio/plain.flac"
+    },
+    {
+      "findings": [],
+      "format": "flac",
+      "outcome": {
+        "detail": {
+          "detail": "unsupported feature: data that isn't sound in the FLAC stream, which could hold anything",
+          "kind": "unsupported"
+        },
+        "status": "failed"
+      },
+      "output": null,
+      "path": "fixtures/generated/audio/spliced.flac"
+    },
+    {
       "findings": [],
       "format": "mp3",
       "outcome": {
@@ -3708,6 +3810,120 @@ exit: 1
       },
       "output": null,
       "path": "fixtures/generated/audio/spliced.mp3"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "cover_art",
+          "location": [
+            "Picture"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "bytes",
+            "value": 1192
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "Vorbis comment",
+            "vendor"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "ffmpeg"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "Vorbis comment",
+            "TITLE"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Holiday"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Vorbis comment",
+            "ARTIST"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Vorbis comment",
+            "DATE"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "Vorbis comment",
+            "DESCRIPTION"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Recorded at home"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "Vorbis comment",
+            "REPLAYGAIN_TRACK_GAIN"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "-6.20 dB"
+          }
+        }
+      ],
+      "format": "flac",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/audio/tagged.flac"
     },
     {
       "findings": [
@@ -8886,8 +9102,8 @@ exit: 1
     "cancelled": 0,
     "cleaned": 0,
     "copied": 0,
-    "failed": 7,
-    "inspected": 50,
+    "failed": 8,
+    "inspected": 54,
     "remaining_metadata": 0,
     "removed": 0,
     "skipped": 5,

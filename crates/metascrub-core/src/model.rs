@@ -292,6 +292,7 @@ pub enum FormatId {
     Avif,
     /// MPEG audio, layers I to III.
     Mp3,
+    Flac,
     /// An OLE compound file: an old-format Office file (`.doc`, `.xls`,
     /// `.ppt`) or a password-protected Office file.
     Compound,

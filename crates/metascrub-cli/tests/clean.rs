@@ -101,6 +101,7 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
     let base_pdf = exiftool_tags(&fixture("pdf/clean.pdf")).unwrap();
     // An MP3 shows its stream: version, bitrate, channels.
     let base_mp3 = exiftool_tags(&fixture("audio/clean.mp3")).unwrap();
+    let base_flac = exiftool_tags(&fixture("audio/clean.flac")).unwrap();
     // Sanity check that the oracle sees what we planted.
     let original = exiftool_tags(&fixture("jpeg/camera.jpg")).unwrap();
     assert!(
@@ -120,6 +121,8 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
             &base_pdf
         } else if name.ends_with(".mp3") {
             &base_mp3
+        } else if name.ends_with(".flac") {
+            &base_flac
         } else if name.ends_with(".webp") {
             &base_webp
         } else if name.ends_with(".png") && name != "jpeg-named.png" {
@@ -638,7 +641,7 @@ fn cleaned_music_sounds_the_same() {
         );
         checked += 1;
     }
-    assert!(checked >= 4, "only {checked} music files were checked");
+    assert!(checked >= 8, "only {checked} music files were checked");
 }
 
 /// What exiftool, reading with its own parser, finds in a video or photo

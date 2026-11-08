@@ -1,6 +1,6 @@
-//! Music: MP3 files from `ffmpeg` (LAME), with the tags ffmpeg writes, and
-//! the tags it can't write (APEv2, Lyrics3, ID3v2.4 with a footer) built
-//! by hand around the same sound.
+//! Music: MP3 and FLAC files from `ffmpeg`, with the tags ffmpeg writes,
+//! and the tags it can't write (APEv2, Lyrics3, ID3v2.4 with a footer, ID3
+//! around FLAC) built by hand around the same sound.
 
 use std::fs;
 use std::path::Path;
@@ -22,6 +22,34 @@ const MP3: &[&str] = &[
     "-flags",
     "+bitexact",
 ];
+
+const FLAC: &[&str] = &[
+    "-c:a",
+    "flac",
+    "-threads",
+    "1",
+    "-fflags",
+    "+bitexact",
+    "-flags",
+    "+bitexact",
+];
+
+/// `data` without its FLAC metadata blocks, except the stream description:
+/// ffmpeg always adds a comment block and padding.
+fn bare_flac(data: &[u8]) -> Vec<u8> {
+    let mut pos = 4;
+    loop {
+        let last = data[pos] & 0x80 != 0;
+        let len = u32::from_be_bytes([0, data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+        pos += 4 + len;
+        if last {
+            break;
+        }
+    }
+    let mut streaminfo = data[4..42].to_vec();
+    streaminfo[0] |= 0x80;
+    [b"fLaC".as_slice(), &streaminfo, &data[pos..]].concat()
+}
 
 fn write(path: &Path, data: &[u8]) {
     fs::write(path, data).unwrap();
@@ -179,4 +207,66 @@ pub fn write_all(dir: &Path, jpeg_dir: &Path) {
     ]
     .concat();
     write(&dir.join("spliced.mp3"), &spliced);
+
+    // FLAC: what ffmpeg writes with no tags (its name and padding), with
+    // tags and a cover, and with ID3 tags around it as some taggers add.
+    ffmpeg(
+        &dir.join("plain.flac"),
+        &[SOUND, FLAC, &["-map_metadata", "-1"]],
+    );
+    ffmpeg(
+        &dir.join("tagged.flac"),
+        &[
+            SOUND,
+            &[
+                "-i",
+                cover.to_str().unwrap(),
+                "-map",
+                "0",
+                "-map",
+                "1",
+                "-c:v",
+                "copy",
+            ],
+            FLAC,
+            &[
+                "-disposition:v",
+                "attached_pic",
+                "-metadata",
+                "title=Holiday",
+                "-metadata",
+                "artist=Jane Doe",
+                "-metadata",
+                "date=2026-03-14",
+                "-metadata",
+                "comment=Recorded at home",
+                "-metadata",
+                "REPLAYGAIN_TRACK_GAIN=-6.20 dB",
+            ],
+        ],
+    );
+    let bare = bare_flac(&fs::read(dir.join("plain.flac")).unwrap());
+    write(&dir.join("clean.flac"), &bare);
+    let id3 = [
+        b"ID3".as_slice(),
+        &[3, 0, 0],
+        &syncsafe(15),
+        b"TPE1\0\0\0\x05\0\0\0Jane",
+    ]
+    .concat();
+    write(
+        &dir.join("id3.flac"),
+        &[id3.as_slice(), &bare, &id3v1].concat(),
+    );
+    let half = bare.len() / 2;
+    let frame_start = (half..bare.len())
+        .find(|&i| bare[i] == 0xFF && bare[i + 1] & 0xFE == 0xF8)
+        .unwrap();
+    let spliced = [
+        &bare[..frame_start],
+        b"hidden between frames",
+        &bare[frame_start..],
+    ]
+    .concat();
+    write(&dir.join("spliced.flac"), &spliced);
 }
