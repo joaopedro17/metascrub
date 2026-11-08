@@ -111,7 +111,7 @@ MP4, QuickTime (`.mov`), M4A and HEIC/AVIF files are cleaned in place: nothing i
 - **Music** loses its tags too: title, artist, album and cover art are removed along with everything else.
 - 3GP videos, camera raw files (`.cr3`) and other formats that share this structure aren't cleaned.
 
-MP3 files keep exactly their sound: only the tags before and after it are removed, so it plays exactly as before. MetaScrub checks that everything between the tags is sound; an MP3 with other data among its frames is refused, since that data could hold anything.
+MP3 files keep exactly their sound: only the tags before and after it are removed, so it plays exactly as before. MetaScrub checks that everything between the tags is sound; an MP3 with other data among its frames is refused, since that data could hold anything, and so is one with less than three frames of sound.
 
 ### Archives
 

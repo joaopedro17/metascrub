@@ -37,7 +37,7 @@ pub(super) fn detect(input: &mut dyn ReadSeek) -> Result<Option<FormatId>, Forma
     }
     // Two frames after a tag, three without: a few bytes of bare frame
     // header can match other files by chance.
-    let frames = if tagged { 2 } else { 3 };
+    let frames = if tagged { 2 } else { mp3::UNTAGGED_FRAMES };
     Ok(mp3::starts_with_frames(input, start, len, frames)?.then_some(FormatId::Mp3))
 }
 

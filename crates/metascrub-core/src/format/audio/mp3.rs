@@ -11,6 +11,9 @@ use crate::format::{FormatError, FormatHandler, ReadSeek};
 use crate::model::{Disposition, Finding, FindingKind, KeepReason, Location};
 use crate::options::Options;
 
+/// Frames in a row that make a file without tags count as MP3.
+pub(super) const UNTAGGED_FRAMES: usize = 3;
+
 /// Zero bytes some taggers leave between the tag and the first frame.
 const MAX_PADDING: u64 = 64 * 1024;
 
@@ -73,6 +76,12 @@ fn scan(input: &mut dyn ReadSeek) -> Result<Layout, FormatError> {
         // Zeros after the frames were dropped: a tag may end where they began.
         end = frames.end;
     };
+    // What's kept must be recognized as MP3 again, without its tags.
+    if !starts_with_frames(input, start, frames.end, UNTAGGED_FRAMES)? {
+        return Err(FormatError::Unsupported(
+            "too little sound: fewer than three complete MP3 frames".into(),
+        ));
+    }
     if let Some(info) = info_frame(input, start, frames.first)? {
         findings.push(info);
     }
@@ -432,6 +441,23 @@ mod tests {
         assert_eq!(clean(&zeros).unwrap().0, frames(3));
     }
 
+    /// Found by the `clean` fuzz target: three frames, the last overlapping
+    /// an ID3v1 block, cleaned into a file no longer recognized as MP3.
+    #[test]
+    fn fuzz_cleaned_file_is_still_recognized() {
+        let mut v1 = vec![0u8; 128];
+        v1[..3].copy_from_slice(b"TAG");
+        v1[3..10].copy_from_slice(b"Holiday");
+        v1[127] = 0xFF;
+        let mut data = frames(3);
+        let at = data.len() - 128;
+        data[at..].copy_from_slice(&v1);
+        assert!(starts_with_frames(&mut Cursor::new(&data), 0, data.len() as u64, 3).unwrap());
+        assert!(matches!(clean(&data), Err(FormatError::Unsupported(_))));
+        let longer = [frames(3), v1].concat();
+        assert_eq!(clean(&longer).unwrap().0, frames(3));
+    }
+
     /// Found by the `audio` fuzz target: a tag hidden behind trailing zeros
     /// was only found when the cleaned file was read again.
     #[test]
@@ -441,9 +467,9 @@ mod tests {
         let mut last = frame();
         let at = last.len() - ape.len();
         last[at..].copy_from_slice(&ape);
-        let data = [frames(2), last.clone(), vec![0]].concat();
+        let data = [frames(3), last.clone(), vec![0]].concat();
         let (out, findings) = clean(&data).unwrap();
-        assert_eq!(out, [frames(2), last[..at].to_vec()].concat());
+        assert_eq!(out, [frames(3), last[..at].to_vec()].concat());
         assert_eq!(findings[0].kind, FindingKind::PersonName);
         assert_eq!(clean(&out).unwrap(), (out.clone(), Vec::new()));
     }
