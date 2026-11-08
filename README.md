@@ -166,6 +166,16 @@ From 1.0, MetaScrub follows [Semantic Versioning](https://semver.org). Within 1.
 
 Anything else would need 2.0, with a new `schema_version` for JSON changes. Before 1.0, anything could change. [CHANGELOG.md](CHANGELOG.md) lists what changed in each release.
 
+### Reporting a problem
+
+If MetaScrub fails on a file or does something unexpected, run the same command again with `--log metascrub.log` and attach that file to an [issue](https://github.com/joaopedro17/metascrub/issues):
+
+```bash
+metascrub clean -r photos -o shared --log metascrub.log
+```
+
+The log shows what MetaScrub did with each file: the format it found, each step and how long it took, and the full error. It **never contains metadata values**, and files are numbered (`file 12`) instead of named, so it's safe to share. With `--show-values` it names the files too; check it before you share it. An existing file is never overwritten: a second log becomes `metascrub-2.log`. Nothing is logged without `--log`. For debugging, `METASCRUB_LOG=debug` prints the same messages to the terminal.
+
 ## Limitations
 
 MetaScrub removes **hidden metadata**. It does not:

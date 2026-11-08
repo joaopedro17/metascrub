@@ -117,6 +117,13 @@ pub const NAME_HINT: &str = "File names that show a date, phone or app can be re
 pub const REMOVED: &str = "removed: a junk file left by the operating system";
 pub const WOULD_REMOVE: &str = "would be removed: a junk file left by the operating system";
 pub const VERIFIED: &str = "no hidden metadata left";
+pub const LOG_WRITTEN: &str = "Diagnostic log written to";
+pub const LOG_NOT_CREATED: &str = "couldn't create the log file";
+pub const LOG_LEVEL: &str = "METASCRUB_LOG must be one of off, error, warn, info, debug or trace";
+pub const LOG_NAMES_HIDDEN: &str =
+    "File names are hidden: files are numbered. Add --show-values to include their names.";
+pub const LOG_NAMES_SHOWN: &str = "File names are included (--show-values).";
+pub const LOG_NO_VALUES: &str = "Metadata values are never written to this log.";
 pub const CHECKSUM: &str = "SHA-256";
 pub const CHECKSUM_BEFORE: &str = "SHA-256 before";
 pub const CHECKSUM_AFTER: &str = "SHA-256 after";

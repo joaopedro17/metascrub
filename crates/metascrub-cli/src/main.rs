@@ -3,6 +3,7 @@
 mod args;
 mod docs;
 mod exit;
+mod logging;
 mod progress;
 mod render;
 
@@ -18,7 +19,7 @@ use metascrub_core::{
 
 use args::{Cli, Command, KeepArgs, KeepItem, OutputArgs};
 use progress::Progress;
-use render::{Mode, Settings, Verbosity};
+use render::{Mode, Settings, Verbosity, messages};
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -102,6 +103,10 @@ fn main() -> ExitCode {
         reject_folders(&request.paths);
     }
     request.checksums = cli.output.checksums;
+    request.log_names = cli.output.show_values;
+    let log = logging::init(cli.output.log.as_deref(), cli.output.show_values)
+        .unwrap_or_else(|message| usage_error(&message));
+    request.ignore.extend(log.clone());
 
     let progress = Progress::new(!cli.output.quiet);
     let cancel = CancelToken::new();
@@ -111,6 +116,9 @@ fn main() -> ExitCode {
     let settings = settings(mode, &cli.output);
     // A closed pipe (e.g. `| head`) is not an error worth reporting.
     let _ = print(&report, &settings, cli.output.json);
+    if let Some(log) = log {
+        eprintln!("{} {}", messages::LOG_WRITTEN, messages::path(&log));
+    }
     exit::exit_code(&report)
 }
 

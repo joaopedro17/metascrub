@@ -694,6 +694,7 @@ dependencies = [
  "ctrlc",
  "flate2",
  "indicatif",
+ "log",
  "metascrub-core",
  "serde_json",
  "tempfile",
