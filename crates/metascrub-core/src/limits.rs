@@ -38,6 +38,9 @@ pub const MAX_TAR_HEADER_BYTES: u64 = 1024 * 1024;
 /// cleaning blanks out) are read into memory up to this size. Pictures and
 /// sound never are.
 pub const MAX_MEDIA_BOX_BYTES: u64 = 64 * 1024 * 1024;
+/// Tags in music files (ID3, APE) are read into memory up to this size to
+/// report what they hold; larger ones are still removed whole.
+pub const MAX_AUDIO_TAG_BYTES: u64 = 64 * 1024 * 1024;
 /// A box may hold at most this many boxes.
 pub const MAX_MEDIA_BOXES: usize = 100_000;
 

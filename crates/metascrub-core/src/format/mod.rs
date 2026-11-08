@@ -1,6 +1,7 @@
 //! File formats: detection by content, and the interface every format implements.
 
 mod archive;
+mod audio;
 mod bytes;
 mod exif;
 mod gzip;
@@ -115,6 +116,7 @@ pub fn detect(head: &[u8], input: &mut dyn ReadSeek) -> Result<Option<FormatId>,
             format => Some(format),
         },
         Some(other) => Some(other),
+        None if head.starts_with(b"ID3") || head.first() == Some(&0xFF) => audio::detect(input)?,
         None => {
             let mut block = Vec::with_capacity(512);
             (&mut *input).take(512).read_to_end(&mut block)?;
@@ -139,6 +141,7 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         FormatId::Mp4 | FormatId::Mov | FormatId::M4a | FormatId::Heic | FormatId::Avif => {
             Some(&media::Media)
         }
+        FormatId::Mp3 => Some(&audio::Mp3),
         FormatId::Compound | FormatId::Folder => None,
     }
 }
@@ -162,6 +165,7 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::M4a => &["m4a", "m4b", "m4p", "mp4"],
         FormatId::Heic => &["heic", "heif", "hif", "heics", "heifs"],
         FormatId::Avif => &["avif", "avifs"],
+        FormatId::Mp3 => &["mp3", "mp2", "mpga"],
         // Password-protected Office files keep their usual extension.
         FormatId::Compound => &[
             "doc", "dot", "xls", "xlt", "ppt", "pot", "pps", "docx", "docm", "xlsx", "xlsm",
@@ -374,6 +378,20 @@ fn inflate(compressed: &[u8]) -> Result<Vec<u8>, FormatError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn detects_mp3_by_its_tag_or_by_several_frames() {
+        let frame = [&[0xFF, 0xFB, 0x90, 0x00][..], &[0; 413]].concat();
+        let detect_bytes = |data: &[u8]| detect(data, &mut io::Cursor::new(data)).unwrap();
+        assert_eq!(detect_bytes(&frame.repeat(3)), Some(FormatId::Mp3));
+        assert_eq!(detect_bytes(&frame.repeat(2)), None);
+        let tagged = [b"ID3\x03\0\0\0\0\0\0".as_slice(), &frame.repeat(2)].concat();
+        assert_eq!(detect_bytes(&tagged), Some(FormatId::Mp3));
+        // An ID3 tag before something else isn't MP3.
+        let other = [b"ID3\x03\0\0\0\0\0\0".as_slice(), b"not sound at all"].concat();
+        assert_eq!(detect_bytes(&other), None);
+        assert_eq!(detect_bytes(&[0xFF; 64]), None);
+    }
 
     #[test]
     fn sniffs_by_content() {

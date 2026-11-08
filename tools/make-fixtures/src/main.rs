@@ -8,6 +8,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
 mod archive;
+mod audio;
 mod media;
 mod office;
 mod pdf;
@@ -33,7 +34,9 @@ fn main() {
     let other_dir = root.join("other");
     let archive_dir = root.join("archive");
     let media_dir = root.join("media");
+    let audio_dir = root.join("audio");
     for dir in [
+        &audio_dir,
         &archive_dir,
         &media_dir,
         &jpeg_dir,
@@ -44,6 +47,11 @@ fn main() {
         &other_dir,
     ] {
         fs::create_dir_all(dir).unwrap();
+    }
+    // `make-fixtures audio` writes only these, leaving the rest as it is.
+    if std::env::args().nth(1).as_deref() == Some("audio") {
+        audio::write_all(&audio_dir, &jpeg_dir);
+        return;
     }
 
     let clean_jpeg = encode_jpeg(64, 48);
@@ -301,6 +309,7 @@ fn main() {
 
     // Videos, music and HEIC/AVIF photos
     media::write(&media_dir, &jpeg_dir, &png_dir);
+    audio::write_all(&audio_dir, &jpeg_dir);
 
     // Other
     write(&other_dir, "notes.txt", b"Not an image.\n");

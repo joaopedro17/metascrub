@@ -4,7 +4,7 @@
 
 MetaScrub is a cross-platform command-line tool that inspects and removes hidden metadata (location, device, author, dates, download sources) from files and folders, so you can share them without leaking personal information.
 
-**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, HEIC and AVIF images, MP4 and QuickTime videos, M4A audio, Word, Excel, PowerPoint and PDF documents, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
+**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, HEIC and AVIF images, MP4 and QuickTime videos, M4A and MP3 audio, Word, Excel, PowerPoint and PDF documents, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
 
 ## Install
 
@@ -74,6 +74,7 @@ Reports hide metadata values so they're safe to share; `--show-values` shows the
 | Word, Excel, PowerPoint | Document properties (author, company, dates, custom properties), thumbnail, revision and document IDs, template and folder paths, printer settings, people lists, sensitivity labels, comments, unknown parts, ZIP dates | The document's content; images inside are cleaned like the formats above |
 | HEIC, AVIF | EXIF (rebuilt with only the orientation), XMP, data after the image | Image data, previews, depth and HDR gain maps (see below) |
 | MP4, MOV, M4A | Location, device make and model, software and encoder names, titles, names, comments, cover art and other tags (QuickTime user data, Apple and iTunes metadata, XMP), dates in the headers (set to zero), timecodes and GPS or sensor tracks (zeroed), leftover data in free space, data after the end | Picture and sound |
+| MP3 | ID3v2 and ID3v1 tags (title, artist, album, dates, comments, lyrics, cover art, loudness levels and every other tag), APE and Lyrics3 tags | The sound, byte for byte, and the first frame that holds the length and seek table (with the encoder's name) |
 | ZIP, TAR, gzip | Dates, owner names and IDs, permissions (reset to 644, or 755 for folders and programs), comments, extra fields and PAX records (including saved download addresses), gzip's original file name, junk files | Every file inside, cleaned like the formats above; files MetaScrub can't read are kept as they are |
 
 By default, two things that affect how the image looks are kept:
@@ -109,6 +110,8 @@ MP4, QuickTime (`.mov`), M4A and HEIC/AVIF files are cleaned in place: nothing i
 - **Previews, depth maps and HDR gain maps** in HEIC and AVIF photos are kept: they show only what the photo shows, and removing them would break how the photo displays. They're listed as low risk.
 - **Music** loses its tags too: title, artist, album and cover art are removed along with everything else.
 - 3GP videos, camera raw files (`.cr3`) and other formats that share this structure aren't cleaned.
+
+MP3 files keep exactly their sound: only the tags before and after it are removed, so it plays exactly as before. MetaScrub checks that everything between the tags is sound; an MP3 with other data among its frames is refused, since that data could hold anything.
 
 ### Archives
 
@@ -184,7 +187,7 @@ MetaScrub removes **hidden metadata**. It does not:
 - Remove invisible watermarks or steganography, or defeat camera sensor fingerprinting.
 - Guarantee anonymity.
 - Securely delete originals. With `--in-place`, the original bytes may still be recoverable from the disk, and other hard links to the file keep the original.
-- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, HEIC and AVIF images, MP4, MOV and M4A files, Office and PDF documents, and ZIP, TAR and gzip archives.
+- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, HEIC and AVIF images, MP4, MOV, M4A and MP3 files, Office and PDF documents, and ZIP, TAR and gzip archives.
 - Check subtitles, chapter titles or what's in the sound itself, or clean MKV, WebM, AVI or 3GP videos.
 - Clean 7z or RAR archives, ZIP files compressed with methods other than Deflate (such as LZMA or Zstandard), or TAR archives with sparse files or device files. These are refused and reported.
 - Clean encrypted or digitally signed PDFs. They're skipped or refused and reported.

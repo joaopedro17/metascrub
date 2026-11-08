@@ -60,3 +60,10 @@ path = "fuzz_targets/media.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "audio"
+path = "fuzz_targets/audio.rs"
+test = false
+doc = false
+bench = false

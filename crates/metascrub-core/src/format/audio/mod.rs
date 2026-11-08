@@ -1,0 +1,66 @@
+//! Music and sound: MP3 for now. Tags sit before or after the sound and are
+//! removed whole; the sound itself is copied byte for byte, so it plays
+//! exactly as before.
+
+mod ape;
+mod id3;
+mod mp3;
+
+use std::io::{Read, SeekFrom};
+
+pub(super) use mp3::Mp3;
+
+use super::{FormatError, ReadSeek};
+use crate::limits::MAX_AUDIO_TAG_BYTES;
+use crate::model::{Finding, FormatId, Value};
+
+/// A tag found in the file, removed whole by cleaning.
+#[derive(Debug)]
+struct Tag {
+    start: u64,
+    end: u64,
+    findings: Vec<Finding>,
+}
+
+/// Longest text value kept for a finding.
+const MAX_VALUE_CHARS: usize = 1000;
+
+/// Detects audio that has no fixed signature at the very start: an ID3 tag
+/// or bare MP3 frames. `None` if it's neither.
+pub(super) fn detect(input: &mut dyn ReadSeek) -> Result<Option<FormatId>, FormatError> {
+    let len = input.seek(SeekFrom::End(0))?;
+    let mut start = 0;
+    let mut tagged = false;
+    while let Some(end) = id3::v2_end(input, start, len)? {
+        start = end;
+        tagged = true;
+    }
+    // Two frames after a tag, three without: a few bytes of bare frame
+    // header can match other files by chance.
+    let frames = if tagged { 2 } else { 3 };
+    Ok(mp3::starts_with_frames(input, start, len, frames)?.then_some(FormatId::Mp3))
+}
+
+/// Reads `len` bytes at `pos`, up to the limit for tags held in memory.
+fn read_at(input: &mut dyn ReadSeek, pos: u64, len: u64) -> Result<Vec<u8>, FormatError> {
+    if len > MAX_AUDIO_TAG_BYTES {
+        return Err(FormatError::TooLarge {
+            limit: MAX_AUDIO_TAG_BYTES,
+        });
+    }
+    input.seek(SeekFrom::Start(pos))?;
+    let mut data = Vec::new();
+    (&mut *input).take(len).read_to_end(&mut data)?;
+    if data.len() as u64 != len {
+        return Err(FormatError::malformed(
+            "a tag runs past the end of the file",
+        ));
+    }
+    Ok(data)
+}
+
+/// A text value, cut to a sensible length, with NUL padding dropped.
+fn text(value: &str) -> Option<Value> {
+    let value = value.trim_matches(|c: char| c == '\0' || c.is_whitespace());
+    (!value.is_empty()).then(|| Value::Text(value.chars().take(MAX_VALUE_CHARS).collect()))
+}
