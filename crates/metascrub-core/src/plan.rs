@@ -62,6 +62,13 @@ pub(crate) fn plan(request: &Request) -> Vec<Job> {
         }
     }
 
+    let ignored: Vec<PathBuf> = request
+        .ignore
+        .iter()
+        .filter_map(|p| fs::canonicalize(p).ok())
+        .collect();
+    found.retain(|f| f.folder || !is_ignored(&f.path, &ignored));
+
     let mut taken = HashSet::new();
     let mut numbers = HashMap::new();
     found
@@ -187,6 +194,12 @@ fn is_folder(path: &Path) -> bool {
 /// Everything inside `root`, sorted by name, each folder before its contents.
 /// Folders, `root` included, only when `folders`. Symbolic links and special
 /// files are listed too, so the report says why they were skipped.
+/// Compares names first, so files are resolved only when the name matches.
+fn is_ignored(path: &Path, ignored: &[PathBuf]) -> bool {
+    ignored.iter().any(|i| i.file_name() == path.file_name())
+        && fs::canonicalize(path).is_ok_and(|p| ignored.contains(&p))
+}
+
 fn walk(root: &Path, output_dir: Option<&Path>, folders: bool, found: &mut Vec<Found>) {
     // `photos` is mirrored as `out/photos/…`; `.` has no name, so its
     // contents go straight into `out/`.
@@ -289,6 +302,25 @@ mod tests {
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(&path, "x").unwrap();
         path
+    }
+
+    #[test]
+    fn ignored_files_are_left_out_wherever_they_are() {
+        let dir = tempfile::tempdir().unwrap();
+        let photos = dir.path().join("photos");
+        let photo = touch(photos.join("a.jpg"));
+        let log = touch(photos.join("run.log"));
+        let other = touch(dir.path().join("run.log"));
+        let jobs = plan(&Request {
+            ignore: vec![photos.join("./run.log")],
+            ..request(
+                Command::Inspect,
+                OutputMode::NextToOriginal,
+                &[&photos, &log, &other],
+            )
+        });
+        let paths: Vec<_> = files(jobs).into_iter().map(|j| j.path).collect();
+        assert_eq!(paths, [photo, other]);
     }
 
     fn renaming(output: OutputMode, paths: &[&Path]) -> Vec<Job> {

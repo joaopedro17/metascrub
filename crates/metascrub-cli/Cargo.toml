@@ -20,6 +20,7 @@ clap_complete.workspace = true
 clap_mangen.workspace = true
 ctrlc.workspace = true
 indicatif.workspace = true
+log = { workspace = true, features = ["std"] }
 metascrub-core.workspace = true
 serde_json.workspace = true
 

@@ -188,4 +188,10 @@ pub struct OutputArgs {
     /// to prove exactly which file was shared.
     #[arg(long, global = true)]
     pub checksums: bool,
+
+    /// Write a diagnostic log to this file, to attach to a problem report.
+    /// It never contains metadata values, and names files by number unless
+    /// --show-values is given. METASCRUB_LOG=debug prints it to the terminal.
+    #[arg(long, global = true, value_name = "FILE")]
+    pub log: Option<PathBuf>,
 }

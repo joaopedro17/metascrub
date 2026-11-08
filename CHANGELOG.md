@@ -2,6 +2,12 @@
 
 What changed in each release of MetaScrub, newest first. From 1.0, versions follow [Semantic Versioning](https://semver.org); the [README](README.md#stability) says what that promises.
 
+## Unreleased
+
+### Added
+
+- **Diagnostic log:** `--log <file>` writes what MetaScrub did with each file (format, each step with its duration, memory, full errors) to attach to a problem report. It never contains metadata values and numbers files instead of naming them, unless `--show-values` is given. Nothing is logged without it; `METASCRUB_LOG=<level>` prints the messages to the terminal instead.
+
 ## 1.1.1 — 2026-11-07
 
 ### Fixed
