@@ -1,11 +1,14 @@
 //! Runs a command over a list of files and collects one report per file.
 
+use std::fmt;
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Instant;
 
+use log::{debug, info, warn};
 use rayon::prelude::*;
 use sha2::{Digest, Sha256};
 
@@ -58,6 +61,11 @@ pub struct Request {
     pub rename: bool,
     /// Report the SHA-256 of every file read and written.
     pub checksums: bool,
+    /// Name files by their path in log messages, not only by their number.
+    /// Paths can show a user name or what a file is about.
+    pub log_names: bool,
+    /// Left out of the run wherever they're found (the log file itself).
+    pub ignore: Vec<PathBuf>,
 }
 
 impl Request {
@@ -73,6 +81,8 @@ impl Request {
             remove_junk: false,
             rename: false,
             checksums: false,
+            log_names: false,
+            ignore: Vec::new(),
         }
     }
 }
@@ -109,14 +119,20 @@ impl CancelToken {
 /// were processed in.
 pub fn run(request: &Request, observer: &dyn Observer, cancel: &CancelToken) -> RunReport {
     let jobs = plan::plan(request);
+    log_start(request, jobs.len());
     observer.planned(jobs.len());
     let budget = Budget::new(MEMORY_BUDGET_BYTES);
-    let run_job = |job: &Job| {
+    let run_job = |(index, job): (usize, &Job)| {
+        let label = Label::new(index, job, request);
         if cancel.is_cancelled() {
-            return report(job, Outcome::Failed(cancelled()));
+            let report = report(job, Outcome::Failed(cancelled()));
+            log_finished(&label, &report, request, Instant::now());
+            return report;
         }
         observer.file_started(&job.path);
-        let report = process(job, request, &budget);
+        let started = Instant::now();
+        let report = process(job, &label, request, &budget);
+        log_finished(&label, &report, request, started);
         observer.file_finished(&report);
         report
     };
@@ -132,9 +148,10 @@ pub fn run(request: &Request, observer: &dyn Observer, cancel: &CancelToken) -> 
                 .ok()
         })
         .flatten();
+    debug!("at most {threads} files at a time");
     let mut files: Vec<FileReport> = match pool {
-        Some(pool) => pool.install(|| jobs.par_iter().map(run_job).collect()),
-        None => jobs.iter().map(run_job).collect(),
+        Some(pool) => pool.install(|| jobs.par_iter().enumerate().map(run_job).collect()),
+        None => jobs.iter().enumerate().map(run_job).collect(),
     };
     if request.command == Command::Clean && !request.dry_run && !cancel.is_cancelled() {
         // Last, and deepest first: writing into a folder changes its date.
@@ -151,7 +168,134 @@ pub fn run(request: &Request, observer: &dyn Observer, cancel: &CancelToken) -> 
     files.retain(|f| {
         f.format != Some(FormatId::Folder) || !f.findings.is_empty() || f.outcome.is_failure()
     });
-    RunReport { files }
+    let report = RunReport { files };
+    info!("finished: {:?}", report.summary());
+    report
+}
+
+/// How the log names a file: `file 12`, followed by its path only when the
+/// request allows names (`Request::log_names`).
+struct Label<'a> {
+    number: usize,
+    folder: bool,
+    path: Option<&'a Path>,
+}
+
+impl<'a> Label<'a> {
+    fn new(index: usize, job: &'a Job, request: &Request) -> Self {
+        Self {
+            number: index + 1,
+            folder: job.folder,
+            path: request.log_names.then_some(job.path.as_path()),
+        }
+    }
+}
+
+impl fmt::Display for Label<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let kind = if self.folder { "folder" } else { "file" };
+        write!(f, "{kind} {}", self.number)?;
+        match self.path {
+            Some(path) => write!(f, " ({})", path.display()),
+            None => Ok(()),
+        }
+    }
+}
+
+fn ms(since: Instant) -> u128 {
+    since.elapsed().as_millis()
+}
+
+fn size(bytes: u64) -> String {
+    const MB: u64 = 1024 * 1024;
+    if bytes < MB {
+        format!("{} KB", bytes.div_ceil(1024))
+    } else {
+        format!("{:.1} MB", bytes as f64 / MB as f64)
+    }
+}
+
+fn log_start(request: &Request, found: usize) {
+    info!(
+        "MetaScrub {} on {} ({})",
+        env!("CARGO_PKG_VERSION"),
+        std::env::consts::OS,
+        std::env::consts::ARCH
+    );
+    let output = match &request.output {
+        OutputMode::NextToOriginal => "next to the originals".to_owned(),
+        OutputMode::InPlace => "in place".to_owned(),
+        OutputMode::Directory(dir) if request.log_names => format!("into {}", dir.display()),
+        OutputMode::Directory(_) => "into a folder".to_owned(),
+    };
+    info!(
+        "{:?}{}: {} paths given, {found} files and folders found; output {output}; \
+         recursive: {}, rename: {}, remove junk: {}, checksums: {}; {:?}",
+        request.command,
+        if request.dry_run { " (dry run)" } else { "" },
+        request.paths.len(),
+        request.recursive,
+        request.rename,
+        request.remove_junk,
+        request.checksums,
+        request.options,
+    );
+    if request.log_names {
+        for path in &request.paths {
+            debug!("path given: {}", path.display());
+        }
+    }
+}
+
+fn log_finished(label: &Label<'_>, report: &FileReport, request: &Request, started: Instant) {
+    let format = report
+        .format
+        .map_or_else(|| "format not read".to_owned(), |f| format!("{f:?}"));
+    let took = ms(started);
+    match &report.outcome {
+        Outcome::Failed(failure) => {
+            // These can name files inside an archive or document.
+            let named = matches!(
+                failure.kind,
+                FailureKind::UnsafePath | FailureKind::Incomplete
+            );
+            let detail = if named && !request.log_names {
+                "details hidden because they can name files (add --show-values to include them)"
+            } else {
+                failure.detail.as_str()
+            };
+            warn!(
+                "{label}: failed ({:?}): {detail} [{format}, {took} ms]",
+                failure.kind
+            );
+        }
+        outcome => info!(
+            "{label}: {outcome:?} [{format}, {} findings, {took} ms]",
+            report.findings.len()
+        ),
+    }
+    if !log::log_enabled!(log::Level::Debug) {
+        return;
+    }
+    // Counted, in the order first found: "Timestamp Remove ×3".
+    let mut counted: Vec<(String, usize)> = Vec::new();
+    for finding in &report.findings {
+        let name = format!("{:?} {:?}", finding.kind, finding.disposition);
+        match counted.iter_mut().find(|(n, _)| *n == name) {
+            Some((_, count)) => *count += 1,
+            None => counted.push((name, 1)),
+        }
+    }
+    if !counted.is_empty() {
+        let findings: Vec<String> = counted
+            .into_iter()
+            .map(|(name, count)| match count {
+                1 => name,
+                n => format!("{name} ×{n}"),
+            })
+            .collect();
+        debug!("{label}: {}", findings.join(", "));
+    }
 }
 
 fn report(job: &Job, outcome: Outcome) -> FileReport {
@@ -165,7 +309,7 @@ fn report(job: &Job, outcome: Outcome) -> FileReport {
     }
 }
 
-fn process(job: &Job, request: &Request, budget: &Budget) -> FileReport {
+fn process(job: &Job, label: &Label<'_>, request: &Request, budget: &Budget) -> FileReport {
     if let Some(outcome) = &job.outcome {
         return report(job, outcome.clone());
     }
@@ -176,7 +320,7 @@ fn process(job: &Job, request: &Request, budget: &Budget) -> FileReport {
     } else if job.junk && removes_junk(request) && is_regular_file(&job.path) {
         remove_junk(job, request, &mut report)
     } else {
-        process_file(job, request, budget, &mut report)
+        process_file(job, label, request, budget, &mut report)
     };
     report.outcome = match result {
         Ok(outcome) => outcome,
@@ -262,6 +406,7 @@ fn remove_junk(
 
 fn process_file(
     job: &Job,
+    label: &Label<'_>,
     request: &Request,
     budget: &Budget,
     report: &mut FileReport,
@@ -279,11 +424,13 @@ fn process_file(
     let mut file = File::open(path)?;
     ensure_same_file(&metadata, &file)?;
     if request.checksums {
+        let step = Instant::now();
         report.checksums = Some(Checksums {
             original: sha256(&mut file)?,
             output: None,
         });
         file.seek(SeekFrom::Start(0))?;
+        debug!("{label}: checksum of the original in {} ms", ms(step));
     }
     let mut head = Vec::with_capacity(SNIFF_LEN);
     Read::by_ref(&mut file)
@@ -291,6 +438,13 @@ fn process_file(
         .read_to_end(&mut head)?;
     file.seek(SeekFrom::Start(0))?;
     report.format = format::detect(&head, &mut file)?;
+    match report.format {
+        Some(format) => debug!("{label}: {format:?}, {}", size(metadata.len())),
+        None => debug!(
+            "{label}: a format MetaScrub can't read, {}",
+            size(metadata.len())
+        ),
+    }
     let settings = output::Settings {
         permissions: metadata.permissions(),
         neutral_times: !request.options.keep_file_times,
@@ -304,7 +458,17 @@ fn process_file(
         return unsupported(job, &mut file, request, &settings, attributes, report);
     };
 
-    let _memory = budget.reserve(budget::estimate(format, metadata.len()));
+    let estimate = budget::estimate(format, metadata.len());
+    let waiting = Instant::now();
+    let _memory = budget.reserve(estimate);
+    if estimate > 0 {
+        debug!(
+            "{label}: {} of memory reserved, after waiting {} ms",
+            size(estimate),
+            ms(waiting)
+        );
+    }
+    let step = Instant::now();
     // Outputs are new files, which never carry the original's attributes.
     let attributes = fsmeta::findings(attributes, Disposition::Remove);
     let options = &request.options;
@@ -328,7 +492,7 @@ fn process_file(
             }
         }
         Command::Clean => {
-            let cleaned = clean(job, file, handler, request, &settings)?;
+            let cleaned = clean(job, label, file, handler, request, &settings)?;
             report.output = cleaned.output;
             report.findings = cleaned.findings;
             if let Some(checksums) = &mut report.checksums {
@@ -341,6 +505,9 @@ fn process_file(
             }
         }
     };
+    if request.command != Command::Clean || request.dry_run {
+        debug!("{label}: read in {} ms", ms(step));
+    }
     if let Some(finding) = extension_mismatch(path, format) {
         report.findings.push(finding);
     }
@@ -408,12 +575,14 @@ fn finish_folder(job: &Job, request: &Request) -> Result<(), FormatError> {
 /// becomes the output once nothing needs a decision.
 fn clean(
     job: &Job,
+    label: &Label<'_>,
     file: File,
     handler: &dyn FormatHandler,
     request: &Request,
     settings: &output::Settings,
 ) -> Result<Cleaned, FormatError> {
     let mut draft = output::Draft::new(job.target.as_deref().unwrap_or(&job.path))?;
+    let step = Instant::now();
     let findings = {
         let mut input = BufReader::new(file);
         let mut out = BufWriter::new(draft.file());
@@ -422,23 +591,33 @@ fn clean(
         findings
         // The input is closed here: Windows can't replace a file that is still open.
     };
+    debug!("{label}: cleaned into a temporary file in {} ms", ms(step));
     if decision_needed(&findings).is_some() {
+        debug!("{label}: not written, it needs the user's decision");
         return Ok(Cleaned {
             output: None,
             findings,
             checksum: None,
         });
     }
-    if !handler.checks_its_output() {
+    let step = Instant::now();
+    if handler.checks_its_output() {
+        debug!("{label}: checked by its cleaner while cleaning");
+    } else {
         self_check(draft.file(), handler, &request.options)?;
+        debug!("{label}: self-check passed in {} ms", ms(step));
     }
     let checksum = if request.checksums {
+        let step = Instant::now();
         let file = draft.file();
         file.seek(SeekFrom::Start(0))?;
-        Some(sha256(file)?)
+        let checksum = sha256(file)?;
+        debug!("{label}: checksum of the cleaned file in {} ms", ms(step));
+        Some(checksum)
     } else {
         None
     };
+    let step = Instant::now();
     let written = match &job.target {
         Some(target) => draft.finish_new(target, settings)?,
         None => {
@@ -451,6 +630,7 @@ fn clean(
     if job.renamed && request.output == OutputMode::InPlace {
         fs::remove_file(&job.path)?;
     }
+    debug!("{label}: written in {} ms", ms(step));
     Ok(Cleaned {
         output: Some(written),
         findings,
@@ -1027,7 +1207,12 @@ mod tests {
         };
         let request = Request::new(Command::Clean, vec![original.clone()]);
         let file = File::open(&original).unwrap();
-        let error = clean(&job, file, &leaky, &request, &settings).unwrap_err();
+        let label = Label {
+            number: 1,
+            folder: false,
+            path: None,
+        };
+        let error = clean(&job, &label, file, &leaky, &request, &settings).unwrap_err();
         assert_eq!(failure(error).kind, FailureKind::Incomplete);
         assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
     }

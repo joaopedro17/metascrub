@@ -708,6 +708,7 @@ dependencies = [
  "flate2",
  "image",
  "kamadak-exif",
+ "log",
  "lopdf",
  "md-5",
  "quick-xml",

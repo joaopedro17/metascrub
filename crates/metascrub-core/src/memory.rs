@@ -18,6 +18,7 @@ pub(crate) fn release_freed() {
     unsafe {
         malloc_trim(0);
     }
+    log::debug!("freed memory handed back to the system after a large file");
 }
 
 #[cfg(not(all(target_os = "linux", target_env = "gnu")))]
