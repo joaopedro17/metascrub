@@ -145,16 +145,18 @@ Some information isn't inside a file at all, but stored next to it by the operat
 
 ### Speed and memory
 
-Measured on a 24-thread Linux PC (WSL) with an SSD, with the release build:
+Measured with the Linux download of 1.1.1 on a 24-thread PC (WSL) with an SSD, three runs each:
 
 | Task | Time | Peak memory |
 |---|---|---|
-| Inspect 5,100 small files of every supported type in 100 folders | 0.1 s | 26 MB |
-| Clean the same folders | 0.3–0.6 s | 28 MB |
-| Clean 500 phone photos (8 MB each, 3.9 GB) | 2–3 s | 115 MB |
-| Clean a 2 GB video | 1.5–4 s | 5 MB |
-| Clean a ZIP archive of 600 MB | 4 s | 29 MB |
-| Clean four 400 MB PDFs | 13 s | 2 GB |
+| Inspect 5,100 small files of every supported type in 100 folders | 1.3 s | 20 MB |
+| Clean the same folders | 2.1–2.2 s | 24 MB |
+| Clean 200 phone photos (8 MB each, 1.6 GB) | 1.1–1.4 s | 34 MB |
+| Clean a 2 GB video | 0.9–3 s | 2 MB |
+| Clean a 600 MB ZIP of 75 phone photos | 16–20 s | 42 MB |
+| Clean four 400 MB PDFs | 13–15 s | 2 GB |
+
+The Linux download is built with musl so it runs on any distribution; musl handles memory more slowly when several files are processed at once. Built from source on Linux (`cargo install`), the small files and photos are up to eight times faster.
 
 Videos, music and archives are processed from disk, so their size barely changes the memory used. Images, PDFs and Office files are read whole, and a PDF can take several times its size while it's rewritten; MetaScrub processes up to 4 files at once, but large ones wait their turn so they stay within about 2 GB together. A single file larger than that runs alone.
 
