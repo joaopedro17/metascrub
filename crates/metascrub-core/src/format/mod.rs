@@ -90,6 +90,10 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
         Some(FormatId::Png)
     } else if head.get(0..4) == Some(b"RIFF") && head.get(8..12) == Some(b"WEBP") {
         Some(FormatId::Webp)
+    } else if matches!(head.get(0..4), Some(b"RIFF" | b"RF64" | b"BW64"))
+        && head.get(8..12) == Some(b"WAVE")
+    {
+        Some(FormatId::Wav)
     } else if head.starts_with(b"%PDF-") {
         Some(FormatId::Pdf)
     } else if head.starts_with(b"OggS") {
@@ -149,6 +153,7 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         FormatId::Mp3 => Some(&audio::Mp3),
         FormatId::Flac => Some(&audio::Flac),
         FormatId::Ogg => Some(&audio::Ogg),
+        FormatId::Wav => Some(&audio::Wav),
         FormatId::Compound | FormatId::Folder => None,
     }
 }
@@ -175,6 +180,7 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::Mp3 => &["mp3", "mp2", "mpga"],
         FormatId::Flac => &["flac"],
         FormatId::Ogg => &["ogg", "oga", "opus"],
+        FormatId::Wav => &["wav", "wave", "bwf"],
         // Password-protected Office files keep their usual extension.
         FormatId::Compound => &[
             "doc", "dot", "xls", "xlt", "ppt", "pot", "pps", "docx", "docm", "xlsx", "xlsm",
@@ -423,11 +429,18 @@ mod tests {
     }
 
     #[test]
+    fn detects_wav_including_files_it_refuses() {
+        assert_eq!(sniff(b"RIFF\0\0\0\0WAVEfmt "), Some(FormatId::Wav));
+        assert_eq!(sniff(b"RF64\xff\xff\xff\xffWAVE"), Some(FormatId::Wav));
+        assert_eq!(sniff(b"RIFF\0\0\0\0AVI LIST"), None);
+    }
+
+    #[test]
     fn sniffs_by_content() {
         assert_eq!(sniff(&[0xFF, 0xD8, 0xFF, 0xE0]), Some(FormatId::Jpeg));
         assert_eq!(sniff(b"\x89PNG\r\n\x1a\n\0\0\0\x0d"), Some(FormatId::Png));
         assert_eq!(sniff(b"RIFF\x10\0\0\0WEBPVP8 "), Some(FormatId::Webp));
-        assert_eq!(sniff(b"RIFF\x10\0\0\0WAVEfmt "), None);
+        assert_eq!(sniff(b"RIFF\x10\0\0\0WAVEfmt "), Some(FormatId::Wav));
         assert_eq!(sniff(b"PK\x03\x04\x14\0"), Some(FormatId::Zip));
         assert_eq!(sniff(COMPOUND_SIGNATURE), Some(FormatId::Compound));
         assert_eq!(sniff(b"%PDF-1.7\n%"), Some(FormatId::Pdf));

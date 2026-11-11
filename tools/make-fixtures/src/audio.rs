@@ -1,6 +1,7 @@
-//! Music: MP3, FLAC, Ogg Vorbis and Opus files from `ffmpeg`, with the tags
-//! ffmpeg writes, and the tags it can't write (APEv2, Lyrics3, ID3v2.4 with
-//! a footer, ID3 around FLAC) built by hand around the same sound.
+//! Music: MP3, FLAC, Ogg Vorbis, Opus and WAV files from `ffmpeg`, with the
+//! tags ffmpeg writes, and the tags it can't write (APEv2, Lyrics3, ID3v2.4
+//! with a footer, ID3 around FLAC, WAV cue labels, iXML, XMP) built by hand
+//! around the same sound.
 
 use std::fs;
 use std::path::Path;
@@ -158,6 +159,43 @@ fn opus_with_gain(data: &[u8], gain: i16) -> Vec<u8> {
         &data[end..],
     ]
     .concat()
+}
+
+const WAV: &[&str] = &[
+    "-c:a",
+    "pcm_s16le",
+    "-fflags",
+    "+bitexact",
+    "-flags",
+    "+bitexact",
+];
+
+fn riff_chunk(id: &[u8; 4], data: &[u8]) -> Vec<u8> {
+    let mut chunk = id.to_vec();
+    chunk.extend_from_slice(&u32::try_from(data.len()).unwrap().to_le_bytes());
+    chunk.extend_from_slice(data);
+    if data.len() % 2 == 1 {
+        chunk.push(0);
+    }
+    chunk
+}
+
+/// The chunks of a WAV file (after `RIFF`, size and `WAVE`).
+fn wav_chunks(data: &[u8]) -> Vec<(&[u8], &[u8])> {
+    let mut chunks = Vec::new();
+    let mut pos = 12;
+    while pos < data.len() {
+        let len = u32::from_le_bytes(data[pos + 4..pos + 8].try_into().unwrap()) as usize;
+        chunks.push((&data[pos..pos + 4], &data[pos + 8..pos + 8 + len]));
+        pos += 8 + len + len % 2;
+    }
+    chunks
+}
+
+fn wav_file(chunks: &[Vec<u8>]) -> Vec<u8> {
+    let body = chunks.concat();
+    let size = u32::try_from(body.len() + 4).unwrap();
+    [b"RIFF".as_slice(), &size.to_le_bytes(), b"WAVE", &body].concat()
 }
 
 /// `data` without its FLAC metadata blocks, except the stream description:
@@ -438,4 +476,106 @@ pub fn write_all(dir: &Path, jpeg_dir: &Path) {
         &dir.join("chained.opus"),
         &[clean_opus.as_slice(), &clean_opus].concat(),
     );
+
+    // WAV: nothing but format and sound; ffmpeg's tags and Broadcast WAV
+    // metadata as a field recorder writes it; a sampler's file with cue
+    // points, loops and labels, plus what audio editors add (iXML, XMP,
+    // ID3); compressed sound; and an RF64 file, refused.
+    ffmpeg(
+        &dir.join("clean.wav"),
+        &[SOUND, WAV, &["-map_metadata", "-1"]],
+    );
+    ffmpeg(
+        &dir.join("tagged.wav"),
+        &[
+            SOUND,
+            WAV,
+            TAGS,
+            &[
+                "-write_bext",
+                "1",
+                "-metadata",
+                "description=Interview",
+                "-metadata",
+                "originator=Jane Doe",
+                "-metadata",
+                "originator_reference=ZOOMH5_SN12345",
+                "-metadata",
+                "origination_date=2026-03-14",
+                "-metadata",
+                "origination_time=09:26:52",
+                "-metadata",
+                "time_reference=1587600000",
+                "-metadata",
+                "coding_history=A=PCM,F=44100,W=16,M=mono",
+            ],
+        ],
+    );
+    let clean_wav = fs::read(dir.join("clean.wav")).unwrap();
+    let chunks = wav_chunks(&clean_wav);
+    let (format, sound) = (chunks[0].1, chunks[1].1);
+    // Made on an Akai sampler (MIDI maker 0x47), with a SMPTE time.
+    let mut sampler_loop = vec![0u8; 36];
+    sampler_loop[0] = 0x47;
+    sampler_loop[4] = 0x5E;
+    sampler_loop[20..24].copy_from_slice(&25u32.to_le_bytes());
+    sampler_loop[24..28].copy_from_slice(&0x0912_1A00u32.to_le_bytes());
+    sampler_loop[28..32].copy_from_slice(&1u32.to_le_bytes());
+    sampler_loop.extend_from_slice(&[0; 8]);
+    sampler_loop.extend_from_slice(&1000u32.to_le_bytes());
+    sampler_loop.extend_from_slice(&20_000u32.to_le_bytes());
+    sampler_loop.extend_from_slice(&[0; 8]);
+    let cue = [
+        &1u32.to_le_bytes()[..],
+        &1u32.to_le_bytes(),
+        &0u32.to_le_bytes(),
+        b"data",
+        &0u32.to_le_bytes(),
+        &0u32.to_le_bytes(),
+        &22_050u32.to_le_bytes(),
+    ]
+    .concat();
+    let labels = [
+        b"adtl".as_slice(),
+        &riff_chunk(b"labl", b"\x01\0\0\0Chorus\0"),
+        &riff_chunk(b"note", b"\x01\0\0\0Retake, Jane was late\0"),
+    ]
+    .concat();
+    let ixml =
+        b"<?xml version=\"1.0\"?><BWFXML><PROJECT>Interview</PROJECT><NOTE>Kitchen</NOTE></BWFXML>";
+    let xmp = b"<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF \
+        xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description \
+        xmlns:dc=\"http://purl.org/dc/elements/1.1/\" dc:creator=\"Jane Doe\"/>\
+        </rdf:RDF></x:xmpmeta>";
+    let sampler = wav_file(&[
+        riff_chunk(b"fmt ", format),
+        riff_chunk(b"cue ", &cue),
+        riff_chunk(b"data", sound),
+        riff_chunk(b"smpl", &sampler_loop),
+        riff_chunk(b"LIST", &labels),
+        riff_chunk(b"iXML", ixml),
+        riff_chunk(b"_PMX", xmp),
+        riff_chunk(b"id3 ", &id3),
+    ]);
+    write(
+        &dir.join("sampler.wav"),
+        &[sampler.as_slice(), &id3v1].concat(),
+    );
+    // Compressed sound needs its `fact` chunk (length in samples).
+    ffmpeg(
+        &dir.join("compressed.wav"),
+        &[
+            SOUND,
+            &[
+                "-c:a",
+                "adpcm_ms",
+                "-fflags",
+                "+bitexact",
+                "-flags",
+                "+bitexact",
+            ],
+            TAGS,
+        ],
+    );
+    ffmpeg(&dir.join("rf64.wav"), &[SOUND, WAV, &["-rf64", "always"]]);
 }

@@ -4,7 +4,7 @@
 
 MetaScrub is a cross-platform command-line tool that inspects and removes hidden metadata (location, device, author, dates, download sources) from files and folders, so you can share them without leaking personal information.
 
-**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, HEIC and AVIF images, MP4 and QuickTime videos, M4A, MP3, FLAC, Ogg Vorbis and Opus audio, Word, Excel, PowerPoint and PDF documents, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
+**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, HEIC and AVIF images, MP4 and QuickTime videos, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV audio, Word, Excel, PowerPoint and PDF documents, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
 
 ## Install
 
@@ -77,6 +77,7 @@ Reports hide metadata values so they're safe to share; `--show-values` shows the
 | MP3 | ID3v2 and ID3v1 tags (title, artist, album, dates, comments, lyrics, cover art, loudness levels and every other tag), APE and Lyrics3 tags | The sound, byte for byte, and the first frame that holds the length and seek table (with the encoder's name) |
 | FLAC | Vorbis comments (title, artist, dates, comments, loudness levels and every other tag, and the encoder's name), pictures, application data, padding, ID3 and APE tags added before or after | The sound, byte for byte, the stream description, seek table and cue sheet |
 | Ogg Vorbis, Opus | The comment header (title, artist, dates, comments, cover art, loudness levels and every other tag, and the encoder's name, left empty), ID3 and APE tags added after | The sound, byte for byte, the codec's other headers, and Opus's volume adjustment |
+| WAV | Tags (`LIST INFO`), names and notes on cue points, Broadcast WAV metadata (description, originator, reference, dates, time of day, UMID, loudness, coding history), iXML, XMP, ID3, the sampler's maker and model and SMPTE time (set to zero), any other chunk, data after the end | The sound, byte for byte, its format, cue points, sampler loops and instrument settings |
 | ZIP, TAR, gzip | Dates, owner names and IDs, permissions (reset to 644, or 755 for folders and programs), comments, extra fields and PAX records (including saved download addresses), gzip's original file name, junk files | Every file inside, cleaned like the formats above; files MetaScrub can't read are kept as they are |
 
 By default, two things that affect how the image looks are kept:
@@ -113,7 +114,7 @@ MP4, QuickTime (`.mov`), M4A and HEIC/AVIF files are cleaned in place: nothing i
 - **Music** loses its tags too: title, artist, album and cover art are removed along with everything else.
 - 3GP videos, camera raw files (`.cr3`) and other formats that share this structure aren't cleaned.
 
-MP3, FLAC and Ogg files keep exactly their sound: only the tags are removed, so it plays exactly as before. In Ogg files the tags sit in a header every file needs, so it's replaced with an empty one; the pages of sound get new page numbers and checksums, but the sound in them isn't touched. MetaScrub checks that everything between the tags is sound (for FLAC and Ogg, through checksums); a file with other data among its frames or pages is refused, since that data could hold anything, and so is an MP3 with less than three frames of sound. Ogg files with more than one stream (several tracks in one file, or one after another) and Ogg files holding FLAC, Speex or video aren't cleaned.
+MP3, FLAC, Ogg and WAV files keep exactly their sound: only the tags are removed, so it plays exactly as before. In Ogg files the tags sit in a header every file needs, so it's replaced with an empty one; the pages of sound get new page numbers and checksums, but the sound in them isn't touched. MetaScrub checks that everything between the tags is sound (for FLAC and Ogg, through checksums); a file with other data among its frames or pages is refused, since that data could hold anything, and so is an MP3 with less than three frames of sound. Ogg files with more than one stream (several tracks in one file, or one after another) and Ogg files holding FLAC, Speex or video aren't cleaned. WAV files over 4 GB (RF64) and WAV files with object audio (ADM, as in Dolby Atmos masters) are refused.
 
 ### Archives
 
@@ -191,7 +192,7 @@ MetaScrub removes **hidden metadata**. It does not:
 - Remove invisible watermarks or steganography, or defeat camera sensor fingerprinting.
 - Guarantee anonymity.
 - Securely delete originals. With `--in-place`, the original bytes may still be recoverable from the disk, and other hard links to the file keep the original.
-- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, HEIC and AVIF images, MP4, MOV, M4A, MP3, FLAC, Ogg Vorbis and Opus files, Office and PDF documents, and ZIP, TAR and gzip archives.
+- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, HEIC and AVIF images, MP4, MOV, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV files, Office and PDF documents, and ZIP, TAR and gzip archives.
 - Check subtitles, chapter titles or what's in the sound itself, or clean MKV, WebM, AVI or 3GP videos.
 - Clean 7z or RAR archives, ZIP files compressed with methods other than Deflate (such as LZMA or Zstandard), or TAR archives with sparse files or device files. These are refused and reported.
 - Clean encrypted or digitally signed PDFs. They're skipped or refused and reported.

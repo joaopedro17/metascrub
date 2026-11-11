@@ -12,7 +12,7 @@ use metascrub_core::model::FormatId;
 // second cleaning changes nothing.
 fuzz_target!(|input: &[u8]| {
     let options = Options::default();
-    for format in [FormatId::Mp3, FormatId::Flac, FormatId::Ogg] {
+    for format in [FormatId::Mp3, FormatId::Flac, FormatId::Ogg, FormatId::Wav] {
         let audio = handler(format).expect("supported");
         let mut cleaned = Vec::new();
         let Ok(findings) = audio.clean(&mut Cursor::new(input), &mut cleaned, &options) else {

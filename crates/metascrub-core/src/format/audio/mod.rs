@@ -1,4 +1,4 @@
-//! Music and sound: MP3, FLAC, Ogg Vorbis and Opus. Tags sit before or after the sound and are
+//! Music and sound: MP3, FLAC, Ogg Vorbis, Opus and WAV. Tags sit before or after the sound and are
 //! removed whole; the sound itself is copied byte for byte, so it plays
 //! exactly as before.
 
@@ -8,12 +8,14 @@ mod id3;
 mod mp3;
 mod ogg;
 mod vorbis;
+mod wav;
 
 use std::io::{Read, SeekFrom};
 
 pub(super) use flac::Flac;
 pub(super) use mp3::Mp3;
 pub(super) use ogg::{Ogg, is_supported as is_ogg};
+pub(super) use wav::Wav;
 
 use super::{FormatError, ReadSeek};
 use crate::limits::MAX_AUDIO_TAG_BYTES;

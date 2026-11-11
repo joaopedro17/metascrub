@@ -82,6 +82,10 @@ fn allowed_extras(name: &str) -> &'static [&'static str] {
         "icc.webp" => WEBP_ICC,
         // The form is kept (its values are only reported).
         "form.pdf" => &["[PDF]HasXFA"],
+        // Cue points and sampler loops (with model and time blanked).
+        "sampler.wav" => &["[RIFF]"],
+        // Compressed sound's length in samples (`fact`).
+        "compressed.wav" => &["[RIFF]NumberOfSamples"],
         _ if name.ends_with(".webp") => &["[RIFF]"],
         _ => &[],
     }
@@ -104,6 +108,7 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
     let base_flac = exiftool_tags(&fixture("audio/clean.flac")).unwrap();
     let base_ogg = exiftool_tags(&fixture("audio/clean.ogg")).unwrap();
     let base_opus = exiftool_tags(&fixture("audio/clean.opus")).unwrap();
+    let base_wav = exiftool_tags(&fixture("audio/clean.wav")).unwrap();
     // Sanity check that the oracle sees what we planted.
     let original = exiftool_tags(&fixture("jpeg/camera.jpg")).unwrap();
     assert!(
@@ -129,6 +134,8 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
             &base_ogg
         } else if name.ends_with(".opus") {
             &base_opus
+        } else if name.ends_with(".wav") {
+            &base_wav
         } else if name.ends_with(".webp") {
             &base_webp
         } else if name.ends_with(".png") && name != "jpeg-named.png" {
@@ -647,7 +654,7 @@ fn cleaned_music_sounds_the_same() {
         );
         checked += 1;
     }
-    assert!(checked >= 13, "only {checked} music files were checked");
+    assert!(checked >= 17, "only {checked} music files were checked");
 }
 
 /// What exiftool, reading with its own parser, finds in a video or photo
