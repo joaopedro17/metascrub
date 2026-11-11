@@ -92,6 +92,8 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
         Some(FormatId::Webp)
     } else if head.starts_with(b"%PDF-") {
         Some(FormatId::Pdf)
+    } else if head.starts_with(b"OggS") {
+        Some(FormatId::Ogg)
     } else if head.starts_with(b"fLaC") {
         Some(FormatId::Flac)
     } else if head.starts_with(&[0x1F, 0x8B, 0x08]) {
@@ -117,6 +119,7 @@ pub fn detect(head: &[u8], input: &mut dyn ReadSeek) -> Result<Option<FormatId>,
             FormatId::Zip if zip_archive::is_package(input)? => None,
             format => Some(format),
         },
+        Some(FormatId::Ogg) => audio::is_ogg(input)?.then_some(FormatId::Ogg),
         Some(other) => Some(other),
         None if head.starts_with(b"ID3") || head.first() == Some(&0xFF) => audio::detect(input)?,
         None => {
@@ -145,6 +148,7 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         }
         FormatId::Mp3 => Some(&audio::Mp3),
         FormatId::Flac => Some(&audio::Flac),
+        FormatId::Ogg => Some(&audio::Ogg),
         FormatId::Compound | FormatId::Folder => None,
     }
 }
@@ -170,6 +174,7 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::Avif => &["avif", "avifs"],
         FormatId::Mp3 => &["mp3", "mp2", "mpga"],
         FormatId::Flac => &["flac"],
+        FormatId::Ogg => &["ogg", "oga", "opus"],
         // Password-protected Office files keep their usual extension.
         FormatId::Compound => &[
             "doc", "dot", "xls", "xlt", "ppt", "pot", "pps", "docx", "docm", "xlsx", "xlsm",
@@ -398,6 +403,23 @@ mod tests {
         let flac = [b"ID3\x03\0\0\0\0\0\0".as_slice(), b"fLaC"].concat();
         assert_eq!(detect_bytes(&flac), Some(FormatId::Flac));
         assert_eq!(detect_bytes(b"fLaC\0\0\0\x22"), Some(FormatId::Flac));
+    }
+
+    #[test]
+    fn detects_ogg_vorbis_and_opus_only() {
+        let fixture = |name: &str| {
+            std::fs::read(
+                std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../fixtures/generated/audio")
+                    .join(name),
+            )
+            .unwrap()
+        };
+        let detect_bytes = |data: &[u8]| detect(data, &mut io::Cursor::new(data)).unwrap();
+        assert_eq!(detect_bytes(&fixture("tagged.ogg")), Some(FormatId::Ogg));
+        assert_eq!(detect_bytes(&fixture("tagged.opus")), Some(FormatId::Ogg));
+        // Damaged: still Ogg, so it's reported as damaged rather than unknown.
+        assert_eq!(detect_bytes(b"OggS\0\x02"), Some(FormatId::Ogg));
     }
 
     #[test]

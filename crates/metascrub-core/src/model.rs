@@ -215,7 +215,7 @@ pub enum KeepReason {
     /// Part of the picture itself (a preview, depth map or HDR gain map),
     /// showing nothing the picture doesn't show.
     PartOfImage,
-    /// Sound files need it to play correctly, show their length or seek.
+    /// Sound files need it to play correctly: their length, seeking, volume.
     RequiredToPlay,
 }
 
@@ -293,6 +293,8 @@ pub enum FormatId {
     /// MPEG audio, layers I to III.
     Mp3,
     Flac,
+    /// Ogg Vorbis or Opus audio (`.ogg`, `.oga`, `.opus`).
+    Ogg,
     /// An OLE compound file: an old-format Office file (`.doc`, `.xls`,
     /// `.ppt`) or a password-protected Office file.
     Compound,

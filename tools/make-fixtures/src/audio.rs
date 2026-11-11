@@ -1,6 +1,6 @@
-//! Music: MP3 and FLAC files from `ffmpeg`, with the tags ffmpeg writes,
-//! and the tags it can't write (APEv2, Lyrics3, ID3v2.4 with a footer, ID3
-//! around FLAC) built by hand around the same sound.
+//! Music: MP3, FLAC, Ogg Vorbis and Opus files from `ffmpeg`, with the tags
+//! ffmpeg writes, and the tags it can't write (APEv2, Lyrics3, ID3v2.4 with
+//! a footer, ID3 around FLAC) built by hand around the same sound.
 
 use std::fs;
 use std::path::Path;
@@ -33,6 +33,132 @@ const FLAC: &[&str] = &[
     "-flags",
     "+bitexact",
 ];
+
+const VORBIS: &[&str] = &[
+    "-c:a",
+    "libvorbis",
+    "-threads",
+    "1",
+    "-fflags",
+    "+bitexact",
+    "-flags",
+    "+bitexact",
+];
+
+const OPUS: &[&str] = &[
+    "-c:a",
+    "libopus",
+    "-threads",
+    "1",
+    "-fflags",
+    "+bitexact",
+    "-flags",
+    "+bitexact",
+];
+
+const TAGS: &[&str] = &[
+    "-metadata",
+    "title=Holiday",
+    "-metadata",
+    "artist=Jane Doe",
+    "-metadata",
+    "date=2026-03-14",
+    "-metadata",
+    "comment=Recorded at home",
+];
+
+/// Ogg's CRC-32: polynomial 0x04C11DB7, not reflected, no initial value.
+fn ogg_crc(data: &[u8]) -> u32 {
+    data.iter().fold(0u32, |crc, &byte| {
+        (0..8).fold(crc ^ (u32::from(byte) << 24), |c, _| {
+            if c & 0x8000_0000 != 0 {
+                (c << 1) ^ 0x04C1_1DB7
+            } else {
+                c << 1
+            }
+        })
+    })
+}
+
+/// Where each Ogg page starts and ends.
+fn ogg_pages(data: &[u8]) -> Vec<(usize, usize)> {
+    let mut pages = Vec::new();
+    let mut pos = 0;
+    while pos < data.len() {
+        let segments = usize::from(data[pos + 26]);
+        let body: usize = data[pos + 27..pos + 27 + segments]
+            .iter()
+            .map(|&l| usize::from(l))
+            .sum();
+        let end = pos + 27 + segments + body;
+        pages.push((pos, end));
+        pos = end;
+    }
+    pages
+}
+
+/// The page with `header` (its first 26 bytes) holding `packets`.
+fn ogg_page(header: &[u8], packets: &[Vec<u8>]) -> Vec<u8> {
+    let mut lacing = Vec::new();
+    for packet in packets {
+        lacing.extend(std::iter::repeat_n(255u8, packet.len() / 255));
+        lacing.push((packet.len() % 255) as u8);
+    }
+    let mut page = header[..22].to_vec();
+    page.extend_from_slice(&[0; 4]);
+    page.push(u8::try_from(lacing.len()).unwrap());
+    page.extend_from_slice(&lacing);
+    page.extend_from_slice(&packets.concat());
+    let crc = ogg_crc(&page);
+    page[22..26].copy_from_slice(&crc.to_le_bytes());
+    page
+}
+
+/// The packets that end on the page at `start..end` (ffmpeg's header
+/// pages hold whole packets).
+fn ogg_packets(data: &[u8], start: usize, end: usize) -> Vec<Vec<u8>> {
+    let segments = usize::from(data[start + 26]);
+    let mut at = start + 27 + segments;
+    let mut packets = Vec::new();
+    let mut packet = Vec::new();
+    for &lace in &data[start + 27..start + 27 + segments] {
+        packet.extend_from_slice(&data[at..at + usize::from(lace)]);
+        at += usize::from(lace);
+        if lace < 255 {
+            packets.push(std::mem::take(&mut packet));
+        }
+    }
+    assert_eq!(at, end);
+    packets
+}
+
+/// `data` with an empty comment packet (no encoder name, no tags) in
+/// place of the one ffmpeg wrote, which starts the second page.
+fn ogg_without_tags(data: &[u8], magic: &[u8], framing: bool) -> Vec<u8> {
+    let pages = ogg_pages(data);
+    let (start, end) = pages[1];
+    let mut packets = ogg_packets(data, start, end);
+    assert!(packets[0].starts_with(magic));
+    packets[0] = [magic, &[0; 8], if framing { &[1] } else { &[] }].concat();
+    [
+        &data[..start],
+        &ogg_page(&data[start..start + 26], &packets),
+        &data[end..],
+    ]
+    .concat()
+}
+
+/// `data` with Opus's output gain set to `gain` (in 1/256 dB).
+fn opus_with_gain(data: &[u8], gain: i16) -> Vec<u8> {
+    let (start, end) = ogg_pages(data)[0];
+    let mut head = ogg_packets(data, start, end).remove(0);
+    head[16..18].copy_from_slice(&gain.to_le_bytes());
+    [
+        ogg_page(&data[start..start + 26], &[head]).as_slice(),
+        &data[end..],
+    ]
+    .concat()
+}
 
 /// `data` without its FLAC metadata blocks, except the stream description:
 /// ffmpeg always adds a comment block and padding.
@@ -269,4 +395,47 @@ pub fn write_all(dir: &Path, jpeg_dir: &Path) {
     ]
     .concat();
     write(&dir.join("spliced.flac"), &spliced);
+
+    // Ogg: Vorbis and Opus with tags (and a picture, as taggers store it),
+    // the same without, an Opus file with a volume adjustment, and files
+    // refused: data hidden between pages, two streams one after another.
+    let picture = format!(
+        "METADATA_BLOCK_PICTURE={}",
+        "AAAAAwAAAAppbWFnZS9qcGVnAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE/9j/2Q=="
+    );
+    ffmpeg(
+        &dir.join("tagged.ogg"),
+        &[
+            SOUND,
+            VORBIS,
+            TAGS,
+            &[
+                "-metadata",
+                "REPLAYGAIN_TRACK_GAIN=-6.20 dB",
+                "-metadata",
+                &picture,
+            ],
+        ],
+    );
+    ffmpeg(&dir.join("tagged.opus"), &[SOUND, OPUS, TAGS]);
+    let vorbis = fs::read(dir.join("tagged.ogg")).unwrap();
+    let clean_vorbis = ogg_without_tags(&vorbis, b"\x03vorbis", true);
+    write(&dir.join("clean.ogg"), &clean_vorbis);
+    let opus = fs::read(dir.join("tagged.opus")).unwrap();
+    let clean_opus = ogg_without_tags(&opus, b"OpusTags", false);
+    write(&dir.join("clean.opus"), &clean_opus);
+    // -3 dB.
+    write(&dir.join("gain.opus"), &opus_with_gain(&clean_opus, -768));
+    let (_, header_end) = ogg_pages(&clean_vorbis)[1];
+    let spliced = [
+        &clean_vorbis[..header_end],
+        b"hidden between pages",
+        &clean_vorbis[header_end..],
+    ]
+    .concat();
+    write(&dir.join("spliced.ogg"), &spliced);
+    write(
+        &dir.join("chained.opus"),
+        &[clean_opus.as_slice(), &clean_opus].concat(),
+    );
 }

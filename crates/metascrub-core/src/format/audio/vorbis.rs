@@ -9,6 +9,12 @@ use crate::model::{Disposition, Finding, FindingKind, Location, Value};
 
 /// What a comment block holds. `label` names the block in locations.
 pub(super) fn findings(label: &str, data: &[u8]) -> Result<Vec<Finding>, FormatError> {
+    read(label, data).map(|(findings, _)| findings)
+}
+
+/// Like [`findings`], with how many bytes of `data` the block takes:
+/// Ogg packets may carry more after it.
+pub(super) fn read(label: &str, data: &[u8]) -> Result<(Vec<Finding>, usize), FormatError> {
     let mut cursor = Cursor::new(data);
     let mut findings = Vec::new();
     let vendor_len = cursor.u32_le()? as usize;
@@ -61,7 +67,7 @@ pub(super) fn findings(label: &str, data: &[u8]) -> Result<Vec<Finding>, FormatE
             .with_value(Value::Bytes(data.len() as u64)),
         );
     }
-    Ok(findings)
+    Ok((findings, data.len() - cursor.remaining().len()))
 }
 
 fn kind_of(name: &str) -> FindingKind {

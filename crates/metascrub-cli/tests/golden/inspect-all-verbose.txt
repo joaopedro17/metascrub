@@ -1,4 +1,4 @@
-$ metascrub inspect -v --show-values fixtures/generated/archive/app.jar fixtures/generated/archive/bomb.zip fixtures/generated/archive/deep.zip fixtures/generated/archive/encrypted.zip fixtures/generated/archive/photos.tar fixtures/generated/archive/photos.tar.gz fixtures/generated/archive/photos.zip fixtures/generated/archive/traversal.tar fixtures/generated/archive/traversal.zip fixtures/generated/audio/appended.mp3 fixtures/generated/audio/clean.flac fixtures/generated/audio/clean.mp3 fixtures/generated/audio/footer.mp3 fixtures/generated/audio/id3.flac fixtures/generated/audio/plain.flac fixtures/generated/audio/spliced.flac fixtures/generated/audio/spliced.mp3 fixtures/generated/audio/tagged.flac fixtures/generated/audio/tagged.mp3 fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/media/camera.avif fixtures/generated/media/camera.heic fixtures/generated/media/clean.avif fixtures/generated/media/clean.mp4 fixtures/generated/media/iphone.mov fixtures/generated/media/phone.mp4 fixtures/generated/media/trailing.mp4 fixtures/generated/media/voice.m4a fixtures/generated/media/xmp.avif fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub inspect -v --show-values fixtures/generated/archive/app.jar fixtures/generated/archive/bomb.zip fixtures/generated/archive/deep.zip fixtures/generated/archive/encrypted.zip fixtures/generated/archive/photos.tar fixtures/generated/archive/photos.tar.gz fixtures/generated/archive/photos.zip fixtures/generated/archive/traversal.tar fixtures/generated/archive/traversal.zip fixtures/generated/audio/appended.mp3 fixtures/generated/audio/chained.opus fixtures/generated/audio/clean.flac fixtures/generated/audio/clean.mp3 fixtures/generated/audio/clean.ogg fixtures/generated/audio/clean.opus fixtures/generated/audio/footer.mp3 fixtures/generated/audio/gain.opus fixtures/generated/audio/id3.flac fixtures/generated/audio/plain.flac fixtures/generated/audio/spliced.flac fixtures/generated/audio/spliced.mp3 fixtures/generated/audio/spliced.ogg fixtures/generated/audio/tagged.flac fixtures/generated/audio/tagged.mp3 fixtures/generated/audio/tagged.ogg fixtures/generated/audio/tagged.opus fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/media/camera.avif fixtures/generated/media/camera.heic fixtures/generated/media/clean.avif fixtures/generated/media/clean.mp4 fixtures/generated/media/iphone.mov fixtures/generated/media/phone.mp4 fixtures/generated/media/trailing.mp4 fixtures/generated/media/voice.m4a fixtures/generated/media/xmp.avif fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 fixtures/generated/archive/app.jar skipped: MetaScrub can't read this type of file
@@ -252,15 +252,24 @@ fixtures/generated/audio/appended.mp3 (MP3 audio)
     • A title, caption or keywords: 57 bytes — will be removed [Lyrics3]
     • A title, caption or keywords: Holiday — will be removed [ID3v1 > Title]
   Low risk
-    • Technical details (encoding, settings, statistics): Lavf lame — kept: needed to play correctly (length and seeking) [Xing]
+    • Technical details (encoding, settings, statistics): Lavf lame — kept: needed to play correctly (length, seeking or volume) [Xing]
     • Cover picture (album or audiobook art): 14 bytes — will be removed [APEv2 > Cover Art (Front)]
+
+fixtures/generated/audio/chained.opus failed: the file uses a feature MetaScrub can't handle safely, so it was left alone
+  unsupported feature: several Ogg streams one after another
 
 fixtures/generated/audio/clean.flac (FLAC audio)
   No hidden metadata found.
 
 fixtures/generated/audio/clean.mp3 (MP3 audio)
   Low risk
-    • Technical details (encoding, settings, statistics): Lavf lame — kept: needed to play correctly (length and seeking) [Xing]
+    • Technical details (encoding, settings, statistics): Lavf lame — kept: needed to play correctly (length, seeking or volume) [Xing]
+
+fixtures/generated/audio/clean.ogg (Ogg audio)
+  No hidden metadata found.
+
+fixtures/generated/audio/clean.opus (Ogg audio)
+  No hidden metadata found.
 
 fixtures/generated/audio/footer.mp3 (MP3 audio)
   High risk
@@ -268,7 +277,11 @@ fixtures/generated/audio/footer.mp3 (MP3 audio)
   Medium risk
     • A title, caption or keywords: Holiday — will be removed [ID3v2.4 > TIT2]
   Low risk
-    • Technical details (encoding, settings, statistics): Lavf lame — kept: needed to play correctly (length and seeking) [Xing]
+    • Technical details (encoding, settings, statistics): Lavf lame — kept: needed to play correctly (length, seeking or volume) [Xing]
+
+fixtures/generated/audio/gain.opus (Ogg audio)
+  Low risk
+    • Technical details (encoding, settings, statistics): -3.00 dB — kept: needed to play correctly (length, seeking or volume) [OpusHead > Output gain]
 
 fixtures/generated/audio/id3.flac (FLAC audio)
   High risk
@@ -286,6 +299,9 @@ fixtures/generated/audio/spliced.flac failed: the file uses a feature MetaScrub 
 
 fixtures/generated/audio/spliced.mp3 failed: the file uses a feature MetaScrub can't handle safely, so it was left alone
   unsupported feature: data that isn't sound between the MP3 frames, which could hold anything
+
+fixtures/generated/audio/spliced.ogg failed: the file uses a feature MetaScrub can't handle safely, so it was left alone
+  unsupported feature: data that isn't sound in the Ogg stream, which could hold anything
 
 fixtures/generated/audio/tagged.flac (FLAC audio)
   High risk
@@ -316,7 +332,30 @@ fixtures/generated/audio/tagged.mp3 (MP3 audio)
   Low risk
     • Technical details (encoding, settings, statistics): REPLAYGAIN_TRACK_GAIN: -6.20 dB — will be removed [ID3v2.3 > TXXX]
     • Cover picture (album or audiobook art): 1.2 KB — will be removed [ID3v2.3 > APIC]
-    • Technical details (encoding, settings, statistics): Lavf lame — kept: needed to play correctly (length and seeking) [Xing]
+    • Technical details (encoding, settings, statistics): Lavf lame — kept: needed to play correctly (length, seeking or volume) [Xing]
+
+fixtures/generated/audio/tagged.ogg (Ogg audio)
+  High risk
+    • A person's name (author, artist or owner): Jane Doe — will be removed [Vorbis comment > ARTIST]
+  Medium risk
+    • Software or app used: ffmpeg — will be removed [Vorbis comment > vendor]
+    • Software or app used: Lavc libvorbis — will be removed [Vorbis comment > ENCODER]
+    • A title, caption or keywords: Holiday — will be removed [Vorbis comment > TITLE]
+    • Date and time: 2026-03-14 — will be removed [Vorbis comment > DATE]
+    • A title, caption or keywords: Recorded at home — will be removed [Vorbis comment > DESCRIPTION]
+  Low risk
+    • Technical details (encoding, settings, statistics): -6.20 dB — will be removed [Vorbis comment > REPLAYGAIN_TRACK_GAIN]
+    • Cover picture (album or audiobook art): 64 bytes — will be removed [Vorbis comment > METADATA_BLOCK_PICTURE]
+
+fixtures/generated/audio/tagged.opus (Ogg audio)
+  High risk
+    • A person's name (author, artist or owner): Jane Doe — will be removed [OpusTags > ARTIST]
+  Medium risk
+    • Software or app used: ffmpeg — will be removed [OpusTags > vendor]
+    • Software or app used: Lavc libopus — will be removed [OpusTags > ENCODER]
+    • A title, caption or keywords: Holiday — will be removed [OpusTags > TITLE]
+    • Date and time: 2026-03-14 — will be removed [OpusTags > DATE]
+    • A title, caption or keywords: Recorded at home — will be removed [OpusTags > DESCRIPTION]
 
 fixtures/generated/jpeg/camera.jpg (JPEG image)
   High risk
@@ -783,4 +822,4 @@ fixtures/generated/webp/trailing.webp (WebP image)
 fixtures/generated/webp/truncated.webp failed: the file is damaged or not what it claims to be
   malformed file: unexpected end of data
 
-54 files inspected, 41 with hidden metadata, 5 skipped, 8 failed
+59 files inspected, 43 with hidden metadata, 5 skipped, 10 failed
