@@ -1,6 +1,7 @@
 //! File formats: detection by content, and the interface every format implements.
 
 mod archive;
+mod audio;
 mod bytes;
 mod exif;
 mod gzip;
@@ -89,8 +90,16 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
         Some(FormatId::Png)
     } else if head.get(0..4) == Some(b"RIFF") && head.get(8..12) == Some(b"WEBP") {
         Some(FormatId::Webp)
+    } else if matches!(head.get(0..4), Some(b"RIFF" | b"RF64" | b"BW64"))
+        && head.get(8..12) == Some(b"WAVE")
+    {
+        Some(FormatId::Wav)
     } else if head.starts_with(b"%PDF-") {
         Some(FormatId::Pdf)
+    } else if head.starts_with(b"OggS") {
+        Some(FormatId::Ogg)
+    } else if head.starts_with(b"fLaC") {
+        Some(FormatId::Flac)
     } else if head.starts_with(&[0x1F, 0x8B, 0x08]) {
         Some(FormatId::Gzip)
     } else if head.get(4..8) == Some(b"ftyp") {
@@ -114,7 +123,9 @@ pub fn detect(head: &[u8], input: &mut dyn ReadSeek) -> Result<Option<FormatId>,
             FormatId::Zip if zip_archive::is_package(input)? => None,
             format => Some(format),
         },
+        Some(FormatId::Ogg) => audio::is_ogg(input)?.then_some(FormatId::Ogg),
         Some(other) => Some(other),
+        None if head.starts_with(b"ID3") || head.first() == Some(&0xFF) => audio::detect(input)?,
         None => {
             let mut block = Vec::with_capacity(512);
             (&mut *input).take(512).read_to_end(&mut block)?;
@@ -139,6 +150,10 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         FormatId::Mp4 | FormatId::Mov | FormatId::M4a | FormatId::Heic | FormatId::Avif => {
             Some(&media::Media)
         }
+        FormatId::Mp3 => Some(&audio::Mp3),
+        FormatId::Flac => Some(&audio::Flac),
+        FormatId::Ogg => Some(&audio::Ogg),
+        FormatId::Wav => Some(&audio::Wav),
         FormatId::Compound | FormatId::Folder => None,
     }
 }
@@ -162,6 +177,10 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::M4a => &["m4a", "m4b", "m4p", "mp4"],
         FormatId::Heic => &["heic", "heif", "hif", "heics", "heifs"],
         FormatId::Avif => &["avif", "avifs"],
+        FormatId::Mp3 => &["mp3", "mp2", "mpga"],
+        FormatId::Flac => &["flac"],
+        FormatId::Ogg => &["ogg", "oga", "opus"],
+        FormatId::Wav => &["wav", "wave", "bwf"],
         // Password-protected Office files keep their usual extension.
         FormatId::Compound => &[
             "doc", "dot", "xls", "xlt", "ppt", "pot", "pps", "docx", "docm", "xlsx", "xlsm",
@@ -376,11 +395,52 @@ mod tests {
     use super::*;
 
     #[test]
+    fn detects_mp3_by_its_tag_or_by_several_frames() {
+        let frame = [&[0xFF, 0xFB, 0x90, 0x00][..], &[0; 413]].concat();
+        let detect_bytes = |data: &[u8]| detect(data, &mut io::Cursor::new(data)).unwrap();
+        assert_eq!(detect_bytes(&frame.repeat(3)), Some(FormatId::Mp3));
+        assert_eq!(detect_bytes(&frame.repeat(2)), None);
+        let tagged = [b"ID3\x03\0\0\0\0\0\0".as_slice(), &frame.repeat(2)].concat();
+        assert_eq!(detect_bytes(&tagged), Some(FormatId::Mp3));
+        // An ID3 tag before something else isn't MP3.
+        let other = [b"ID3\x03\0\0\0\0\0\0".as_slice(), b"not sound at all"].concat();
+        assert_eq!(detect_bytes(&other), None);
+        assert_eq!(detect_bytes(&[0xFF; 64]), None);
+        let flac = [b"ID3\x03\0\0\0\0\0\0".as_slice(), b"fLaC"].concat();
+        assert_eq!(detect_bytes(&flac), Some(FormatId::Flac));
+        assert_eq!(detect_bytes(b"fLaC\0\0\0\x22"), Some(FormatId::Flac));
+    }
+
+    #[test]
+    fn detects_ogg_vorbis_and_opus_only() {
+        let fixture = |name: &str| {
+            std::fs::read(
+                std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../fixtures/generated/audio")
+                    .join(name),
+            )
+            .unwrap()
+        };
+        let detect_bytes = |data: &[u8]| detect(data, &mut io::Cursor::new(data)).unwrap();
+        assert_eq!(detect_bytes(&fixture("tagged.ogg")), Some(FormatId::Ogg));
+        assert_eq!(detect_bytes(&fixture("tagged.opus")), Some(FormatId::Ogg));
+        // Damaged: still Ogg, so it's reported as damaged rather than unknown.
+        assert_eq!(detect_bytes(b"OggS\0\x02"), Some(FormatId::Ogg));
+    }
+
+    #[test]
+    fn detects_wav_including_files_it_refuses() {
+        assert_eq!(sniff(b"RIFF\0\0\0\0WAVEfmt "), Some(FormatId::Wav));
+        assert_eq!(sniff(b"RF64\xff\xff\xff\xffWAVE"), Some(FormatId::Wav));
+        assert_eq!(sniff(b"RIFF\0\0\0\0AVI LIST"), None);
+    }
+
+    #[test]
     fn sniffs_by_content() {
         assert_eq!(sniff(&[0xFF, 0xD8, 0xFF, 0xE0]), Some(FormatId::Jpeg));
         assert_eq!(sniff(b"\x89PNG\r\n\x1a\n\0\0\0\x0d"), Some(FormatId::Png));
         assert_eq!(sniff(b"RIFF\x10\0\0\0WEBPVP8 "), Some(FormatId::Webp));
-        assert_eq!(sniff(b"RIFF\x10\0\0\0WAVEfmt "), None);
+        assert_eq!(sniff(b"RIFF\x10\0\0\0WAVEfmt "), Some(FormatId::Wav));
         assert_eq!(sniff(b"PK\x03\x04\x14\0"), Some(FormatId::Zip));
         assert_eq!(sniff(COMPOUND_SIGNATURE), Some(FormatId::Compound));
         assert_eq!(sniff(b"%PDF-1.7\n%"), Some(FormatId::Pdf));

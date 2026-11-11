@@ -27,7 +27,7 @@ fn metascrub(args: &[&std::ffi::OsStr]) -> Output {
 
 fn clean_all_into(out: &Path) -> Vec<PathBuf> {
     let mut fixtures = Vec::new();
-    for dir in ["jpeg", "png", "webp", "office", "pdf"] {
+    for dir in ["jpeg", "png", "webp", "office", "pdf", "audio"] {
         for entry in fs::read_dir(fixture(dir)).unwrap() {
             fixtures.push(entry.unwrap().path());
         }
@@ -82,6 +82,10 @@ fn allowed_extras(name: &str) -> &'static [&'static str] {
         "icc.webp" => WEBP_ICC,
         // The form is kept (its values are only reported).
         "form.pdf" => &["[PDF]HasXFA"],
+        // Cue points and sampler loops (with model and time blanked).
+        "sampler.wav" => &["[RIFF]"],
+        // Compressed sound's length in samples (`fact`).
+        "compressed.wav" => &["[RIFF]NumberOfSamples"],
         _ if name.ends_with(".webp") => &["[RIFF]"],
         _ => &[],
     }
@@ -99,6 +103,12 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
     let base_office = exiftool_tags(&fixture("office/clean.docx")).unwrap();
     // A PDF shows its version and page count.
     let base_pdf = exiftool_tags(&fixture("pdf/clean.pdf")).unwrap();
+    // An MP3 shows its stream: version, bitrate, channels.
+    let base_mp3 = exiftool_tags(&fixture("audio/clean.mp3")).unwrap();
+    let base_flac = exiftool_tags(&fixture("audio/clean.flac")).unwrap();
+    let base_ogg = exiftool_tags(&fixture("audio/clean.ogg")).unwrap();
+    let base_opus = exiftool_tags(&fixture("audio/clean.opus")).unwrap();
+    let base_wav = exiftool_tags(&fixture("audio/clean.wav")).unwrap();
     // Sanity check that the oracle sees what we planted.
     let original = exiftool_tags(&fixture("jpeg/camera.jpg")).unwrap();
     assert!(
@@ -116,6 +126,16 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
             &base_office
         } else if name.ends_with(".pdf") {
             &base_pdf
+        } else if name.ends_with(".mp3") {
+            &base_mp3
+        } else if name.ends_with(".flac") {
+            &base_flac
+        } else if name.ends_with(".ogg") {
+            &base_ogg
+        } else if name.ends_with(".opus") {
+            &base_opus
+        } else if name.ends_with(".wav") {
+            &base_wav
         } else if name.ends_with(".webp") {
             &base_webp
         } else if name.ends_with(".png") && name != "jpeg-named.png" {
@@ -585,6 +605,56 @@ fn cleaned_media_still_play() {
     }
     let verify = metascrub(&["verify".as_ref(), "-r".as_ref(), out.as_os_str()]);
     assert_eq!(verify.status.code(), Some(0), "{verify:?}");
+}
+
+/// Cleaned music must sound exactly the same: ffmpeg decodes the original
+/// and the cleaned file to the same samples. Skipped like the test above.
+#[test]
+fn cleaned_music_sounds_the_same() {
+    let required = std::env::var_os("METASCRUB_REQUIRE_MEDIA_TOOLS").is_some_and(|v| !v.is_empty());
+    if Command::new("ffmpeg").arg("-version").output().is_err() {
+        assert!(!required, "ffmpeg is required but couldn't run");
+        eprintln!("ffmpeg not installed; skipping");
+        return;
+    }
+    let samples = |path: &Path| {
+        let output = Command::new("ffmpeg")
+            .args(["-v", "quiet", "-i"])
+            .arg(path)
+            .args(["-map", "0:a", "-f", "s16le", "-"])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{}", path.display());
+        output.stdout
+    };
+    let out = tempfile::tempdir().unwrap();
+    let mut checked = 0;
+    for entry in fs::read_dir(fixture("audio")).unwrap() {
+        let original = entry.unwrap().path();
+        let name = original.file_name().unwrap();
+        let output = metascrub(&[
+            "clean".as_ref(),
+            "-q".as_ref(),
+            "-o".as_ref(),
+            out.path().as_os_str(),
+            original.as_os_str(),
+        ]);
+        let cleaned = out.path().join(name);
+        if !cleaned.exists() {
+            // Refused files (data hidden between frames) are never written.
+            assert_ne!(output.status.code(), Some(0), "{}", original.display());
+            continue;
+        }
+        let original_samples = samples(&original);
+        assert!(!original_samples.is_empty());
+        assert!(
+            samples(&cleaned) == original_samples,
+            "{} sounds different after cleaning",
+            name.to_string_lossy()
+        );
+        checked += 1;
+    }
+    assert!(checked >= 17, "only {checked} music files were checked");
 }
 
 /// What exiftool, reading with its own parser, finds in a video or photo

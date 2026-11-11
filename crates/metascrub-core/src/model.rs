@@ -215,6 +215,9 @@ pub enum KeepReason {
     /// Part of the picture itself (a preview, depth map or HDR gain map),
     /// showing nothing the picture doesn't show.
     PartOfImage,
+    /// Sound files need it to play correctly: length, seeking, volume, cue
+    /// points, loops.
+    RequiredToPlay,
 }
 
 /// A choice only the user can make, because every option changes the content.
@@ -288,6 +291,13 @@ pub enum FormatId {
     /// HEIC or HEIF photo, as iPhones take.
     Heic,
     Avif,
+    /// MPEG audio, layers I to III.
+    Mp3,
+    Flac,
+    /// Ogg Vorbis or Opus audio (`.ogg`, `.oga`, `.opus`).
+    Ogg,
+    /// WAV audio, Broadcast WAV included (`.wav`, `.bwf`).
+    Wav,
     /// An OLE compound file: an old-format Office file (`.doc`, `.xls`,
     /// `.ppt`) or a password-protected Office file.
     Compound,

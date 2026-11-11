@@ -36,11 +36,11 @@ fixtures $METASCRUB_BLESS="1":
     cargo run -q -p make-fixtures
     cargo test -q -p metascrub-cli --test golden
 
-# Fuzz a target (inspect, jpeg, png, webp, clean, media, attributes), seeded with the fixtures; needs nightly and cargo-fuzz, Linux or macOS
+# Fuzz a target (inspect, jpeg, png, webp, clean, media, audio, attributes), seeded with the fixtures; needs nightly and cargo-fuzz, Linux or macOS
 [working-directory: 'fuzz']
 fuzz target seconds="180":
     mkdir -p corpus/{{target}}
-    cargo +nightly fuzz run {{target}} corpus/{{target}} ../fixtures/generated/jpeg ../fixtures/generated/png ../fixtures/generated/webp ../fixtures/generated/office ../fixtures/generated/pdf ../fixtures/generated/archive ../fixtures/generated/media -- -max_total_time={{seconds}}
+    cargo +nightly fuzz run {{target}} corpus/{{target}} ../fixtures/generated/jpeg ../fixtures/generated/png ../fixtures/generated/webp ../fixtures/generated/office ../fixtures/generated/pdf ../fixtures/generated/archive ../fixtures/generated/media ../fixtures/generated/audio -- -max_total_time={{seconds}}
 
 # Run MetaScrub, e.g. `just run inspect photo.jpg`
 run *args:

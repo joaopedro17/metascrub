@@ -88,6 +88,9 @@ pub fn disposition(kind: FindingKind, disposition: Disposition, tense: Tense) ->
         }
         (Disposition::Keep(KeepReason::UserRequested), _) => "kept: you asked to keep it",
         (Disposition::Keep(KeepReason::NotWritten), _) => "kept: no copy of this file is written",
+        (Disposition::Keep(KeepReason::RequiredToPlay), _) => {
+            "kept: needed to play correctly (length, seeking, volume, cue points or loops)"
+        }
         (Disposition::Keep(KeepReason::PartOfImage), _) => {
             "kept: part of the picture, shows nothing the picture doesn't"
         }
@@ -243,6 +246,10 @@ pub fn format(format: FormatId) -> &'static str {
         FormatId::Mp4 => "MP4 video",
         FormatId::Mov => "QuickTime video",
         FormatId::M4a => "MPEG-4 audio",
+        FormatId::Mp3 => "MP3 audio",
+        FormatId::Flac => "FLAC audio",
+        FormatId::Ogg => "Ogg audio",
+        FormatId::Wav => "WAV audio",
         FormatId::Heic => "HEIC image",
         FormatId::Avif => "AVIF image",
         FormatId::Compound => "old-format or password-protected Office file",

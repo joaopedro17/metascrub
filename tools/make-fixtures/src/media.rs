@@ -37,7 +37,7 @@ fn run(program: &str, args: &[&str]) {
     assert!(status.success(), "{program} {args:?} failed");
 }
 
-fn ffmpeg(output: &Path, args: &[&[&str]]) {
+pub(crate) fn ffmpeg(output: &Path, args: &[&[&str]]) {
     let mut all = vec!["-y", "-v", "error"];
     for group in args {
         all.extend_from_slice(group);
