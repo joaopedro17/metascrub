@@ -18,6 +18,7 @@ mod pdf;
 mod png;
 mod tar_archive;
 mod tiff;
+mod ultra_hdr;
 mod unpack;
 mod webp;
 mod xml;

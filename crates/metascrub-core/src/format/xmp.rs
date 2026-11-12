@@ -32,7 +32,15 @@ const NAMESPACES: &[(&str, &str)] = &[
     ("http://ns.google.com/photos/1.0/camera/", "GCamera"),
     ("http://ns.google.com/photos/1.0/container/", "Container"),
     ("http://ns.google.com/photos/1.0/container/item/", "Item"),
+    (GAIN_MAP, "hdrgm"),
 ];
+
+/// Ultra HDR's gain map settings (Adobe's gain map namespace).
+pub(super) const GAIN_MAP: &str = "http://ns.adobe.com/hdr-gain-map/1.0/";
+
+/// The namespaces an Ultra HDR photo needs: the gain map settings and the
+/// directory that says where the gain map is.
+pub(super) const ULTRA_HDR: &[&str] = &["hdrgm", "Container", "Item"];
 
 /// Namespaces that only give the packet its structure.
 const STRUCTURAL: &[&str] = &[
@@ -106,6 +114,8 @@ struct Element {
 
 #[derive(Debug, Default)]
 struct Collector {
+    /// Prefixes of namespaces that aren't reported.
+    skip: &'static [&'static str],
     findings: Vec<Finding>,
     technical: i64,
     unknown: i64,
@@ -117,6 +127,9 @@ impl Collector {
             self.unknown += 1;
             return;
         };
+        if self.skip.contains(&prefix) {
+            return;
+        }
         let Some(kind) = classify(prefix, &property.name) else {
             self.technical += 1;
             return;
@@ -173,7 +186,20 @@ pub(super) fn empty_packet(len: usize) -> Option<Vec<u8>> {
 }
 
 pub(super) fn inspect(data: &[u8], location: &Location) -> Vec<Finding> {
-    let mut collector = Collector::default();
+    inspect_except(data, location, &[])
+}
+
+/// Like [`inspect`], but properties in the namespaces with the prefixes in
+/// `skip` aren't reported.
+pub(super) fn inspect_except(
+    data: &[u8],
+    location: &Location,
+    skip: &'static [&'static str],
+) -> Vec<Finding> {
+    let mut collector = Collector {
+        skip,
+        ..Collector::default()
+    };
     if parse(data, location, &mut collector).is_err() {
         collector.findings.push(
             Finding::new(
@@ -310,6 +336,115 @@ fn namespace(ns: &ResolveResult<'_>) -> Option<Option<&'static str>> {
     )
 }
 
+/// A gain map setting: its name and value, or values for each color channel.
+pub(super) type Setting = (String, Vec<String>);
+
+/// The gain map settings (`hdrgm:*`) in a packet, in order, written either
+/// as attributes or as elements (with an `rdf:Seq` for one value per
+/// channel). `None` when the packet can't be read.
+pub(super) fn gain_map_settings(data: &[u8]) -> Option<Vec<Setting>> {
+    let mut reader = NsReader::from_reader(data);
+    let mut settings: Vec<Setting> = Vec::new();
+    // The setting being read as an element, and how deep inside it we are.
+    let mut open: Option<(String, Vec<String>, usize)> = None;
+    let is_gain_map = |ns: &ResolveResult<'_>| matches!(ns, ResolveResult::Bound(ns) if AsRef::<str>::as_ref(ns) == GAIN_MAP);
+    loop {
+        let (ns, event) = reader.read_resolved_event().ok()?;
+        let in_gain_map = is_gain_map(&ns);
+        match &event {
+            Event::Start(element) | Event::Empty(element) => {
+                for attribute in element.attributes() {
+                    let attribute = attribute.ok()?;
+                    if attribute.key.as_namespace_binding().is_some() {
+                        continue;
+                    }
+                    let (ns, name) = reader.resolver().resolve_attribute(attribute.key);
+                    if is_gain_map(&ns) {
+                        let value = attribute.normalized_value(XmlVersion::Implicit1_0).ok()?;
+                        let name: &str = name.as_ref();
+                        settings.push((name.to_owned(), vec![value.trim().to_owned()]));
+                    }
+                }
+                let empty = matches!(event, Event::Empty(_));
+                match &mut open {
+                    Some((_, _, depth)) if !empty => *depth += 1,
+                    None if in_gain_map && !empty => {
+                        let name = element.local_name();
+                        let name: &str = name.as_ref();
+                        open = Some((name.to_owned(), Vec::new(), 0));
+                    }
+                    _ => {}
+                }
+            }
+            Event::Text(text) => {
+                if let Some((_, values, _)) = &mut open {
+                    let text = text.xml10_content();
+                    if !text.trim().is_empty() {
+                        values.push(text.trim().to_owned());
+                    }
+                }
+            }
+            Event::End(_) => match open.take() {
+                Some((name, values, 0)) => settings.push((name, values)),
+                Some((name, values, depth)) => open = Some((name, values, depth - 1)),
+                None => {}
+            },
+            Event::Eof => return Some(settings),
+            _ => {}
+        }
+    }
+}
+
+fn escape(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
+
+/// A packet with only `settings` and, for the primary image of an Ultra HDR
+/// photo, the directory listing it and its gain map of `gain_map_len` bytes.
+pub(super) fn gain_map_packet(settings: &[Setting], gain_map_len: Option<usize>) -> Vec<u8> {
+    let mut out = String::from(
+        "<?xpacket begin=\"\u{feff}\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>\
+         <x:xmpmeta xmlns:x=\"adobe:ns:meta/\">\
+         <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\
+         <rdf:Description rdf:about=\"\" xmlns:hdrgm=\"http://ns.adobe.com/hdr-gain-map/1.0/\"",
+    );
+    if gain_map_len.is_some() {
+        out.push_str(
+            " xmlns:Container=\"http://ns.google.com/photos/1.0/container/\" \
+             xmlns:Item=\"http://ns.google.com/photos/1.0/container/item/\"",
+        );
+    }
+    for (name, values) in settings {
+        if let [value] = values.as_slice() {
+            out.push_str(&format!(" hdrgm:{name}=\"{}\"", escape(value)));
+        }
+    }
+    out.push('>');
+    for (name, values) in settings {
+        if values.len() > 1 {
+            out.push_str(&format!("<hdrgm:{name}><rdf:Seq>"));
+            for value in values {
+                out.push_str(&format!("<rdf:li>{}</rdf:li>", escape(value)));
+            }
+            out.push_str(&format!("</rdf:Seq></hdrgm:{name}>"));
+        }
+    }
+    if let Some(len) = gain_map_len {
+        out.push_str(&format!(
+            "<Container:Directory><rdf:Seq>\
+             <rdf:li rdf:parseType=\"Resource\"><Container:Item Item:Semantic=\"Primary\" Item:Mime=\"image/jpeg\"/></rdf:li>\
+             <rdf:li rdf:parseType=\"Resource\"><Container:Item Item:Semantic=\"GainMap\" Item:Mime=\"image/jpeg\" Item:Length=\"{len}\"/></rdf:li>\
+             </rdf:Seq></Container:Directory>"
+        ));
+    }
+    out.push_str("</rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end=\"w\"?>");
+    out.into_bytes()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -385,5 +520,29 @@ mod tests {
                 .iter()
                 .any(|f| f.kind == FindingKind::UnknownMetadata)
         );
+    }
+
+    #[test]
+    fn gain_map_settings_survive_a_rewrite() {
+        let packet = br#"<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 9.1"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description xmlns:hdrgm="http://ns.adobe.com/hdr-gain-map/1.0/" xmlns:xmp="http://ns.adobe.com/xap/1.0/" hdrgm:Version="1.0" hdrgm:GainMapMax="2.3" xmp:CreatorTool="Editor"><hdrgm:Gamma><rdf:Seq><rdf:li>1</rdf:li><rdf:li>1.1</rdf:li><rdf:li>0.9</rdf:li></rdf:Seq></hdrgm:Gamma></rdf:Description></rdf:RDF></x:xmpmeta>"#;
+        let settings = gain_map_settings(packet).unwrap();
+        assert_eq!(
+            settings,
+            [
+                ("Version".to_owned(), vec!["1.0".to_owned()]),
+                ("GainMapMax".to_owned(), vec!["2.3".to_owned()]),
+                (
+                    "Gamma".to_owned(),
+                    vec!["1".to_owned(), "1.1".to_owned(), "0.9".to_owned()]
+                ),
+            ]
+        );
+        let rewritten = gain_map_packet(&settings, Some(1234));
+        assert_eq!(gain_map_settings(&rewritten).unwrap(), settings);
+        assert!(inspect_except(&rewritten, &Location::new(["XMP"]), ULTRA_HDR).is_empty());
+        // The original reports the editor but not the settings.
+        let findings = inspect_except(packet, &Location::new(["XMP"]), ULTRA_HDR);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].kind, FindingKind::Software);
     }
 }

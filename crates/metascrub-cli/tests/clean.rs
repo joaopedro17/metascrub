@@ -87,6 +87,19 @@ fn allowed_extras(name: &str) -> &'static [&'static str] {
             "[File]ProfileDataOffset",
             "[File]ProfileSize",
         ],
+        // The gain map, its settings and where it is. Newer exiftool names
+        // the list `GContainer`, reads the ISO 21496-1 segment (its name)
+        // and shows the gain map itself; older ones warn about the segment.
+        "ultra-hdr.jpg" => &[
+            "[XMP-hdrgm]",
+            "[XMP-Container]",
+            "[XMP-GContainer]",
+            "[MPF0]",
+            "[MPImage",
+            "[Google]GainMapImage",
+            "[APP2]UniformResourceName",
+            "[ExifTool]Warning",
+        ],
         "rotated.tif" => &["[IFD0]Orientation"],
         "srgb.tif" => &["[ICC-header]", "[ICC_Profile]"],
         // The second page.
@@ -865,5 +878,79 @@ fn exiftool_finds_no_media_metadata() {
         );
         let left = exiftool_media_leftovers(&dir.path().join(name));
         assert!(left.is_empty(), "{name:?}: exiftool still finds {left:?}");
+    }
+}
+
+/// An Ultra HDR photo keeps a working gain map: exiftool finds it through
+/// the rewritten MPF segment, its settings are all there, and both images
+/// decode to the same pixels as before.
+#[test]
+fn ultra_hdr_photos_keep_their_gain_map() {
+    let gain_map = |path: &Path| -> Option<Vec<u8>> {
+        let output = Command::new("exiftool")
+            .args(["-b", "-MPImage2"])
+            .arg(path)
+            .output();
+        match output {
+            Ok(output) => Some(output.stdout),
+            Err(_) if std::env::var_os("METASCRUB_REQUIRE_EXIFTOOL").is_none() => None,
+            Err(e) => panic!("exiftool is required but couldn't run: {e}"),
+        }
+    };
+    let original = fixture("jpeg/ultra-hdr.jpg");
+    let Some(before) = gain_map(&original) else {
+        eprintln!("exiftool not installed; skipping");
+        return;
+    };
+    let out = tempfile::tempdir().unwrap();
+    let output = metascrub(&[
+        "clean".as_ref(),
+        "-q".as_ref(),
+        "-o".as_ref(),
+        out.path().as_os_str(),
+        original.as_os_str(),
+    ]);
+    assert_eq!(output.status.code(), Some(0));
+    let cleaned = out.path().join("ultra-hdr.jpg");
+    let after = gain_map(&cleaned).unwrap();
+    assert!(after.starts_with(&[0xFF, 0xD8]), "no gain map found");
+    let gain_map_file = out.path().join("gain-map.jpg");
+    fs::write(&gain_map_file, &after).unwrap();
+    let settings = exiftool_tags(&gain_map_file).unwrap();
+    for setting in [
+        "GainMapMin",
+        "GainMapMax",
+        "Gamma",
+        "OffsetSDR",
+        "HDRCapacityMax",
+    ] {
+        assert!(
+            settings.contains(&format!("[XMP-hdrgm]{setting}")),
+            "{setting} missing from {settings:?}"
+        );
+    }
+    assert!(!settings.iter().any(|t| t.contains("CreatorTool")));
+    let decode = |data: &[u8]| -> Option<Vec<u8>> {
+        let mut child = Command::new("ffmpeg")
+            .args(["-v", "error", "-i", "-", "-frames:v", "1"])
+            .args(["-f", "rawvideo", "-pix_fmt", "rgb24", "-"])
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .spawn()
+            .ok()?;
+        let mut stdin = child.stdin.take()?;
+        let data = data.to_vec();
+        let writer = std::thread::spawn(move || {
+            use std::io::Write;
+            stdin.write_all(&data).ok();
+        });
+        let output = child.wait_with_output().ok()?;
+        writer.join().ok()?;
+        Some(output.stdout)
+    };
+    if let Some(pixels) = decode(&before) {
+        assert_eq!(decode(&after), Some(pixels), "the gain map changed");
+        let main = |path: &Path| decode(&fs::read(path).unwrap());
+        assert_eq!(main(&cleaned), main(&original), "the photo changed");
     }
 }

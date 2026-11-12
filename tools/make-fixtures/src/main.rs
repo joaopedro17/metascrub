@@ -16,6 +16,7 @@ mod office;
 mod opendocument;
 mod pdf;
 mod tiff;
+mod ultra_hdr;
 
 use std::fs;
 use std::io::Write;
@@ -125,6 +126,11 @@ fn main() {
         &jpeg_dir,
         "motion-photo.jpg",
         &with_segments(&clean_jpeg, &[], &fake_mp4()),
+    );
+    write(
+        &jpeg_dir,
+        "ultra-hdr.jpg",
+        &ultra_hdr::photo(&clean_jpeg, &encode_jpeg(16, 12), &fake_mp4()),
     );
     write(
         &jpeg_dir,
