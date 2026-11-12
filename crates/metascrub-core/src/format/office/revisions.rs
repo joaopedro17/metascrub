@@ -5,8 +5,8 @@
 use std::collections::{BTreeSet, HashSet};
 
 use super::W;
-use super::xml::{self, Element, Node};
 use crate::format::FormatError;
+use crate::format::xml::{self, Element, Node};
 
 /// Elements that record a change.
 const CHANGES: &[&str] = &[

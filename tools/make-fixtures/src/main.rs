@@ -9,8 +9,10 @@
 
 mod archive;
 mod audio;
+mod ebook;
 mod media;
 mod office;
+mod opendocument;
 mod pdf;
 
 use std::fs;
@@ -35,8 +37,10 @@ fn main() {
     let archive_dir = root.join("archive");
     let media_dir = root.join("media");
     let audio_dir = root.join("audio");
+    let ebook_dir = root.join("ebook");
     for dir in [
         &audio_dir,
+        &ebook_dir,
         &archive_dir,
         &media_dir,
         &jpeg_dir,
@@ -284,6 +288,22 @@ fn main() {
     write(&office_dir, "budget.xlsx", &office.budget_xlsx);
     write(&office_dir, "comments.xlsx", &office.comments_xlsx);
     write(&office_dir, "linked.xlsx", &office.linked_xlsx);
+
+    // OpenDocument
+    let odf = opendocument::files(&camera, &encode_png(16, 12));
+    write(&office_dir, "clean.odt", &odf.clean_odt);
+    write(&office_dir, "report.odt", &odf.report_odt);
+    write(&office_dir, "comments.odt", &odf.comments_odt);
+    write(&office_dir, "tracked-changes.odt", &odf.tracked_changes_odt);
+    write(&office_dir, "signed.odt", &odf.signed_odt);
+    write(&office_dir, "budget.ods", &odf.budget_ods);
+    write(&office_dir, "plans.odp", &odf.plans_odp);
+
+    // E-books
+    let ebooks = ebook::files(&camera);
+    write(&ebook_dir, "book.epub", &ebooks.book_epub);
+    write(&ebook_dir, "legacy.epub", &ebooks.legacy_epub);
+    write(&ebook_dir, "drm.epub", &ebooks.drm_epub);
 
     // PDF
     let pdfs = pdf::files(&camera, &thumbnail, XMP);

@@ -1,7 +1,7 @@
 //! What the document property parts say, for the report. These parts are
 //! removed whole, so reading them never affects the cleaned file.
 
-use super::xml::{self, Element, Node};
+use crate::format::xml::{self, Element, Node};
 use crate::model::{Disposition, Finding, FindingKind, Location, Value};
 
 const W15: &str = "http://schemas.microsoft.com/office/word/2012/wordml";

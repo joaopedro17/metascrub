@@ -2,8 +2,8 @@
 //! hidden text, hidden slides and speaker notes. It's the user's content,
 //! not metadata, so it's reported but never changed.
 
-use super::xml::{self, Element, Node};
 use super::{P, S, W};
+use crate::format::xml::{self, Element, Node};
 use crate::model::{Disposition, Finding, FindingKind, Location, Value};
 
 const A: &[&str] = &[

@@ -12,6 +12,7 @@ use super::FormatError;
 use crate::limits::{
     MAX_ZIP_ENTRIES, MAX_ZIP_RATIO, MAX_ZIP_UNPACKED_BYTES, ZIP_RATIO_CHECK_ABOVE,
 };
+use crate::model::{Disposition, Finding, FindingKind, Location, Value};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Entry {
@@ -96,6 +97,35 @@ pub(crate) fn read(data: &[u8]) -> Result<Archive, FormatError> {
     })
 }
 
+impl Archive {
+    /// The archive's comment and file dates, which cleaning resets.
+    pub(crate) fn findings(&self) -> Vec<Finding> {
+        let mut findings = Vec::new();
+        let comment = String::from_utf8_lossy(&self.comment).trim().to_owned();
+        if !comment.is_empty() {
+            findings.push(
+                Finding::new(
+                    FindingKind::Comment,
+                    Location::new(["ZIP"]),
+                    Disposition::Remove,
+                )
+                .with_value(Value::Text(comment)),
+            );
+        }
+        if let Some(date) = self.latest_date {
+            findings.push(
+                Finding::new(
+                    FindingKind::Timestamp,
+                    Location::new(["ZIP", "File dates"]),
+                    Disposition::Remove,
+                )
+                .with_value(Value::Text(date.to_string())),
+            );
+        }
+        findings
+    }
+}
+
 /// Entry names must be relative paths that stay inside the archive.
 pub(super) fn check_name(name: &str) -> Result<(), FormatError> {
     let unsafe_name = name.is_empty()
@@ -111,15 +141,24 @@ pub(super) fn check_name(name: &str) -> Result<(), FormatError> {
 
 /// Writes `entries` in the given order, all dated 1980-01-01, with no
 /// comments, extra fields or operating-system details, so the same content
-/// always gives the same bytes.
+/// always gives the same bytes. A `mimetype` entry is stored uncompressed,
+/// as OpenDocument and EPUB require of their first entry.
 pub(crate) fn write(entries: &[Entry], out: &mut dyn Write) -> Result<(), FormatError> {
     let options = SimpleFileOptions::default()
         .compression_method(CompressionMethod::Deflated)
         .compression_level(Some(6))
         .last_modified_time(DateTime::default())
         .system(System::Dos);
+    let stored = options
+        .compression_method(CompressionMethod::Stored)
+        .compression_level(None);
     let mut zip = ZipWriter::new(Cursor::new(Vec::new()));
     for entry in entries {
+        let options = if entry.name == "mimetype" {
+            stored
+        } else {
+            options
+        };
         zip.start_file(entry.name.as_str(), options)
             .map_err(zip_error)?;
         zip.write_all(&entry.data)?;

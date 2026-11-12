@@ -4,7 +4,7 @@
 
 MetaScrub is a cross-platform command-line tool that inspects and removes hidden metadata (location, device, author, dates, download sources) from files and folders, so you can share them without leaking personal information.
 
-**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, HEIC and AVIF images, MP4 and QuickTime videos, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV audio, Word, Excel, PowerPoint and PDF documents, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
+**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, HEIC and AVIF images, MP4 and QuickTime videos, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV audio, Word, Excel, PowerPoint, OpenDocument (LibreOffice) and PDF documents, EPUB e-books, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
 
 ## Install
 
@@ -72,6 +72,8 @@ Reports hide metadata values so they're safe to share; `--show-values` shows the
 | WebP | EXIF, XMP, unknown chunks, data after the image | Image data, transparency, animation |
 | PDF | Document information (author, title, dates, software), XMP, the document ID (replaced by one computed from the cleaned file), page thumbnails, application data, comments, attachments, earlier versions left by incremental saves, unused objects, data after the end | Pages and their content; photos inside are cleaned like JPEG |
 | Word, Excel, PowerPoint | Document properties (author, company, dates, custom properties), thumbnail, revision and document IDs, template and folder paths, printer settings, people lists, sensitivity labels, comments, unknown parts, ZIP dates | The document's content; images inside are cleaned like the formats above |
+| OpenDocument (ODT, ODS, ODP, ODG) | Document properties (`meta.xml`: author, dates, editing time, template path, custom properties), thumbnail, view and printer settings, editing-session IDs, file paths in settings, comments, files not in the manifest, ZIP dates | The document's content and layout settings; images inside are cleaned like the formats above |
+| EPUB | Author, contributors, publisher, dates, descriptions, other identifiers, calibre and Apple Books extras, program names and `<meta>` tags in pages, files not in the package, ZIP dates. The book's identifier is replaced by one computed from the cleaned book | Title, language, the cover, layout and accessibility settings, the content; images inside are cleaned like the formats above |
 | HEIC, AVIF | EXIF (rebuilt with only the orientation), XMP, data after the image | Image data, previews, depth and HDR gain maps (see below) |
 | MP4, MOV, M4A | Location, device make and model, software and encoder names, titles, names, comments, cover art and other tags (QuickTime user data, Apple and iTunes metadata, XMP), dates in the headers (set to zero), timecodes and GPS or sensor tracks (zeroed), leftover data in free space, data after the end | Picture and sound |
 | MP3 | ID3v2 and ID3v1 tags (title, artist, album, dates, comments, lyrics, cover art, loudness levels and every other tag), APE and Lyrics3 tags | The sound, byte for byte, and the first frame that holds the length and seek table (with the encoder's name) |
@@ -94,6 +96,26 @@ By default, two things that affect how the image looks are kept:
 - **Embedded documents** (such as the workbook behind a chart) are cleaned with the same rules. Other embedded files (OLE objects, PDFs) and **macros** are kept and reported, since MetaScrub can't look inside them.
 - **Links to other workbooks** keep only the file name, not the folder it was in.
 - **Hidden content** (hidden text, hidden sheets or slides, speaker notes) is reported but left alone: it's part of the document.
+
+### OpenDocument files
+
+`.odt`, `.ods`, `.odp`, `.odg` and their templates, as LibreOffice and OpenOffice write them. The same choices as for Office documents apply:
+
+- **Comments** are removed. `--keep comments` keeps them, with every author shown as "Author" and the dates removed.
+- **Settings** stay where the layout depends on them (documents converted from Word need them); how the document was last viewed, the printer and its driver data go.
+- **Embedded objects** (charts) are cleaned with the same rules; pictures like the formats above. **Macros** (Basic, scripts) are kept and reported.
+- **Hidden content** (hidden text, sheets and slides, speaker notes) is reported but left alone.
+- **Tracked changes:** files with tracked changes are refused for now. Accept or reject them in LibreOffice first (Edit ▸ Track Changes ▸ Manage).
+- **Signed** files are refused (cleaning would break the signature), and **password-protected** ones skipped.
+
+### E-books
+
+EPUB 2 and 3 books. The title and language always stay, since reading apps need them.
+
+- **Author, publisher and ISBN** are removed by default: tools that make e-books often fill in the author from the computer's account. `--keep book-info` keeps them.
+- **The book's identifier** is replaced by one computed from the cleaned book, so it reveals nothing, the same book always gets the same one, and different books get different ones (reading apps use it to keep books and reading positions apart).
+- **Embedded fonts** that are scrambled (font obfuscation, which isn't DRM) are scrambled again with the new identifier, so they still work.
+- **DRM-protected** books are refused, and so are books with several renditions (a fixed-layout and a reflowable version in one file).
 
 ### PDF documents
 
@@ -124,7 +146,7 @@ ZIP, TAR and gzip-compressed files (`.tar.gz`, `.tgz`, `.gz`) are treated like a
 - **Junk files** inside (`__MACOSX/`, `.DS_Store`, `._` files, `Thumbs.db`) are always removed: the cleaned archive is a new file, so nothing of yours is deleted.
 - **Symbolic links** inside are kept, never followed, and listed with their target.
 - **Safety:** an archive may unpack to at most 4 GB in total, archives inside it included, with at most 10,000 files, and no file may unpack to more than 100 times its compressed size (zip bombs). Archives with paths that point outside them (`../`) are refused; encrypted ones are skipped, since MetaScrub never asks for passwords. Archives of any size are processed a file at a time, using temporary files rather than memory for large ones.
-- **Apps, e-books and OpenDocument files** are ZIP files too (`.jar`, `.apk`, `.epub`, `.odt`, …), but they're often signed and depend on their exact content, so they're not treated as archives.
+- **Office, OpenDocument and EPUB files** inside archives are cleaned like files on disk. **Apps and extensions** are ZIP files too (`.jar`, `.apk`, `.vsix`, …), but they're often signed and depend on their exact content, so they're not treated as archives.
 
 ### Files and folders
 
@@ -192,11 +214,12 @@ MetaScrub removes **hidden metadata**. It does not:
 - Remove invisible watermarks or steganography, or defeat camera sensor fingerprinting.
 - Guarantee anonymity.
 - Securely delete originals. With `--in-place`, the original bytes may still be recoverable from the disk, and other hard links to the file keep the original.
-- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, HEIC and AVIF images, MP4, MOV, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV files, Office and PDF documents, and ZIP, TAR and gzip archives.
+- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, HEIC and AVIF images, MP4, MOV, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV files, Office, OpenDocument and PDF documents, EPUB e-books, and ZIP, TAR and gzip archives.
 - Check subtitles, chapter titles or what's in the sound itself, or clean MKV, WebM, AVI or 3GP videos.
 - Clean 7z or RAR archives, ZIP files compressed with methods other than Deflate (such as LZMA or Zstandard), or TAR archives with sparse files or device files. These are refused and reported.
 - Clean encrypted or digitally signed PDFs. They're skipped or refused and reported.
 - Clean old-format (`.doc`, `.xls`, `.ppt`) or password-protected Office files, Excel workbooks with change history (shared workbooks), or documents linked to files outside them (linked images or objects). These are skipped or refused and reported.
+- Clean OpenDocument files with tracked changes, signed or password-protected ones, flat OpenDocument files (`.fodt`), e-books with DRM or several renditions. These are refused or skipped and reported.
 - Remove what documents contain as content: text, hidden text, speaker notes, cached values from linked workbooks, form values, scripts, or what's inside macros and embedded files it can't read.
 - Keep HDR in "Ultra HDR" photos: their gain map is a hidden image and is removed, so the photo shows in standard range.
 - Set every date the file system keeps. On Linux, a file's change time (ctime) and creation time can't be set by normal programs.

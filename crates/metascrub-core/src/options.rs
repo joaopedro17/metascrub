@@ -11,6 +11,8 @@ pub struct Options {
     pub keep_comments: bool,
     /// Keep files attached to PDFs, cleaned where possible (`--keep attachments`).
     pub keep_attachments: bool,
+    /// Keep the author, publisher and ISBN of e-books (`--keep book-info`).
+    pub keep_book_info: bool,
     pub tracked_changes: TrackedChanges,
 }
 

@@ -8,18 +8,17 @@ mod hidden;
 mod package;
 mod props;
 mod revisions;
-mod xml;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::{Read, Write};
 
 use super::archive::{self, Entry, zip_error};
+use super::xml::{self, Element};
 use super::{Depth, FormatError, FormatHandler, ReadSeek, clean_embedded, read_image};
 use crate::model::{Decision, Disposition, Finding, FindingKind, FormatId, Location, Value};
 use crate::options::{Options, TrackedChanges};
 use hidden::Family;
 use package::{CONTENT_TYPES, ContentTypes, PACKAGE_RELS, Relationship};
-use xml::Element;
 
 const W: &[&str] = &[
     "http://schemas.openxmlformats.org/wordprocessingml/2006/main",

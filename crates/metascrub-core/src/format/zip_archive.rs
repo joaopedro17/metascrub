@@ -54,6 +54,27 @@ impl FormatHandler for Zip {
 /// Programs and documents stored as ZIP files (Java and Android apps,
 /// e-books, OpenDocument files, extensions) depend on their exact content
 /// and are often signed, so they aren't treated as archives.
+/// The `mimetype` entry that OpenDocument files and e-books start with,
+/// naming what they are.
+pub(super) fn mimetype(input: &mut dyn ReadSeek) -> Result<Option<String>, FormatError> {
+    let mut zip = ZipArchive::new(input).map_err(zip_error)?;
+    let Ok(mut file) = zip.by_name("mimetype") else {
+        return Ok(None);
+    };
+    if file.size() > 256 {
+        return Ok(None);
+    }
+    let mut text = String::new();
+    if Read::by_ref(&mut file)
+        .take(256)
+        .read_to_string(&mut text)
+        .is_err()
+    {
+        return Ok(None);
+    }
+    Ok(Some(text.trim().to_owned()))
+}
+
 pub(super) fn is_package(input: &mut dyn ReadSeek) -> Result<bool, FormatError> {
     let zip = ZipArchive::new(input).map_err(zip_error)?;
     Ok(zip.file_names().any(|name| {
