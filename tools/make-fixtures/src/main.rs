@@ -9,6 +9,7 @@
 
 mod archive;
 mod audio;
+mod bitmap;
 mod ebook;
 mod media;
 mod office;
@@ -31,6 +32,8 @@ fn main() {
     let jpeg_dir = root.join("jpeg");
     let png_dir = root.join("png");
     let webp_dir = root.join("webp");
+    let gif_dir = root.join("gif");
+    let bmp_dir = root.join("bmp");
     let office_dir = root.join("office");
     let pdf_dir = root.join("pdf");
     let other_dir = root.join("other");
@@ -46,6 +49,8 @@ fn main() {
         &jpeg_dir,
         &png_dir,
         &webp_dir,
+        &gif_dir,
+        &bmp_dir,
         &office_dir,
         &pdf_dir,
         &other_dir,
@@ -274,6 +279,21 @@ fn main() {
         "trailing.webp",
         &riff(&[image], b"appended after the image"),
     );
+
+    // GIF and BMP
+    let bitmaps = bitmap::files(
+        &icc_profile("sRGB IEC61966-2.1", SRGB, false),
+        &icc_profile("EIZO CG2700S (calibrated)", SRGB, true),
+    );
+    write(&gif_dir, "clean.gif", &bitmaps.clean_gif);
+    write(&gif_dir, "tagged.gif", &bitmaps.tagged_gif);
+    write(&gif_dir, "animated.gif", &bitmaps.animated_gif);
+    write(&gif_dir, "icc.gif", &bitmaps.icc_gif);
+    write(&bmp_dir, "clean.bmp", &bitmaps.clean_bmp);
+    write(&bmp_dir, "linked.bmp", &bitmaps.linked_bmp);
+    write(&bmp_dir, "calibrated.bmp", &bitmaps.calibrated_bmp);
+    write(&bmp_dir, "srgb.bmp", &bitmaps.srgb_bmp);
+    write(&bmp_dir, "padded.bmp", &bitmaps.padded_bmp);
 
     // Office
     let office = office::files(&camera, &thumbnail);

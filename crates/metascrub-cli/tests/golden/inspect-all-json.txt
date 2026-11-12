@@ -1,4 +1,4 @@
-$ metascrub inspect --json --show-values fixtures/generated/archive/app.jar fixtures/generated/archive/bomb.zip fixtures/generated/archive/deep.zip fixtures/generated/archive/encrypted.zip fixtures/generated/archive/photos.tar fixtures/generated/archive/photos.tar.gz fixtures/generated/archive/photos.zip fixtures/generated/archive/traversal.tar fixtures/generated/archive/traversal.zip fixtures/generated/audio/appended.mp3 fixtures/generated/audio/chained.opus fixtures/generated/audio/clean.flac fixtures/generated/audio/clean.mp3 fixtures/generated/audio/clean.ogg fixtures/generated/audio/clean.opus fixtures/generated/audio/clean.wav fixtures/generated/audio/compressed.wav fixtures/generated/audio/footer.mp3 fixtures/generated/audio/gain.opus fixtures/generated/audio/id3.flac fixtures/generated/audio/plain.flac fixtures/generated/audio/rf64.wav fixtures/generated/audio/sampler.wav fixtures/generated/audio/spliced.flac fixtures/generated/audio/spliced.mp3 fixtures/generated/audio/spliced.ogg fixtures/generated/audio/tagged.flac fixtures/generated/audio/tagged.mp3 fixtures/generated/audio/tagged.ogg fixtures/generated/audio/tagged.opus fixtures/generated/audio/tagged.wav fixtures/generated/ebook/book.epub fixtures/generated/ebook/drm.epub fixtures/generated/ebook/legacy.epub fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/media/camera.avif fixtures/generated/media/camera.heic fixtures/generated/media/clean.avif fixtures/generated/media/clean.mp4 fixtures/generated/media/iphone.mov fixtures/generated/media/phone.mp4 fixtures/generated/media/trailing.mp4 fixtures/generated/media/voice.m4a fixtures/generated/media/xmp.avif fixtures/generated/office/budget.ods fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/clean.odt fixtures/generated/office/comments.docx fixtures/generated/office/comments.odt fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/plans.odp fixtures/generated/office/report.docx fixtures/generated/office/report.odt fixtures/generated/office/signed.odt fixtures/generated/office/tracked-changes.docx fixtures/generated/office/tracked-changes.odt fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub inspect --json --show-values fixtures/generated/archive/app.jar fixtures/generated/archive/bomb.zip fixtures/generated/archive/deep.zip fixtures/generated/archive/encrypted.zip fixtures/generated/archive/photos.tar fixtures/generated/archive/photos.tar.gz fixtures/generated/archive/photos.zip fixtures/generated/archive/traversal.tar fixtures/generated/archive/traversal.zip fixtures/generated/audio/appended.mp3 fixtures/generated/audio/chained.opus fixtures/generated/audio/clean.flac fixtures/generated/audio/clean.mp3 fixtures/generated/audio/clean.ogg fixtures/generated/audio/clean.opus fixtures/generated/audio/clean.wav fixtures/generated/audio/compressed.wav fixtures/generated/audio/footer.mp3 fixtures/generated/audio/gain.opus fixtures/generated/audio/id3.flac fixtures/generated/audio/plain.flac fixtures/generated/audio/rf64.wav fixtures/generated/audio/sampler.wav fixtures/generated/audio/spliced.flac fixtures/generated/audio/spliced.mp3 fixtures/generated/audio/spliced.ogg fixtures/generated/audio/tagged.flac fixtures/generated/audio/tagged.mp3 fixtures/generated/audio/tagged.ogg fixtures/generated/audio/tagged.opus fixtures/generated/audio/tagged.wav fixtures/generated/bmp/calibrated.bmp fixtures/generated/bmp/clean.bmp fixtures/generated/bmp/linked.bmp fixtures/generated/bmp/padded.bmp fixtures/generated/bmp/srgb.bmp fixtures/generated/ebook/book.epub fixtures/generated/ebook/drm.epub fixtures/generated/ebook/legacy.epub fixtures/generated/gif/animated.gif fixtures/generated/gif/clean.gif fixtures/generated/gif/icc.gif fixtures/generated/gif/tagged.gif fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/media/camera.avif fixtures/generated/media/camera.heic fixtures/generated/media/clean.avif fixtures/generated/media/clean.mp4 fixtures/generated/media/iphone.mov fixtures/generated/media/phone.mp4 fixtures/generated/media/trailing.mp4 fixtures/generated/media/voice.m4a fixtures/generated/media/xmp.avif fixtures/generated/office/budget.ods fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/clean.odt fixtures/generated/office/comments.docx fixtures/generated/office/comments.odt fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/plans.odp fixtures/generated/office/report.docx fixtures/generated/office/report.odt fixtures/generated/office/signed.odt fixtures/generated/office/tracked-changes.docx fixtures/generated/office/tracked-changes.odt fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 {
@@ -4877,6 +4877,130 @@ exit: 1
           "disposition": {
             "action": "remove"
           },
+          "kind": "color_profile",
+          "location": [
+            "BMP",
+            "Color profile"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "EIZO CG2700S (calibrated)"
+          }
+        }
+      ],
+      "format": "bmp",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/bmp/calibrated.bmp"
+    },
+    {
+      "findings": [],
+      "format": "bmp",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/bmp/clean.bmp"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "BMP",
+            "Linked color profile"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "C:\\Users\\jane\\Color\\EIZO-CG2700S-calibrated.icc"
+          }
+        }
+      ],
+      "format": "bmp",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/bmp/linked.bmp"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "BMP",
+            "Reserved"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 4
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "trailing_data",
+          "location": [
+            "After end of image"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 17
+          }
+        }
+      ],
+      "format": "bmp",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/bmp/padded.bmp"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "standard_color_profile"
+          },
+          "kind": "color_profile",
+          "location": [
+            "BMP",
+            "Color profile"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "sRGB IEC61966-2.1"
+          }
+        }
+      ],
+      "format": "bmp",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/bmp/srgb.bmp"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
           "kind": "timestamp",
           "location": [
             "ZIP",
@@ -5487,6 +5611,146 @@ exit: 1
       },
       "output": null,
       "path": "fixtures/generated/ebook/legacy.epub"
+    },
+    {
+      "findings": [],
+      "format": "gif",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/gif/animated.gif"
+    },
+    {
+      "findings": [],
+      "format": "gif",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/gif/clean.gif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "color_profile",
+          "location": [
+            "ICC"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "EIZO CG2700S (calibrated)"
+          }
+        }
+      ],
+      "format": "gif",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/gif/icc.gif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "comment",
+          "location": [
+            "Comment"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Scanned by Jane Doe at the Lisbon office"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "XMP",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "XMP",
+            "xmp:CreatorTool"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "XMP",
+            "xmp:CreateDate"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14T09:26:52"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "Application",
+            "PHOTOTL1.00"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 51
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "trailing_data",
+          "location": [
+            "After end of image"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 26
+          }
+        }
+      ],
+      "format": "gif",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/gif/tagged.gif"
     },
     {
       "findings": [
@@ -12513,7 +12777,7 @@ exit: 1
     "cleaned": 0,
     "copied": 0,
     "failed": 14,
-    "inspected": 70,
+    "inspected": 79,
     "remaining_metadata": 0,
     "removed": 0,
     "skipped": 5,

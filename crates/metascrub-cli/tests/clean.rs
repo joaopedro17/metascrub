@@ -27,7 +27,9 @@ fn metascrub(args: &[&std::ffi::OsStr]) -> Output {
 
 fn clean_all_into(out: &Path) -> Vec<PathBuf> {
     let mut fixtures = Vec::new();
-    for dir in ["jpeg", "png", "webp", "office", "pdf", "audio", "ebook"] {
+    for dir in [
+        "jpeg", "png", "webp", "gif", "bmp", "office", "pdf", "audio", "ebook",
+    ] {
         for entry in fs::read_dir(fixture(dir)).unwrap() {
             fixtures.push(entry.unwrap().path());
         }
@@ -78,6 +80,13 @@ fn allowed_extras(name: &str) -> &'static [&'static str] {
     match name {
         "camera.jpg" | "exif.png" => ORIENTATION,
         "icc-standard.jpg" | "icc.png" => ICC,
+        // The standard profile, and where it is in the file.
+        "srgb.bmp" => &[
+            "[ICC-header]",
+            "[ICC_Profile]",
+            "[File]ProfileDataOffset",
+            "[File]ProfileSize",
+        ],
         "camera.webp" => WEBP_ORIENTATION,
         "icc.webp" => WEBP_ICC,
         // The form is kept (its values are only reported).
@@ -86,6 +95,12 @@ fn allowed_extras(name: &str) -> &'static [&'static str] {
         "sampler.wav" => &["[RIFF]"],
         // Compressed sound's length in samples (`fact`).
         "compressed.wav" => &["[RIFF]NumberOfSamples"],
+        // Looping and frame timing, needed to play the animation.
+        "animated.gif" => &[
+            "[GIF]AnimationIterations",
+            "[GIF]Duration",
+            "[GIF]FrameCount",
+        ],
         _ if name.ends_with(".webp") => &["[RIFF]"],
         // What EPUB requires: title, language, the new identifier, the
         // neutral modification date, the cover, and the list of files.
@@ -109,6 +124,8 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
     };
     let base_png = exiftool_tags(&fixture("png/clean.png")).unwrap();
     let base_webp = exiftool_tags(&fixture("webp/clean.webp")).unwrap();
+    let base_gif = exiftool_tags(&fixture("gif/clean.gif")).unwrap();
+    let base_bmp = exiftool_tags(&fixture("bmp/clean.bmp")).unwrap();
     // Every Office file shows its ZIP structure: entry names, sizes, dates.
     let base_office = exiftool_tags(&fixture("office/clean.docx")).unwrap();
     // A PDF shows its version and page count.
@@ -151,6 +168,10 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
             &base_wav
         } else if name.ends_with(".webp") {
             &base_webp
+        } else if name.ends_with(".gif") {
+            &base_gif
+        } else if name.ends_with(".bmp") {
+            &base_bmp
         } else if name.ends_with(".png") && name != "jpeg-named.png" {
             &base_png
         } else {
@@ -716,6 +737,53 @@ fn cleaned_music_sounds_the_same() {
         checked += 1;
     }
     assert!(checked >= 17, "only {checked} music files were checked");
+}
+
+/// Cleaned GIF and BMP pictures must look exactly the same: ffmpeg decodes
+/// every frame of the original and the cleaned copy to raw pixels.
+#[test]
+fn cleaned_pictures_look_the_same() {
+    let required = std::env::var_os("METASCRUB_REQUIRE_MEDIA_TOOLS").is_some_and(|v| !v.is_empty());
+    if Command::new("ffmpeg").arg("-version").output().is_err() {
+        assert!(!required, "ffmpeg is required but couldn't run");
+        eprintln!("ffmpeg not installed; skipping");
+        return;
+    }
+    let pixels = |path: &Path| {
+        let output = Command::new("ffmpeg")
+            .args(["-v", "quiet", "-i"])
+            .arg(path)
+            .args(["-f", "rawvideo", "-pix_fmt", "rgb24", "-"])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{}", path.display());
+        output.stdout
+    };
+    let out = tempfile::tempdir().unwrap();
+    let mut checked = 0;
+    for dir in ["gif", "bmp"] {
+        for entry in fs::read_dir(fixture(dir)).unwrap() {
+            let original = entry.unwrap().path();
+            let output = metascrub(&[
+                "clean".as_ref(),
+                "-q".as_ref(),
+                "-o".as_ref(),
+                out.path().as_os_str(),
+                original.as_os_str(),
+            ]);
+            assert_eq!(output.status.code(), Some(0), "{}", original.display());
+            let cleaned = out.path().join(original.file_name().unwrap());
+            let before = pixels(&original);
+            assert!(!before.is_empty());
+            assert!(
+                pixels(&cleaned) == before,
+                "{} looks different after cleaning",
+                original.display()
+            );
+            checked += 1;
+        }
+    }
+    assert!(checked >= 9, "only {checked} pictures were checked");
 }
 
 /// What exiftool, reading with its own parser, finds in a video or photo

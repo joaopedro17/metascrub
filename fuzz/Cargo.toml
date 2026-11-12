@@ -67,3 +67,11 @@ path = "fuzz_targets/audio.rs"
 test = false
 doc = false
 bench = false
+
+
+[[bin]]
+name = "bitmap"
+path = "fuzz_targets/bitmap.rs"
+test = false
+doc = false
+bench = false
