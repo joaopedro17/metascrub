@@ -11,6 +11,7 @@ mod archive;
 mod audio;
 mod media;
 mod office;
+mod opendocument;
 mod pdf;
 
 use std::fs;
@@ -284,6 +285,16 @@ fn main() {
     write(&office_dir, "budget.xlsx", &office.budget_xlsx);
     write(&office_dir, "comments.xlsx", &office.comments_xlsx);
     write(&office_dir, "linked.xlsx", &office.linked_xlsx);
+
+    // OpenDocument
+    let odf = opendocument::files(&camera, &encode_png(16, 12));
+    write(&office_dir, "clean.odt", &odf.clean_odt);
+    write(&office_dir, "report.odt", &odf.report_odt);
+    write(&office_dir, "comments.odt", &odf.comments_odt);
+    write(&office_dir, "tracked-changes.odt", &odf.tracked_changes_odt);
+    write(&office_dir, "signed.odt", &odf.signed_odt);
+    write(&office_dir, "budget.ods", &odf.budget_ods);
+    write(&office_dir, "plans.odp", &odf.plans_odp);
 
     // PDF
     let pdfs = pdf::files(&camera, &thumbnail, XMP);

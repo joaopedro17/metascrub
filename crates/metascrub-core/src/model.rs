@@ -277,7 +277,15 @@ pub enum FormatId {
     Xlsx,
     /// PowerPoint presentation (also `.pptm`, `.ppsx`, `.potx`, …).
     Pptx,
-    /// A ZIP archive (not an Office file, an app or an e-book).
+    /// OpenDocument text (`.odt`, `.ott`), as LibreOffice writes.
+    Odt,
+    /// OpenDocument spreadsheet (`.ods`, `.ots`).
+    Ods,
+    /// OpenDocument presentation (`.odp`, `.otp`).
+    Odp,
+    /// OpenDocument drawing (`.odg`, `.otg`).
+    Odg,
+    /// A ZIP archive (not an Office or OpenDocument file, an app or an e-book).
     Zip,
     Tar,
     /// A gzip-compressed file, such as `.tar.gz`.

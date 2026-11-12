@@ -2,7 +2,7 @@
 //! `--keep comments`, kept with every author shown as `Author` and the
 //! dates and account details removed or reset.
 
-use super::xml::{self, Element, Node};
+use crate::format::xml::{self, Element, Node};
 use crate::model::{Disposition, Finding, FindingKind, KeepReason, Location, Value};
 
 const W: &[&str] = &[

@@ -16,7 +16,13 @@ fn factor(format: FormatId) -> u64 {
         // The file, its parsed objects and the rewritten copy.
         FormatId::Pdf => 6,
         // Compressed parts unpacked, plus the new file.
-        FormatId::Docx | FormatId::Xlsx | FormatId::Pptx => 4,
+        FormatId::Docx
+        | FormatId::Xlsx
+        | FormatId::Pptx
+        | FormatId::Odt
+        | FormatId::Ods
+        | FormatId::Odp
+        | FormatId::Odg => 4,
         FormatId::Jpeg | FormatId::Png | FormatId::Webp => 2,
         _ => 0,
     }

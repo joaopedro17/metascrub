@@ -9,12 +9,14 @@ mod icc;
 mod iptc;
 mod jpeg;
 mod media;
+mod odf;
 mod office;
 mod pdf;
 mod png;
 mod tar_archive;
 mod unpack;
 mod webp;
+mod xml;
 mod xmp;
 mod zip_archive;
 
@@ -112,15 +114,19 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
     }
 }
 
-/// Like [`sniff`], but looks inside ZIP files to recognize Word, Excel and
-/// PowerPoint documents (and apps and e-books, which aren't archives), at
+/// Like [`sniff`], but looks inside ZIP files to recognize Word, Excel,
+/// PowerPoint and OpenDocument files (and apps and e-books, which aren't archives), at
 /// every brand of videos and photos, and further into the file for TAR
 /// archives. Leaves `input` at the start.
 pub fn detect(head: &[u8], input: &mut dyn ReadSeek) -> Result<Option<FormatId>, FormatError> {
     let format = match sniff(head) {
         _ if head.get(4..8) == Some(b"ftyp") => media::detect(input)?,
         Some(FormatId::Zip) => match office::identify(input)? {
-            FormatId::Zip if zip_archive::is_package(input)? => None,
+            FormatId::Zip => match zip_archive::mimetype(input)?.as_deref() {
+                Some(mimetype) if odf::format(mimetype).is_some() => odf::format(mimetype),
+                _ if zip_archive::is_package(input)? => None,
+                _ => Some(FormatId::Zip),
+            },
             format => Some(format),
         },
         Some(FormatId::Ogg) => audio::is_ogg(input)?.then_some(FormatId::Ogg),
@@ -143,6 +149,7 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         FormatId::Png => Some(&png::Png),
         FormatId::Webp => Some(&webp::Webp),
         FormatId::Docx | FormatId::Xlsx | FormatId::Pptx => Some(&office::Office),
+        FormatId::Odt | FormatId::Ods | FormatId::Odp | FormatId::Odg => Some(&odf::Odf),
         FormatId::Pdf => Some(&pdf::Pdf),
         FormatId::Zip => Some(&zip_archive::Zip),
         FormatId::Tar => Some(&tar_archive::Tar),
@@ -167,6 +174,10 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::Docx => &["docx", "docm", "dotx", "dotm"],
         FormatId::Xlsx => &["xlsx", "xlsm", "xltx", "xltm", "xlam"],
         FormatId::Pptx => &["pptx", "pptm", "potx", "potm", "ppsx", "ppsm", "ppam"],
+        FormatId::Odt => &["odt", "ott"],
+        FormatId::Ods => &["ods", "ots"],
+        FormatId::Odp => &["odp", "otp"],
+        FormatId::Odg => &["odg", "otg"],
         FormatId::Pdf => &["pdf"],
         FormatId::Zip => &["zip"],
         FormatId::Tar => &["tar"],

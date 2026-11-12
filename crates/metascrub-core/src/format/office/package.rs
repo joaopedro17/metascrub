@@ -3,8 +3,8 @@
 
 use quick_xml::escape::escape;
 
-use super::xml::{self, Node};
 use crate::format::FormatError;
+use crate::format::xml::{self, Node};
 
 pub(super) const CONTENT_TYPES: &str = "[Content_Types].xml";
 pub(super) const PACKAGE_RELS: &str = "_rels/.rels";

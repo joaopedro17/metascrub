@@ -1,4 +1,4 @@
-$ metascrub inspect --json --show-values fixtures/generated/archive/app.jar fixtures/generated/archive/bomb.zip fixtures/generated/archive/deep.zip fixtures/generated/archive/encrypted.zip fixtures/generated/archive/photos.tar fixtures/generated/archive/photos.tar.gz fixtures/generated/archive/photos.zip fixtures/generated/archive/traversal.tar fixtures/generated/archive/traversal.zip fixtures/generated/audio/appended.mp3 fixtures/generated/audio/chained.opus fixtures/generated/audio/clean.flac fixtures/generated/audio/clean.mp3 fixtures/generated/audio/clean.ogg fixtures/generated/audio/clean.opus fixtures/generated/audio/clean.wav fixtures/generated/audio/compressed.wav fixtures/generated/audio/footer.mp3 fixtures/generated/audio/gain.opus fixtures/generated/audio/id3.flac fixtures/generated/audio/plain.flac fixtures/generated/audio/rf64.wav fixtures/generated/audio/sampler.wav fixtures/generated/audio/spliced.flac fixtures/generated/audio/spliced.mp3 fixtures/generated/audio/spliced.ogg fixtures/generated/audio/tagged.flac fixtures/generated/audio/tagged.mp3 fixtures/generated/audio/tagged.ogg fixtures/generated/audio/tagged.opus fixtures/generated/audio/tagged.wav fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/media/camera.avif fixtures/generated/media/camera.heic fixtures/generated/media/clean.avif fixtures/generated/media/clean.mp4 fixtures/generated/media/iphone.mov fixtures/generated/media/phone.mp4 fixtures/generated/media/trailing.mp4 fixtures/generated/media/voice.m4a fixtures/generated/media/xmp.avif fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/comments.docx fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/report.docx fixtures/generated/office/tracked-changes.docx fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub inspect --json --show-values fixtures/generated/archive/app.jar fixtures/generated/archive/bomb.zip fixtures/generated/archive/deep.zip fixtures/generated/archive/encrypted.zip fixtures/generated/archive/photos.tar fixtures/generated/archive/photos.tar.gz fixtures/generated/archive/photos.zip fixtures/generated/archive/traversal.tar fixtures/generated/archive/traversal.zip fixtures/generated/audio/appended.mp3 fixtures/generated/audio/chained.opus fixtures/generated/audio/clean.flac fixtures/generated/audio/clean.mp3 fixtures/generated/audio/clean.ogg fixtures/generated/audio/clean.opus fixtures/generated/audio/clean.wav fixtures/generated/audio/compressed.wav fixtures/generated/audio/footer.mp3 fixtures/generated/audio/gain.opus fixtures/generated/audio/id3.flac fixtures/generated/audio/plain.flac fixtures/generated/audio/rf64.wav fixtures/generated/audio/sampler.wav fixtures/generated/audio/spliced.flac fixtures/generated/audio/spliced.mp3 fixtures/generated/audio/spliced.ogg fixtures/generated/audio/tagged.flac fixtures/generated/audio/tagged.mp3 fixtures/generated/audio/tagged.ogg fixtures/generated/audio/tagged.opus fixtures/generated/audio/tagged.wav fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/media/camera.avif fixtures/generated/media/camera.heic fixtures/generated/media/clean.avif fixtures/generated/media/clean.mp4 fixtures/generated/media/iphone.mov fixtures/generated/media/phone.mp4 fixtures/generated/media/trailing.mp4 fixtures/generated/media/voice.m4a fixtures/generated/media/xmp.avif fixtures/generated/office/budget.ods fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/clean.odt fixtures/generated/office/comments.docx fixtures/generated/office/comments.odt fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/plans.odp fixtures/generated/office/report.docx fixtures/generated/office/report.odt fixtures/generated/office/signed.odt fixtures/generated/office/tracked-changes.docx fixtures/generated/office/tracked-changes.odt fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 {
@@ -6443,6 +6443,641 @@ exit: 1
         },
         {
           "disposition": {
+            "action": "warn"
+          },
+          "kind": "hidden_content",
+          "location": [
+            "content.xml",
+            "hidden sheet"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Salaries"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "comment",
+          "location": [
+            "content.xml",
+            "annotation"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Check with Acme"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "content.xml",
+            "annotation",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "content.xml",
+            "annotation",
+            "dc:date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14T09:30:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "meta.xml",
+            "meta:generator"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "LibreOffice/24.2.7.2$Linux_X86_64 LibreOffice_project/420$Build-2"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "meta.xml",
+            "dc:title"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Q1 report — draft"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "meta.xml",
+            "dc:description"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Numbers still to be checked with Acme."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "meta.xml",
+            "meta:keyword"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "confidential"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "meta.xml",
+            "meta:initial-creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "meta.xml",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "meta.xml",
+            "meta:printed-by"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "meta.xml",
+            "meta:creation-date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-10T08:15:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "meta.xml",
+            "dc:date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14T09:26:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "meta.xml",
+            "meta:print-date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-13T17:02:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "meta.xml",
+            "meta:editing-cycles"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "7"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "meta.xml",
+            "meta:editing-duration"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "PT1H34M"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "meta.xml",
+            "meta:template"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "file:///home/jane/Templates/Report.ott"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "meta.xml",
+            "meta:document-statistic"
+          ],
+          "risk": "low",
+          "value": null
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "custom_property",
+          "location": [
+            "meta.xml",
+            "meta:user-defined Client"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Acme Corporation"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "settings.xml",
+            "ooo:view-settings"
+          ],
+          "risk": "low",
+          "value": null
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "settings.xml",
+            "PrinterName"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "HP LaserJet 4 (Jane's office)"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "settings.xml",
+            "PrinterSetup"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 15
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "settings.xml",
+            "RsidRoot"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "138066"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "settings.xml",
+            "Rsid"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "655404"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "settings.xml",
+            "CurrentDatabaseDataSource"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "file:///home/jane/contacts.odb"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Make"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Fictional Camera Co."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Model"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC-100"
+          }
+        },
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "required_to_render"
+          },
+          "kind": "orientation",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Orientation"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 6
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "DateTime"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Copyright"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Copyright Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "DateTimeOriginal"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "BodySerialNumber"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "SN-0042-7781"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "LensModel"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC 24-70mm"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "GPS"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "coordinates",
+            "value": {
+              "latitude": 48.8584,
+              "longitude": 2.2944999999999998
+            }
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "thumbnail",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Thumbnail"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 648
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 2
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "thumbnail",
+          "location": [
+            "Thumbnails/thumbnail.png"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 193
+          }
+        },
+        {
+          "disposition": {
+            "action": "warn"
+          },
+          "kind": "macros",
+          "location": [
+            "Basic"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 392
+          }
+        }
+      ],
+      "format": "ods",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/budget.ods"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "ZIP",
+            "File dates"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 09:26:52"
+          }
+        },
+        {
+          "disposition": {
             "action": "remove"
           },
           "kind": "description",
@@ -6728,6 +7363,15 @@ exit: 1
       "path": "fixtures/generated/office/clean.docx"
     },
     {
+      "findings": [],
+      "format": "odt",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/clean.odt"
+    },
+    {
       "findings": [
         {
           "disposition": {
@@ -6829,6 +7473,403 @@ exit: 1
       },
       "output": null,
       "path": "fixtures/generated/office/comments.docx"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "ZIP",
+            "File dates"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 09:26:52"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "comment",
+          "location": [
+            "content.xml",
+            "annotation"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Check the numbers with Acme first."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "content.xml",
+            "annotation",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "content.xml",
+            "annotation",
+            "dc:date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14T09:30:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "content.xml",
+            "annotation",
+            "meta:creator-initials"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "JD"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "meta.xml",
+            "meta:generator"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "LibreOffice/24.2.7.2$Linux_X86_64 LibreOffice_project/420$Build-2"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "meta.xml",
+            "dc:title"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Q1 report — draft"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "meta.xml",
+            "dc:description"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Numbers still to be checked with Acme."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "meta.xml",
+            "meta:keyword"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "confidential"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "meta.xml",
+            "meta:initial-creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "meta.xml",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "meta.xml",
+            "meta:printed-by"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "meta.xml",
+            "meta:creation-date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-10T08:15:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "meta.xml",
+            "dc:date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14T09:26:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "meta.xml",
+            "meta:print-date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-13T17:02:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "meta.xml",
+            "meta:editing-cycles"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "7"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "meta.xml",
+            "meta:editing-duration"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "PT1H34M"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "meta.xml",
+            "meta:template"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "file:///home/jane/Templates/Report.ott"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "meta.xml",
+            "meta:document-statistic"
+          ],
+          "risk": "low",
+          "value": null
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "custom_property",
+          "location": [
+            "meta.xml",
+            "meta:user-defined Client"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Acme Corporation"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "settings.xml",
+            "ooo:view-settings"
+          ],
+          "risk": "low",
+          "value": null
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "settings.xml",
+            "PrinterName"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "HP LaserJet 4 (Jane's office)"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "settings.xml",
+            "PrinterSetup"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 15
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "settings.xml",
+            "RsidRoot"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "138066"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "settings.xml",
+            "Rsid"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "655404"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "settings.xml",
+            "CurrentDatabaseDataSource"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "file:///home/jane/contacts.odb"
+          }
+        }
+      ],
+      "format": "odt",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/comments.odt"
     },
     {
       "findings": [
@@ -7081,6 +8122,417 @@ exit: 1
       },
       "output": null,
       "path": "fixtures/generated/office/linked.xlsx"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "ZIP",
+            "File dates"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 09:26:52"
+          }
+        },
+        {
+          "disposition": {
+            "action": "warn"
+          },
+          "kind": "hidden_content",
+          "location": [
+            "content.xml",
+            "hidden slide"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Layoffs"
+          }
+        },
+        {
+          "disposition": {
+            "action": "warn"
+          },
+          "kind": "hidden_content",
+          "location": [
+            "content.xml",
+            "speaker notes"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Don't mention the layoffs."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "comment",
+          "location": [
+            "content.xml",
+            "annotation"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Too early to show this."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "content.xml",
+            "annotation",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "content.xml",
+            "annotation",
+            "dc:date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14T09:30:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "meta.xml",
+            "meta:generator"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "LibreOffice/24.2.7.2$Linux_X86_64 LibreOffice_project/420$Build-2"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "meta.xml",
+            "dc:title"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Q1 report — draft"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "meta.xml",
+            "dc:description"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Numbers still to be checked with Acme."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "meta.xml",
+            "meta:keyword"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "confidential"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "meta.xml",
+            "meta:initial-creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "meta.xml",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "meta.xml",
+            "meta:printed-by"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "meta.xml",
+            "meta:creation-date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-10T08:15:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "meta.xml",
+            "dc:date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14T09:26:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "meta.xml",
+            "meta:print-date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-13T17:02:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "meta.xml",
+            "meta:editing-cycles"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "7"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "meta.xml",
+            "meta:editing-duration"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "PT1H34M"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "meta.xml",
+            "meta:template"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "file:///home/jane/Templates/Report.ott"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "meta.xml",
+            "meta:document-statistic"
+          ],
+          "risk": "low",
+          "value": null
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "custom_property",
+          "location": [
+            "meta.xml",
+            "meta:user-defined Client"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Acme Corporation"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "settings.xml",
+            "ooo:view-settings"
+          ],
+          "risk": "low",
+          "value": null
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "settings.xml",
+            "PrinterName"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "HP LaserJet 4 (Jane's office)"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "settings.xml",
+            "PrinterSetup"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 15
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "settings.xml",
+            "RsidRoot"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "138066"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "settings.xml",
+            "Rsid"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "655404"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "settings.xml",
+            "CurrentDatabaseDataSource"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "file:///home/jane/contacts.odb"
+          }
+        }
+      ],
+      "format": "odp",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/plans.odp"
     },
     {
       "findings": [
@@ -7723,6 +9175,608 @@ exit: 1
         },
         {
           "disposition": {
+            "action": "warn"
+          },
+          "kind": "hidden_content",
+          "location": [
+            "content.xml",
+            "hidden text"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Salary review for Jane: 90k"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "content.xml",
+            "rsid"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "integer",
+            "value": 2
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "meta.xml",
+            "meta:generator"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "LibreOffice/24.2.7.2$Linux_X86_64 LibreOffice_project/420$Build-2"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "meta.xml",
+            "dc:title"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Q1 report — draft"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "meta.xml",
+            "dc:description"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Numbers still to be checked with Acme."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "meta.xml",
+            "meta:keyword"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "confidential"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "meta.xml",
+            "meta:initial-creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "meta.xml",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "meta.xml",
+            "meta:printed-by"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "meta.xml",
+            "meta:creation-date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-10T08:15:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "meta.xml",
+            "dc:date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14T09:26:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "meta.xml",
+            "meta:print-date"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-13T17:02:00"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "meta.xml",
+            "meta:editing-cycles"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "7"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "meta.xml",
+            "meta:editing-duration"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "PT1H34M"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "meta.xml",
+            "meta:template"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "file:///home/jane/Templates/Report.ott"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "meta.xml",
+            "meta:document-statistic"
+          ],
+          "risk": "low",
+          "value": null
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "custom_property",
+          "location": [
+            "meta.xml",
+            "meta:user-defined Client"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Acme Corporation"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "settings.xml",
+            "ooo:view-settings"
+          ],
+          "risk": "low",
+          "value": null
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "settings.xml",
+            "PrinterName"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "HP LaserJet 4 (Jane's office)"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "settings.xml",
+            "PrinterSetup"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 15
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "settings.xml",
+            "RsidRoot"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "138066"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "settings.xml",
+            "Rsid"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "655404"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "settings.xml",
+            "CurrentDatabaseDataSource"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "file:///home/jane/contacts.odb"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Make"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Fictional Camera Co."
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Model"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC-100"
+          }
+        },
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "required_to_render"
+          },
+          "kind": "orientation",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Orientation"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 6
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "PhotoTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "DateTime"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Copyright"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Copyright Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "DateTimeOriginal"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:53"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "BodySerialNumber"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "SN-0042-7781"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "LensModel"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FC 24-70mm"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "GPS"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "coordinates",
+            "value": {
+              "latitude": 48.8584,
+              "longitude": 2.2944999999999998
+            }
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "thumbnail",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF",
+            "Thumbnail"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 648
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "Pictures/photo.jpg",
+            "EXIF"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 2
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "thumbnail",
+          "location": [
+            "Thumbnails/thumbnail.png"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 193
+          }
+        }
+      ],
+      "format": "odt",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/report.odt"
+    },
+    {
+      "findings": [],
+      "format": "odt",
+      "outcome": {
+        "detail": {
+          "detail": "unsupported feature: digitally signed OpenDocument files: cleaning would break the signature",
+          "kind": "unsupported"
+        },
+        "status": "failed"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/signed.odt"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "ZIP",
+            "File dates"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14 09:26:52"
+          }
+        },
+        {
+          "disposition": {
             "action": "blocks",
             "reason": "tracked_changes"
           },
@@ -7790,6 +9844,19 @@ exit: 1
       },
       "output": null,
       "path": "fixtures/generated/office/tracked-changes.docx"
+    },
+    {
+      "findings": [],
+      "format": "odt",
+      "outcome": {
+        "detail": {
+          "detail": "unsupported feature: tracked changes in OpenDocument files (accept or reject them first)",
+          "kind": "unsupported"
+        },
+        "status": "failed"
+      },
+      "output": null,
+      "path": "fixtures/generated/office/tracked-changes.odt"
     },
     {
       "findings": [
@@ -9828,8 +11895,8 @@ exit: 1
     "cancelled": 0,
     "cleaned": 0,
     "copied": 0,
-    "failed": 11,
-    "inspected": 63,
+    "failed": 13,
+    "inspected": 68,
     "remaining_metadata": 0,
     "removed": 0,
     "skipped": 5,

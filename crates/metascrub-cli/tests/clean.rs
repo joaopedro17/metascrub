@@ -103,6 +103,7 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
     let base_office = exiftool_tags(&fixture("office/clean.docx")).unwrap();
     // A PDF shows its version and page count.
     let base_pdf = exiftool_tags(&fixture("pdf/clean.pdf")).unwrap();
+    let base_odf = exiftool_tags(&fixture("office/clean.odt")).unwrap();
     // An MP3 shows its stream: version, bitrate, channels.
     let base_mp3 = exiftool_tags(&fixture("audio/clean.mp3")).unwrap();
     let base_flac = exiftool_tags(&fixture("audio/clean.flac")).unwrap();
@@ -124,6 +125,8 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
         let name = path.file_name().unwrap().to_string_lossy().into_owned();
         let base = if name.ends_with(".docx") || name.ends_with(".xlsx") {
             &base_office
+        } else if [".odt", ".ods", ".odp"].iter().any(|e| name.ends_with(e)) {
+            &base_odf
         } else if name.ends_with(".pdf") {
             &base_pdf
         } else if name.ends_with(".mp3") {
@@ -155,7 +158,8 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
     assert!(checked >= 20, "only {checked} files were cleaned");
 }
 
-/// Cleaned Office files must still open: LibreOffice converts each to PDF.
+/// Cleaned Office and OpenDocument files must still open: LibreOffice
+/// converts each to PDF.
 /// Skipped when LibreOffice isn't installed, unless
 /// METASCRUB_REQUIRE_LIBREOFFICE is set (as in CI on Linux).
 #[test]
@@ -178,6 +182,11 @@ fn cleaned_office_files_still_open() {
         "office/comments.xlsx",
         "office/tracked-changes.docx",
         "office/linked.xlsx",
+        "office/clean.odt",
+        "office/report.odt",
+        "office/comments.odt",
+        "office/budget.ods",
+        "office/plans.odp",
     ]
     .iter()
     .map(|f| fixture(f))

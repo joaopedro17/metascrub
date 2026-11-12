@@ -1,5 +1,5 @@
-//! A small XML tree for rewriting Office parts. Whatever isn't changed is
-//! written back exactly as it was read.
+//! A small XML tree for rewriting Office and OpenDocument parts.
+//! Whatever isn't changed is written back exactly as it was read.
 
 use std::borrow::Cow;
 
@@ -12,19 +12,19 @@ use quick_xml::{Writer, XmlVersion};
 use crate::format::FormatError;
 
 #[derive(Debug, Clone)]
-pub(super) enum Node {
+pub(crate) enum Node {
     Element(Element),
     Other(Event<'static>),
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct Element {
+pub(crate) struct Element {
     start: BytesStart<'static>,
     end: Option<BytesEnd<'static>>,
-    pub(super) ns: String,
-    pub(super) local: String,
+    pub(crate) ns: String,
+    pub(crate) local: String,
     attributes: Vec<Attr>,
-    pub(super) children: Vec<Node>,
+    pub(crate) children: Vec<Node>,
     /// Set when attributes were removed, so the start tag must be rebuilt.
     changed: bool,
 }
@@ -39,7 +39,7 @@ struct Attr {
     value: String,
 }
 
-pub(super) fn parse(data: &[u8]) -> Result<Vec<Node>, FormatError> {
+pub(crate) fn parse(data: &[u8]) -> Result<Vec<Node>, FormatError> {
     parse_xml(data).map_err(|e| FormatError::malformed(format!("XML: {e}")))
 }
 
@@ -121,11 +121,11 @@ fn element(
 }
 
 impl Element {
-    pub(super) fn is(&self, ns: &[&str], local: &str) -> bool {
+    pub(crate) fn is(&self, ns: &[&str], local: &str) -> bool {
         self.local == local && ns.contains(&self.ns.as_str())
     }
 
-    pub(super) fn attribute(&self, ns: &[&str], local: &str) -> Option<&str> {
+    pub(crate) fn attribute(&self, ns: &[&str], local: &str) -> Option<&str> {
         self.attributes
             .iter()
             .find(|a| a.local == local && ns.contains(&a.ns.as_str()))
@@ -133,14 +133,14 @@ impl Element {
     }
 
     /// The first descendant (or this element) matching the name.
-    pub(super) fn find(&self, ns: &[&str], local: &str) -> Option<&Element> {
+    pub(crate) fn find(&self, ns: &[&str], local: &str) -> Option<&Element> {
         if self.is(ns, local) {
             return Some(self);
         }
         self.elements().find_map(|child| child.find(ns, local))
     }
 
-    pub(super) fn elements(&self) -> impl Iterator<Item = &Element> {
+    pub(crate) fn elements(&self) -> impl Iterator<Item = &Element> {
         self.children.iter().filter_map(|node| match node {
             Node::Element(element) => Some(element),
             Node::Other(_) => None,
@@ -148,7 +148,7 @@ impl Element {
     }
 
     /// Removes the attributes `remove` matches; returns how many.
-    pub(super) fn remove_attributes(&mut self, remove: impl Fn(&str, &str, &str) -> bool) -> usize {
+    pub(crate) fn remove_attributes(&mut self, remove: impl Fn(&str, &str, &str) -> bool) -> usize {
         let before = self.attributes.len();
         self.attributes
             .retain(|a| !remove(&a.ns, &a.local, &a.value));
@@ -158,7 +158,7 @@ impl Element {
     }
 
     /// Replaces the value of an existing attribute; returns the old value.
-    pub(super) fn set_attribute(
+    pub(crate) fn set_attribute(
         &mut self,
         ns: &[&str],
         local: &str,
@@ -175,7 +175,7 @@ impl Element {
     }
 
     /// Replaces everything inside the element with `text`.
-    pub(super) fn set_text(&mut self, text: &str) {
+    pub(crate) fn set_text(&mut self, text: &str) {
         self.children = vec![Node::Other(Event::Text(BytesText::new(text).into_owned()))];
         if self.end.is_none() {
             let name = self.start.name();
@@ -184,7 +184,7 @@ impl Element {
     }
 
     /// Changes the element's name, keeping its prefix: `w:delText` → `w:t`.
-    pub(super) fn rename(&mut self, local: &str) {
+    pub(crate) fn rename(&mut self, local: &str) {
         let old = AsRef::<str>::as_ref(&self.start.name()).to_owned();
         let name = match old.split_once(':') {
             Some((prefix, _)) => format!("{prefix}:{local}"),
@@ -198,7 +198,7 @@ impl Element {
     }
 
     /// All text inside the element, with entities resolved.
-    pub(super) fn text(&self) -> String {
+    pub(crate) fn text(&self) -> String {
         let mut text = String::new();
         for node in &self.children {
             match node {
@@ -227,7 +227,7 @@ impl Element {
 }
 
 /// Visits every element, depth first.
-pub(super) fn visit_elements<'a>(nodes: &'a [Node], visit: &mut impl FnMut(&'a Element)) {
+pub(crate) fn visit_elements<'a>(nodes: &'a [Node], visit: &mut impl FnMut(&'a Element)) {
     for node in nodes {
         if let Node::Element(element) = node {
             visit(element);
@@ -237,7 +237,7 @@ pub(super) fn visit_elements<'a>(nodes: &'a [Node], visit: &mut impl FnMut(&'a E
 }
 
 /// Visits every element, depth first, letting `visit` change it.
-pub(super) fn for_each_element(nodes: &mut [Node], visit: &mut impl FnMut(&mut Element)) {
+pub(crate) fn for_each_element(nodes: &mut [Node], visit: &mut impl FnMut(&mut Element)) {
     for node in nodes {
         if let Node::Element(element) = node {
             visit(element);
@@ -248,7 +248,7 @@ pub(super) fn for_each_element(nodes: &mut [Node], visit: &mut impl FnMut(&mut E
 
 /// Removes every element `remove` matches, with everything inside it.
 /// Returns the removed elements.
-pub(super) fn remove_elements(
+pub(crate) fn remove_elements(
     nodes: &mut Vec<Node>,
     remove: &mut impl FnMut(&Element) -> bool,
 ) -> Vec<Element> {
@@ -268,7 +268,7 @@ pub(super) fn remove_elements(
     removed
 }
 
-pub(super) fn write(nodes: &[Node]) -> Result<Vec<u8>, FormatError> {
+pub(crate) fn write(nodes: &[Node]) -> Result<Vec<u8>, FormatError> {
     let mut writer = Writer::new(Vec::new());
     write_nodes(&mut writer, nodes)?;
     Ok(writer.into_inner())
