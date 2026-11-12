@@ -14,6 +14,7 @@ mod jpeg;
 mod media;
 mod odf;
 mod office;
+mod patch;
 mod pdf;
 mod png;
 mod tar_archive;

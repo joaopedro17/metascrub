@@ -11,13 +11,14 @@ mod tags;
 mod tests;
 
 use std::collections::HashSet;
-use std::io::{self, Read, SeekFrom, Write};
+use std::io::{SeekFrom, Write};
 use std::ops::Range;
 
 use exif::{Context, In, Tag};
 use ifd::{Entry, Layout};
 use tags::Role;
 
+use super::patch::{self, Fill};
 use super::{
     FormatError, FormatHandler, ReadSeek, apply_options, drop_all, exif as exif_fields, icc, iptc,
     xmp,
@@ -745,11 +746,6 @@ fn is_zero(input: &mut dyn ReadSeek, range: Range<u64>) -> Result<bool, FormatEr
     Ok(true)
 }
 
-enum Fill {
-    Bytes(Vec<u8>),
-    Zeros(u64),
-}
-
 /// Copies the file up to `end`, with the directories rewritten, and zeros
 /// wherever no kept tag points.
 fn write(
@@ -769,36 +765,6 @@ fn write(
     for range in merge(plan.zeros) {
         patches.push((range.start, Fill::Zeros(range.end - range.start)));
     }
-    patches.sort_by_key(|(at, _)| *at);
-    input.seek(SeekFrom::Start(0))?;
-    let mut at = 0;
-    for (start, fill) in patches {
-        let len = match &fill {
-            Fill::Bytes(bytes) => bytes.len() as u64,
-            Fill::Zeros(len) => *len,
-        };
-        if start < at || start + len > end {
-            return Err(FormatError::malformed(
-                "TIFF metadata in overlapping places",
-            ));
-        }
-        copy(input, output, start - at)?;
-        match fill {
-            Fill::Bytes(bytes) => output.write_all(&bytes)?,
-            Fill::Zeros(len) => {
-                io::copy(&mut io::repeat(0).take(len), output)?;
-            }
-        }
-        input.seek(SeekFrom::Start(start + len))?;
-        at = start + len;
-    }
-    copy(input, output, end - at)?;
+    patch::write(input, output, patches, end)?;
     Ok(plan.findings)
-}
-
-fn copy(input: &mut dyn ReadSeek, output: &mut dyn Write, len: u64) -> Result<(), FormatError> {
-    if io::copy(&mut (&mut *input).take(len), output)? != len {
-        return Err(FormatError::malformed("the file ends early"));
-    }
-    Ok(())
 }
