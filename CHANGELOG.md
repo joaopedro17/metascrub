@@ -2,7 +2,7 @@
 
 What changed in each release of MetaScrub, newest first. From 1.0, versions follow [Semantic Versioning](https://semver.org); the [README](README.md#stability) says what that promises.
 
-## Unreleased
+## 1.2.0 — 2026-11-12
 
 ### Added
 
@@ -23,6 +23,7 @@ What changed in each release of MetaScrub, newest first. From 1.0, versions foll
 
 - OpenDocument files and e-books inside ZIP and TAR archives are now cleaned; before, they were kept as they were.
 - The README's speed table is now measured with the Linux download, and says how it differs from a build from source.
+- The Rust package of the command is now called `metascrub` (it was `metascrub-cli`), so it installs with `cargo install metascrub`. The command's name is unchanged.
 
 ## 1.1.1 — 2026-11-07
 
