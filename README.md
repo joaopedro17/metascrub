@@ -4,7 +4,7 @@
 
 MetaScrub is a cross-platform command-line tool that inspects and removes hidden metadata (location, device, author, dates, download sources) from files and folders, so you can share them without leaking personal information.
 
-**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, GIF, BMP, HEIC and AVIF images, MP4 and QuickTime videos, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV audio, Word, Excel, PowerPoint, OpenDocument (LibreOffice) and PDF documents, EPUB e-books, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
+**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, GIF, BMP, TIFF, HEIC and AVIF images, DNG raw photos, MP4 and QuickTime videos, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV audio, Word, Excel, PowerPoint, OpenDocument (LibreOffice) and PDF documents, EPUB e-books, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
 
 ## Install
 
@@ -72,6 +72,8 @@ Reports hide metadata values so they're safe to share; `--show-values` shows the
 | WebP | EXIF, XMP, unknown chunks, data after the image | Image data, transparency, animation |
 | GIF | Comments, XMP, programs' own extensions, data after the image | Image data, animation (looping and frame timing) |
 | BMP | A linked color profile (a file path), unused bytes (reserved fields, gaps before the pixels, data after them) | Image data and the header; an embedded color profile follows the rule below |
+| TIFF | On every page: EXIF, GPS, XMP, IPTC and Photoshop data, names, dates, device and software names, document names (often a file path), Photoshop layers, map placement (GeoTIFF), unknown tags, unused bytes, data after the end | Image data (it never moves), the tags pictures need, page numbers |
+| DNG | The same as TIFF, plus camera and lens serial numbers, the original file name, an embedded copy of the original raw file, maker notes, and the app and date of the preview | Raw data, previews, and what raw editors need: color matrices, levels, crops, the camera model's name (see below) |
 | PDF | Document information (author, title, dates, software), XMP, the document ID (replaced by one computed from the cleaned file), page thumbnails, application data, comments, attachments, earlier versions left by incremental saves, unused objects, data after the end | Pages and their content; photos inside are cleaned like JPEG |
 | Word, Excel, PowerPoint | Document properties (author, company, dates, custom properties), thumbnail, revision and document IDs, template and folder paths, printer settings, people lists, sensitivity labels, comments, unknown parts, ZIP dates | The document's content; images inside are cleaned like the formats above |
 | OpenDocument (ODT, ODS, ODP, ODG) | Document properties (`meta.xml`: author, dates, editing time, template path, custom properties), thumbnail, view and printer settings, editing-session IDs, file paths in settings, comments, files not in the manifest, ZIP dates | The document's content and layout settings; images inside are cleaned like the formats above |
@@ -88,6 +90,15 @@ By default, two things that affect how the image looks are kept:
 
 - **Rotation:** a rotated photo keeps a minimal EXIF with only the Orientation tag, so it doesn't display sideways. `--strip-orientation` removes it.
 - **Color profile:** kept only if it's a standard one (sRGB, Display P3, Adobe RGB), which reveals nothing. Other profiles can identify a calibrated monitor and are removed; `--keep color-profile` keeps them.
+
+### TIFF and DNG
+
+Every page and every sub-image (such as a DNG's raw data and previews) is cleaned, and only the tags a picture needs are kept: anything MetaScrub doesn't know is removed. The picture data never moves; bytes no kept tag points to are zeroed.
+
+- **DNG raw photos** keep the camera model's name (such as "Canon EOS R5"): raw editors need it to choose the camera's color profile, and the color numbers they also need reveal the model anyway. Serial numbers, the owner and the original file name go. Previews are kept and reported.
+- **Photoshop layers** are removed. The flat picture stays exactly as it was, and Photoshop opens the file without layers.
+- **Map placement** (GeoTIFF) says where a map or aerial picture lies on Earth, so it's removed like any location. `--keep location` keeps it for maps; photo GPS is removed either way.
+- **Other camera raw formats** built on TIFF (Nikon NEF, Canon CR2, Sony ARW and others) are refused: their decoders need the maker notes that hold the serial numbers. So are TIFFs with old-style JPEG or uncommon compressions.
 
 ### Office documents
 
@@ -216,7 +227,7 @@ MetaScrub removes **hidden metadata**. It does not:
 - Remove invisible watermarks or steganography, or defeat camera sensor fingerprinting.
 - Guarantee anonymity.
 - Securely delete originals. With `--in-place`, the original bytes may still be recoverable from the disk, and other hard links to the file keep the original.
-- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, GIF, BMP, HEIC and AVIF images, MP4, MOV, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV files, Office, OpenDocument and PDF documents, EPUB e-books, and ZIP, TAR and gzip archives.
+- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, GIF, BMP, TIFF, HEIC and AVIF images, DNG raw photos, MP4, MOV, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV files, Office, OpenDocument and PDF documents, EPUB e-books, and ZIP, TAR and gzip archives.
 - Check subtitles, chapter titles or what's in the sound itself, or clean MKV, WebM, AVI or 3GP videos.
 - Clean 7z or RAR archives, ZIP files compressed with methods other than Deflate (such as LZMA or Zstandard), or TAR archives with sparse files or device files. These are refused and reported.
 - Clean encrypted or digitally signed PDFs. They're skipped or refused and reported.

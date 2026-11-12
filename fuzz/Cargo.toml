@@ -75,3 +75,10 @@ path = "fuzz_targets/bitmap.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "tiff"
+path = "fuzz_targets/tiff.rs"
+test = false
+doc = false
+bench = false

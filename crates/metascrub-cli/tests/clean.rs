@@ -28,7 +28,7 @@ fn metascrub(args: &[&std::ffi::OsStr]) -> Output {
 fn clean_all_into(out: &Path) -> Vec<PathBuf> {
     let mut fixtures = Vec::new();
     for dir in [
-        "jpeg", "png", "webp", "gif", "bmp", "office", "pdf", "audio", "ebook",
+        "jpeg", "png", "webp", "gif", "bmp", "tiff", "office", "pdf", "audio", "ebook",
     ] {
         for entry in fs::read_dir(fixture(dir)).unwrap() {
             fixtures.push(entry.unwrap().path());
@@ -87,6 +87,17 @@ fn allowed_extras(name: &str) -> &'static [&'static str] {
             "[File]ProfileDataOffset",
             "[File]ProfileSize",
         ],
+        "rotated.tif" => &["[IFD0]Orientation"],
+        "srgb.tif" => &["[ICC-header]", "[ICC_Profile]"],
+        // The second page.
+        "pages.tif" => &[
+            "[File]PageCount",
+            "[IFD0]PageNumber",
+            "[IFD0]SubfileType",
+            "[IFD1]",
+        ],
+        // exiftool names a JPEG-compressed strip a preview; it's the picture.
+        "jpeg.tif" => &["[IFD0]PreviewImage"],
         "camera.webp" => WEBP_ORIENTATION,
         "icc.webp" => WEBP_ICC,
         // The form is kept (its values are only reported).
@@ -126,6 +137,9 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
     let base_webp = exiftool_tags(&fixture("webp/clean.webp")).unwrap();
     let base_gif = exiftool_tags(&fixture("gif/clean.gif")).unwrap();
     let base_bmp = exiftool_tags(&fixture("bmp/clean.bmp")).unwrap();
+    let base_tiff = exiftool_tags(&fixture("tiff/clean.tif")).unwrap();
+    // A DNG shows what raw editors need: color matrices, levels, the camera model.
+    let base_dng = exiftool_tags(&fixture("tiff/clean.dng")).unwrap();
     // Every Office file shows its ZIP structure: entry names, sizes, dates.
     let base_office = exiftool_tags(&fixture("office/clean.docx")).unwrap();
     // A PDF shows its version and page count.
@@ -172,6 +186,10 @@ fn exiftool_finds_nothing_left_but_what_is_kept() {
             &base_gif
         } else if name.ends_with(".bmp") {
             &base_bmp
+        } else if name.ends_with(".tif") {
+            &base_tiff
+        } else if name.ends_with(".dng") {
+            &base_dng
         } else if name.ends_with(".png") && name != "jpeg-named.png" {
             &base_png
         } else {
@@ -739,7 +757,7 @@ fn cleaned_music_sounds_the_same() {
     assert!(checked >= 17, "only {checked} music files were checked");
 }
 
-/// Cleaned GIF and BMP pictures must look exactly the same: ffmpeg decodes
+/// Cleaned GIF, BMP, TIFF and DNG pictures must look exactly the same: ffmpeg decodes
 /// every frame of the original and the cleaned copy to raw pixels.
 #[test]
 fn cleaned_pictures_look_the_same() {
@@ -761,9 +779,13 @@ fn cleaned_pictures_look_the_same() {
     };
     let out = tempfile::tempdir().unwrap();
     let mut checked = 0;
-    for dir in ["gif", "bmp"] {
+    for dir in ["gif", "bmp", "tiff"] {
         for entry in fs::read_dir(fixture(dir)).unwrap() {
             let original = entry.unwrap().path();
+            // ffmpeg doesn't read BigTIFF.
+            if original.ends_with("bigtiff.tif") {
+                continue;
+            }
             let output = metascrub(&[
                 "clean".as_ref(),
                 "-q".as_ref(),
@@ -783,7 +805,7 @@ fn cleaned_pictures_look_the_same() {
             checked += 1;
         }
     }
-    assert!(checked >= 9, "only {checked} pictures were checked");
+    assert!(checked >= 21, "only {checked} pictures were checked");
 }
 
 /// What exiftool, reading with its own parser, finds in a video or photo

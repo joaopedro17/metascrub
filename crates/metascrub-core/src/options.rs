@@ -13,6 +13,8 @@ pub struct Options {
     pub keep_attachments: bool,
     /// Keep the author, publisher and ISBN of e-books (`--keep book-info`).
     pub keep_book_info: bool,
+    /// Keep where a map or aerial picture lies on Earth (GeoTIFF; `--keep location`).
+    pub keep_location: bool,
     pub tracked_changes: TrackedChanges,
 }
 

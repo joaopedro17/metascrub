@@ -273,6 +273,9 @@ pub enum FormatId {
     Gif,
     /// Windows bitmap (`.bmp`, `.dib`).
     Bmp,
+    Tiff,
+    /// Adobe's raw photo format, built on TIFF.
+    Dng,
     Pdf,
     /// Word document (also `.docm`, `.dotx`, `.dotm`).
     Docx,

@@ -17,6 +17,7 @@ mod office;
 mod pdf;
 mod png;
 mod tar_archive;
+mod tiff;
 mod unpack;
 mod webp;
 mod xml;
@@ -103,6 +104,11 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
         Some(FormatId::Wav)
     } else if head.starts_with(b"%PDF-") {
         Some(FormatId::Pdf)
+    } else if matches!(
+        head.get(0..4),
+        Some(b"II*\0" | b"MM\0*" | b"II+\0" | b"MM\0+")
+    ) {
+        Some(FormatId::Tiff)
     } else if head.starts_with(b"OggS") {
         Some(FormatId::Ogg)
     } else if head.starts_with(b"fLaC") {
@@ -136,6 +142,8 @@ pub fn detect(head: &[u8], input: &mut dyn ReadSeek) -> Result<Option<FormatId>,
             format => Some(format),
         },
         Some(FormatId::Ogg) => audio::is_ogg(input)?.then_some(FormatId::Ogg),
+        // A damaged TIFF is still a TIFF: cleaning says what's wrong.
+        Some(FormatId::Tiff) if tiff::is_dng(input).unwrap_or(false) => Some(FormatId::Dng),
         Some(other) => Some(other),
         None if head.starts_with(b"ID3") || head.first() == Some(&0xFF) => audio::detect(input)?,
         None => {
@@ -160,6 +168,7 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         FormatId::Webp => Some(&webp::Webp),
         FormatId::Gif => Some(&gif::Gif),
         FormatId::Bmp => Some(&bmp::Bmp),
+        FormatId::Tiff | FormatId::Dng => Some(&tiff::Tiff),
         FormatId::Docx | FormatId::Xlsx | FormatId::Pptx => Some(&office::Office),
         FormatId::Odt | FormatId::Ods | FormatId::Odp | FormatId::Odg => Some(&odf::Odf),
         FormatId::Epub => Some(&epub::Epub),
@@ -186,6 +195,8 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::Webp => &["webp"],
         FormatId::Gif => &["gif"],
         FormatId::Bmp => &["bmp", "dib"],
+        FormatId::Tiff => &["tif", "tiff"],
+        FormatId::Dng => &["dng"],
         FormatId::Docx => &["docx", "docm", "dotx", "dotm"],
         FormatId::Xlsx => &["xlsx", "xlsm", "xltx", "xltm", "xlam"],
         FormatId::Pptx => &["pptx", "pptm", "potx", "potm", "ppsx", "ppsm", "ppam"],

@@ -15,6 +15,7 @@ mod media;
 mod office;
 mod opendocument;
 mod pdf;
+mod tiff;
 
 use std::fs;
 use std::io::Write;
@@ -34,6 +35,7 @@ fn main() {
     let webp_dir = root.join("webp");
     let gif_dir = root.join("gif");
     let bmp_dir = root.join("bmp");
+    let tiff_dir = root.join("tiff");
     let office_dir = root.join("office");
     let pdf_dir = root.join("pdf");
     let other_dir = root.join("other");
@@ -51,6 +53,7 @@ fn main() {
         &webp_dir,
         &gif_dir,
         &bmp_dir,
+        &tiff_dir,
         &office_dir,
         &pdf_dir,
         &other_dir,
@@ -294,6 +297,30 @@ fn main() {
     write(&bmp_dir, "calibrated.bmp", &bitmaps.calibrated_bmp);
     write(&bmp_dir, "srgb.bmp", &bitmaps.srgb_bmp);
     write(&bmp_dir, "padded.bmp", &bitmaps.padded_bmp);
+
+    // TIFF and DNG
+    let tiffs = tiff::files(
+        &icc_profile("sRGB IEC61966-2.1", SRGB, false),
+        &icc_profile("EIZO CG2700S (calibrated)", SRGB, true),
+        &encode_jpeg(16, 12),
+    );
+    for (name, data) in [
+        ("clean.tif", &tiffs.clean),
+        ("tagged.tif", &tiffs.tagged),
+        ("pages.tif", &tiffs.pages),
+        ("bigtiff.tif", &tiffs.bigtiff),
+        ("deflate.tif", &tiffs.deflate),
+        ("jpeg.tif", &tiffs.jpeg),
+        ("rotated.tif", &tiffs.rotated),
+        ("icc.tif", &tiffs.icc),
+        ("srgb.tif", &tiffs.srgb),
+        ("geotiff.tif", &tiffs.geotiff),
+        ("layers.tif", &tiffs.layers),
+        ("clean.dng", &tiffs.clean_dng),
+        ("camera.dng", &tiffs.camera_dng),
+    ] {
+        write(&tiff_dir, name, data);
+    }
 
     // Office
     let office = office::files(&camera, &thumbnail);

@@ -1,4 +1,4 @@
-$ metascrub clean --dry-run fixtures/generated/archive/app.jar fixtures/generated/archive/bomb.zip fixtures/generated/archive/deep.zip fixtures/generated/archive/encrypted.zip fixtures/generated/archive/photos.tar fixtures/generated/archive/photos.tar.gz fixtures/generated/archive/photos.zip fixtures/generated/archive/traversal.tar fixtures/generated/archive/traversal.zip fixtures/generated/audio/appended.mp3 fixtures/generated/audio/chained.opus fixtures/generated/audio/clean.flac fixtures/generated/audio/clean.mp3 fixtures/generated/audio/clean.ogg fixtures/generated/audio/clean.opus fixtures/generated/audio/clean.wav fixtures/generated/audio/compressed.wav fixtures/generated/audio/footer.mp3 fixtures/generated/audio/gain.opus fixtures/generated/audio/id3.flac fixtures/generated/audio/plain.flac fixtures/generated/audio/rf64.wav fixtures/generated/audio/sampler.wav fixtures/generated/audio/spliced.flac fixtures/generated/audio/spliced.mp3 fixtures/generated/audio/spliced.ogg fixtures/generated/audio/tagged.flac fixtures/generated/audio/tagged.mp3 fixtures/generated/audio/tagged.ogg fixtures/generated/audio/tagged.opus fixtures/generated/audio/tagged.wav fixtures/generated/bmp/calibrated.bmp fixtures/generated/bmp/clean.bmp fixtures/generated/bmp/linked.bmp fixtures/generated/bmp/padded.bmp fixtures/generated/bmp/srgb.bmp fixtures/generated/ebook/book.epub fixtures/generated/ebook/drm.epub fixtures/generated/ebook/legacy.epub fixtures/generated/gif/animated.gif fixtures/generated/gif/clean.gif fixtures/generated/gif/icc.gif fixtures/generated/gif/tagged.gif fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/media/camera.avif fixtures/generated/media/camera.heic fixtures/generated/media/clean.avif fixtures/generated/media/clean.mp4 fixtures/generated/media/iphone.mov fixtures/generated/media/phone.mp4 fixtures/generated/media/trailing.mp4 fixtures/generated/media/voice.m4a fixtures/generated/media/xmp.avif fixtures/generated/office/budget.ods fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/clean.odt fixtures/generated/office/comments.docx fixtures/generated/office/comments.odt fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/plans.odp fixtures/generated/office/report.docx fixtures/generated/office/report.odt fixtures/generated/office/signed.odt fixtures/generated/office/tracked-changes.docx fixtures/generated/office/tracked-changes.odt fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub clean --dry-run fixtures/generated/archive/app.jar fixtures/generated/archive/bomb.zip fixtures/generated/archive/deep.zip fixtures/generated/archive/encrypted.zip fixtures/generated/archive/photos.tar fixtures/generated/archive/photos.tar.gz fixtures/generated/archive/photos.zip fixtures/generated/archive/traversal.tar fixtures/generated/archive/traversal.zip fixtures/generated/audio/appended.mp3 fixtures/generated/audio/chained.opus fixtures/generated/audio/clean.flac fixtures/generated/audio/clean.mp3 fixtures/generated/audio/clean.ogg fixtures/generated/audio/clean.opus fixtures/generated/audio/clean.wav fixtures/generated/audio/compressed.wav fixtures/generated/audio/footer.mp3 fixtures/generated/audio/gain.opus fixtures/generated/audio/id3.flac fixtures/generated/audio/plain.flac fixtures/generated/audio/rf64.wav fixtures/generated/audio/sampler.wav fixtures/generated/audio/spliced.flac fixtures/generated/audio/spliced.mp3 fixtures/generated/audio/spliced.ogg fixtures/generated/audio/tagged.flac fixtures/generated/audio/tagged.mp3 fixtures/generated/audio/tagged.ogg fixtures/generated/audio/tagged.opus fixtures/generated/audio/tagged.wav fixtures/generated/bmp/calibrated.bmp fixtures/generated/bmp/clean.bmp fixtures/generated/bmp/linked.bmp fixtures/generated/bmp/padded.bmp fixtures/generated/bmp/srgb.bmp fixtures/generated/ebook/book.epub fixtures/generated/ebook/drm.epub fixtures/generated/ebook/legacy.epub fixtures/generated/gif/animated.gif fixtures/generated/gif/clean.gif fixtures/generated/gif/icc.gif fixtures/generated/gif/tagged.gif fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/media/camera.avif fixtures/generated/media/camera.heic fixtures/generated/media/clean.avif fixtures/generated/media/clean.mp4 fixtures/generated/media/iphone.mov fixtures/generated/media/phone.mp4 fixtures/generated/media/trailing.mp4 fixtures/generated/media/voice.m4a fixtures/generated/media/xmp.avif fixtures/generated/office/budget.ods fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/clean.odt fixtures/generated/office/comments.docx fixtures/generated/office/comments.odt fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/plans.odp fixtures/generated/office/report.docx fixtures/generated/office/report.odt fixtures/generated/office/signed.odt fixtures/generated/office/tracked-changes.docx fixtures/generated/office/tracked-changes.odt fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/tiff/bigtiff.tif fixtures/generated/tiff/camera.dng fixtures/generated/tiff/clean.dng fixtures/generated/tiff/clean.tif fixtures/generated/tiff/deflate.tif fixtures/generated/tiff/geotiff.tif fixtures/generated/tiff/icc.tif fixtures/generated/tiff/jpeg.tif fixtures/generated/tiff/layers.tif fixtures/generated/tiff/pages.tif fixtures/generated/tiff/rotated.tif fixtures/generated/tiff/srgb.tif fixtures/generated/tiff/tagged.tif fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 fixtures/generated/archive/app.jar skipped: MetaScrub can't read this type of file
@@ -667,6 +667,102 @@ fixtures/generated/png/trailing.png (PNG image)
   High risk
     • Hidden data added after the file's content (such as a Motion Photo video) — would be removed
 
+fixtures/generated/tiff/bigtiff.tif (TIFF image)
+  High risk
+    • A person's name (author, artist or owner) — would be removed
+  Medium risk
+    • Software or app used — would be removed
+
+fixtures/generated/tiff/camera.dng (DNG raw photo)
+  High risk
+    • A comment — would be removed
+    • Serial number of the camera or device — would be removed
+    • Location where it was created — would be removed
+    • A person's name (author, artist or owner) — would be removed
+  Medium risk
+    • Date and time — would be removed
+    • Metadata MetaScrub doesn't recognize — would be removed
+    • Make and model of a device (camera, phone, printer) — kept: needed to display correctly
+    • A unique ID that can link copies of this file — would be removed
+    • The file name (shows when it was made, or which phone or app made it) — would be removed
+    • Software or app used — would be removed
+    • Make and model of a device (camera, phone, printer) — would be removed
+  Low risk
+    • Extra hidden images (such as depth maps) — kept: part of the picture, shows nothing the picture doesn't
+    • Technical details (encoding, settings, statistics) — would be removed
+
+fixtures/generated/tiff/clean.dng (DNG raw photo)
+  Medium risk
+    • Make and model of a device (camera, phone, printer) — kept: needed to display correctly
+  Low risk
+    • Extra hidden images (such as depth maps) — kept: part of the picture, shows nothing the picture doesn't
+
+fixtures/generated/tiff/clean.tif (TIFF image)
+  No hidden metadata found.
+
+fixtures/generated/tiff/deflate.tif (TIFF image)
+  Medium risk
+    • Software or app used — would be removed
+
+fixtures/generated/tiff/geotiff.tif (TIFF image)
+  High risk
+    • Location where it was created — would be removed
+  Medium risk
+    • Software or app used — would be removed
+
+fixtures/generated/tiff/icc.tif (TIFF image)
+  Low risk
+    • Color profile — would be removed
+
+fixtures/generated/tiff/jpeg.tif (TIFF image)
+  High risk
+    • A comment — would be removed
+  Medium risk
+    • Software or app used — would be removed
+
+fixtures/generated/tiff/layers.tif (TIFF image)
+  High risk
+    • A person's name (author, artist or owner) — would be removed
+    • Location where it was created — would be removed
+    • Extra hidden images (such as depth maps) — would be removed
+  Medium risk
+    • Software or app used — would be removed
+  Low risk
+    • Technical details (encoding, settings, statistics) — would be removed
+
+fixtures/generated/tiff/pages.tif (TIFF image)
+  High risk
+    • A person's name (author, artist or owner) — would be removed
+  Medium risk
+    • Software or app used — would be removed
+
+fixtures/generated/tiff/rotated.tif (TIFF image)
+  Medium risk
+    • Make and model of a device (camera, phone, printer) — would be removed
+  Low risk
+    • Rotation setting — kept: needed to display correctly
+
+fixtures/generated/tiff/srgb.tif (TIFF image)
+  Low risk
+    • Color profile — kept: a standard profile that reveals nothing
+
+fixtures/generated/tiff/tagged.tif (TIFF image)
+  High risk
+    • A file path from the computer that made it — would be removed
+    • A person's name (author, artist or owner) — would be removed
+    • Location where it was created — would be removed
+    • A comment — would be removed
+    • Serial number of the camera or device — would be removed
+    • Hidden data added after the file's content (such as a Motion Photo video) — would be removed
+  Medium risk
+    • Software or app used — would be removed
+    • Date and time — would be removed
+    • Metadata MetaScrub doesn't recognize — would be removed
+    • A title, caption or keywords — would be removed
+    • Make and model of a device (camera, phone, printer) — would be removed
+  Low risk
+    • Technical details (encoding, settings, statistics) — would be removed
+
 fixtures/generated/webp/animated.webp (WebP image)
   High risk
     • Location where it was created — would be removed
@@ -708,5 +804,5 @@ fixtures/generated/webp/trailing.webp (WebP image)
 
 fixtures/generated/webp/truncated.webp failed: the file is damaged or not what it claims to be
 
-78 files would be cleaned, 5 skipped, 1 needs your decision, 14 failed
+91 files would be cleaned, 5 skipped, 1 needs your decision, 14 failed
 Values are hidden so this report is safe to share. Use --show-values to see them.

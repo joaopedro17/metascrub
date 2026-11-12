@@ -1,4 +1,4 @@
-$ metascrub inspect --json --show-values fixtures/generated/archive/app.jar fixtures/generated/archive/bomb.zip fixtures/generated/archive/deep.zip fixtures/generated/archive/encrypted.zip fixtures/generated/archive/photos.tar fixtures/generated/archive/photos.tar.gz fixtures/generated/archive/photos.zip fixtures/generated/archive/traversal.tar fixtures/generated/archive/traversal.zip fixtures/generated/audio/appended.mp3 fixtures/generated/audio/chained.opus fixtures/generated/audio/clean.flac fixtures/generated/audio/clean.mp3 fixtures/generated/audio/clean.ogg fixtures/generated/audio/clean.opus fixtures/generated/audio/clean.wav fixtures/generated/audio/compressed.wav fixtures/generated/audio/footer.mp3 fixtures/generated/audio/gain.opus fixtures/generated/audio/id3.flac fixtures/generated/audio/plain.flac fixtures/generated/audio/rf64.wav fixtures/generated/audio/sampler.wav fixtures/generated/audio/spliced.flac fixtures/generated/audio/spliced.mp3 fixtures/generated/audio/spliced.ogg fixtures/generated/audio/tagged.flac fixtures/generated/audio/tagged.mp3 fixtures/generated/audio/tagged.ogg fixtures/generated/audio/tagged.opus fixtures/generated/audio/tagged.wav fixtures/generated/bmp/calibrated.bmp fixtures/generated/bmp/clean.bmp fixtures/generated/bmp/linked.bmp fixtures/generated/bmp/padded.bmp fixtures/generated/bmp/srgb.bmp fixtures/generated/ebook/book.epub fixtures/generated/ebook/drm.epub fixtures/generated/ebook/legacy.epub fixtures/generated/gif/animated.gif fixtures/generated/gif/clean.gif fixtures/generated/gif/icc.gif fixtures/generated/gif/tagged.gif fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/media/camera.avif fixtures/generated/media/camera.heic fixtures/generated/media/clean.avif fixtures/generated/media/clean.mp4 fixtures/generated/media/iphone.mov fixtures/generated/media/phone.mp4 fixtures/generated/media/trailing.mp4 fixtures/generated/media/voice.m4a fixtures/generated/media/xmp.avif fixtures/generated/office/budget.ods fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/clean.odt fixtures/generated/office/comments.docx fixtures/generated/office/comments.odt fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/plans.odp fixtures/generated/office/report.docx fixtures/generated/office/report.odt fixtures/generated/office/signed.odt fixtures/generated/office/tracked-changes.docx fixtures/generated/office/tracked-changes.odt fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
+$ metascrub inspect --json --show-values fixtures/generated/archive/app.jar fixtures/generated/archive/bomb.zip fixtures/generated/archive/deep.zip fixtures/generated/archive/encrypted.zip fixtures/generated/archive/photos.tar fixtures/generated/archive/photos.tar.gz fixtures/generated/archive/photos.zip fixtures/generated/archive/traversal.tar fixtures/generated/archive/traversal.zip fixtures/generated/audio/appended.mp3 fixtures/generated/audio/chained.opus fixtures/generated/audio/clean.flac fixtures/generated/audio/clean.mp3 fixtures/generated/audio/clean.ogg fixtures/generated/audio/clean.opus fixtures/generated/audio/clean.wav fixtures/generated/audio/compressed.wav fixtures/generated/audio/footer.mp3 fixtures/generated/audio/gain.opus fixtures/generated/audio/id3.flac fixtures/generated/audio/plain.flac fixtures/generated/audio/rf64.wav fixtures/generated/audio/sampler.wav fixtures/generated/audio/spliced.flac fixtures/generated/audio/spliced.mp3 fixtures/generated/audio/spliced.ogg fixtures/generated/audio/tagged.flac fixtures/generated/audio/tagged.mp3 fixtures/generated/audio/tagged.ogg fixtures/generated/audio/tagged.opus fixtures/generated/audio/tagged.wav fixtures/generated/bmp/calibrated.bmp fixtures/generated/bmp/clean.bmp fixtures/generated/bmp/linked.bmp fixtures/generated/bmp/padded.bmp fixtures/generated/bmp/srgb.bmp fixtures/generated/ebook/book.epub fixtures/generated/ebook/drm.epub fixtures/generated/ebook/legacy.epub fixtures/generated/gif/animated.gif fixtures/generated/gif/clean.gif fixtures/generated/gif/icc.gif fixtures/generated/gif/tagged.gif fixtures/generated/jpeg/camera.jpg fixtures/generated/jpeg/clean.jpg fixtures/generated/jpeg/comment.jpg fixtures/generated/jpeg/icc-custom.jpg fixtures/generated/jpeg/icc-standard.jpg fixtures/generated/jpeg/jpeg-named.png fixtures/generated/jpeg/motion-photo.jpg fixtures/generated/jpeg/multi-picture.jpg fixtures/generated/jpeg/truncated.jpg fixtures/generated/jpeg/unknown-segment.jpg fixtures/generated/jpeg/xmp-iptc.jpg fixtures/generated/media/camera.avif fixtures/generated/media/camera.heic fixtures/generated/media/clean.avif fixtures/generated/media/clean.mp4 fixtures/generated/media/iphone.mov fixtures/generated/media/phone.mp4 fixtures/generated/media/trailing.mp4 fixtures/generated/media/voice.m4a fixtures/generated/media/xmp.avif fixtures/generated/office/budget.ods fixtures/generated/office/budget.xlsx fixtures/generated/office/clean.docx fixtures/generated/office/clean.odt fixtures/generated/office/comments.docx fixtures/generated/office/comments.odt fixtures/generated/office/comments.xlsx fixtures/generated/office/linked.xlsx fixtures/generated/office/plans.odp fixtures/generated/office/report.docx fixtures/generated/office/report.odt fixtures/generated/office/signed.odt fixtures/generated/office/tracked-changes.docx fixtures/generated/office/tracked-changes.odt fixtures/generated/other/archive.zip fixtures/generated/other/legacy.doc fixtures/generated/other/notes.txt fixtures/generated/pdf/attachments.pdf fixtures/generated/pdf/clean.pdf fixtures/generated/pdf/comments.pdf fixtures/generated/pdf/encrypted.pdf fixtures/generated/pdf/form.pdf fixtures/generated/pdf/report.pdf fixtures/generated/png/bad-checksum.png fixtures/generated/png/clean.png fixtures/generated/png/exif.png fixtures/generated/png/icc.png fixtures/generated/png/text-chunks.png fixtures/generated/png/trailing.png fixtures/generated/tiff/bigtiff.tif fixtures/generated/tiff/camera.dng fixtures/generated/tiff/clean.dng fixtures/generated/tiff/clean.tif fixtures/generated/tiff/deflate.tif fixtures/generated/tiff/geotiff.tif fixtures/generated/tiff/icc.tif fixtures/generated/tiff/jpeg.tif fixtures/generated/tiff/layers.tif fixtures/generated/tiff/pages.tif fixtures/generated/tiff/rotated.tif fixtures/generated/tiff/srgb.tif fixtures/generated/tiff/tagged.tif fixtures/generated/webp/animated.webp fixtures/generated/webp/camera.webp fixtures/generated/webp/clean.webp fixtures/generated/webp/icc.webp fixtures/generated/webp/trailing.webp fixtures/generated/webp/truncated.webp
 exit: 1
 
 {
@@ -12190,6 +12190,1145 @@ exit: 1
           "disposition": {
             "action": "remove"
           },
+          "kind": "software",
+          "location": [
+            "TIFF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "GDAL 3.8"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "TIFF",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        }
+      ],
+      "format": "tiff",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/bigtiff.tif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "part_of_image"
+          },
+          "kind": "hidden_image",
+          "location": [
+            "DNG",
+            "Preview"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "bytes",
+            "value": 576
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "DNG",
+            "EXIF",
+            "DateTimeOriginal"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:52"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "DNG",
+            "EXIF",
+            "MakerNote"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 35
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "comment",
+          "location": [
+            "DNG",
+            "EXIF",
+            "UserComment"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "At the Lisbon office"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "DNG",
+            "EXIF",
+            "BodySerialNumber"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "4012345"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "DNG",
+            "EXIF",
+            "LensSerialNumber"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "LENS-0077"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "DNG",
+            "EXIF"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "DNG",
+            "GPS"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "coordinates",
+            "value": {
+              "latitude": 38.70838333333334,
+              "longitude": -9.143033333333333
+            }
+          }
+        },
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "required_to_render"
+          },
+          "kind": "device_model",
+          "location": [
+            "DNG",
+            "UniqueCameraModel"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Canon EOS R5"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "DNG",
+            "CameraSerialNumber"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "012345678901"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "DNG",
+            "DNGPrivateData"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 32
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "document_id",
+          "location": [
+            "DNG",
+            "RawDataUniqueID"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 16
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_name",
+          "location": [
+            "DNG",
+            "OriginalRawFileName"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "IMG_0042.CR3"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "DNG",
+            "PreviewApplicationName"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Adobe Lightroom"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "DNG",
+            "PreviewDateTime"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14T10:02:11"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "DNG",
+            "Make"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Canon"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "DNG",
+            "Model"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Canon EOS R5"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "DNG",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Adobe DNG Converter 16.0"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "DNG",
+            "DateTime"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:52"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "DNG",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        }
+      ],
+      "format": "dng",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/camera.dng"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "part_of_image"
+          },
+          "kind": "hidden_image",
+          "location": [
+            "DNG",
+            "Preview"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "bytes",
+            "value": 576
+          }
+        },
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "required_to_render"
+          },
+          "kind": "device_model",
+          "location": [
+            "DNG",
+            "UniqueCameraModel"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Canon EOS R5"
+          }
+        }
+      ],
+      "format": "dng",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/clean.dng"
+    },
+    {
+      "findings": [],
+      "format": "tiff",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/clean.tif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "TIFF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "ScanTool 2.1"
+          }
+        }
+      ],
+      "format": "tiff",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/deflate.tif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "TIFF",
+            "GeoTIFF"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "coordinates",
+            "value": {
+              "latitude": 38.7369,
+              "longitude": -9.1427
+            }
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "TIFF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "QGIS 3.34"
+          }
+        }
+      ],
+      "format": "tiff",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/geotiff.tif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "color_profile",
+          "location": [
+            "TIFF",
+            "Color profile"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "EIZO CG2700S (calibrated)"
+          }
+        }
+      ],
+      "format": "tiff",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/icc.tif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "TIFF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "ScanTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "comment",
+          "location": [
+            "TIFF",
+            "JPEG comment"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Scanned by Jane Doe"
+          }
+        }
+      ],
+      "format": "tiff",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/jpeg.tif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "TIFF",
+            "Photoshop",
+            "IPTC",
+            "By-line"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "TIFF",
+            "Photoshop",
+            "IPTC",
+            "City"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Lisbon"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "TIFF",
+            "Photoshop"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "hidden_image",
+          "location": [
+            "TIFF",
+            "Photoshop layers"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 80
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "TIFF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Adobe Photoshop 25.0 (Windows)"
+          }
+        }
+      ],
+      "format": "tiff",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/layers.tif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "TIFF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FaxTool 3"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "TIFF",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "TIFF",
+            "Page 2",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "FaxTool 3"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "TIFF",
+            "Page 2",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "John Roe"
+          }
+        }
+      ],
+      "format": "tiff",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/pages.tif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "required_to_render"
+          },
+          "kind": "orientation",
+          "location": [
+            "TIFF",
+            "Orientation"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 6
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "TIFF",
+            "Model"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Pixel 9"
+          }
+        }
+      ],
+      "format": "tiff",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/rotated.tif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "keep",
+            "reason": "standard_color_profile"
+          },
+          "kind": "color_profile",
+          "location": [
+            "TIFF",
+            "Color profile"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "text",
+            "value": "sRGB IEC61966-2.1"
+          }
+        }
+      ],
+      "format": "tiff",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/srgb.tif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "file_path",
+          "location": [
+            "TIFF",
+            "DocumentName"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "C:\\Users\\jane\\Scans\\passport.tif"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "TIFF",
+            "XMP",
+            "dc:creator"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "TIFF",
+            "XMP",
+            "xmp:CreatorTool"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "ScanTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "TIFF",
+            "XMP",
+            "xmp:CreateDate"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026-03-14T09:26:52"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "TIFF",
+            "IPTC",
+            "By-line"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "TIFF",
+            "IPTC",
+            "City"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Lisbon"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "TIFF",
+            "EXIF",
+            "DateTimeOriginal"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:52"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "TIFF",
+            "EXIF",
+            "MakerNote"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 35
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "comment",
+          "location": [
+            "TIFF",
+            "EXIF",
+            "UserComment"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "At the Lisbon office"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "TIFF",
+            "EXIF",
+            "BodySerialNumber"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "4012345"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_serial",
+          "location": [
+            "TIFF",
+            "EXIF",
+            "LensSerialNumber"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "LENS-0077"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "technical_info",
+          "location": [
+            "TIFF",
+            "EXIF"
+          ],
+          "risk": "low",
+          "value": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "gps_location",
+          "location": [
+            "TIFF",
+            "GPS"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "coordinates",
+            "value": {
+              "latitude": 38.70838333333334,
+              "longitude": -9.143033333333333
+            }
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "description",
+          "location": [
+            "TIFF",
+            "ImageDescription"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Passport, page 2"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "TIFF",
+            "Make"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Epson"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "TIFF",
+            "Model"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "Perfection V600"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "software",
+          "location": [
+            "TIFF",
+            "Software"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "ScanTool 2.1"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "timestamp",
+          "location": [
+            "TIFF",
+            "DateTime"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "2026:03:14 09:26:52"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "TIFF",
+            "Artist"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "device_model",
+          "location": [
+            "TIFF",
+            "HostComputer"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "text",
+            "value": "JANE-LAPTOP"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "person_name",
+          "location": [
+            "TIFF",
+            "Copyright"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "text",
+            "value": "(c) 2026 Jane Doe"
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "unknown_metadata",
+          "location": [
+            "TIFF",
+            "Unused space"
+          ],
+          "risk": "medium",
+          "value": {
+            "type": "bytes",
+            "value": 18
+          }
+        },
+        {
+          "disposition": {
+            "action": "remove"
+          },
+          "kind": "trailing_data",
+          "location": [
+            "After end of image"
+          ],
+          "risk": "high",
+          "value": {
+            "type": "bytes",
+            "value": 29
+          }
+        }
+      ],
+      "format": "tiff",
+      "outcome": {
+        "status": "inspected"
+      },
+      "output": null,
+      "path": "fixtures/generated/tiff/tagged.tif"
+    },
+    {
+      "findings": [
+        {
+          "disposition": {
+            "action": "remove"
+          },
           "kind": "unknown_metadata",
           "location": [
             "WebP",
@@ -12777,7 +13916,7 @@ exit: 1
     "cleaned": 0,
     "copied": 0,
     "failed": 14,
-    "inspected": 79,
+    "inspected": 92,
     "remaining_metadata": 0,
     "removed": 0,
     "skipped": 5,
