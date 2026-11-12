@@ -4,7 +4,7 @@
 
 MetaScrub is a cross-platform command-line tool that inspects and removes hidden metadata (location, device, author, dates, download sources) from files and folders, so you can share them without leaking personal information.
 
-**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, GIF, BMP, TIFF, HEIC and AVIF images, DNG raw photos, MP4 and QuickTime videos, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV audio, Word, Excel, PowerPoint, OpenDocument (LibreOffice) and PDF documents, EPUB e-books, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
+**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, GIF, BMP, TIFF, HEIC and AVIF images, DNG raw photos, MP4, QuickTime, Matroska (MKV) and WebM videos, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV audio, Word, Excel, PowerPoint, OpenDocument (LibreOffice) and PDF documents, EPUB e-books, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
 
 ## Install
 
@@ -79,6 +79,7 @@ Reports hide metadata values so they're safe to share; `--show-values` shows the
 | OpenDocument (ODT, ODS, ODP, ODG) | Document properties (`meta.xml`: author, dates, editing time, template path, custom properties), thumbnail, view and printer settings, editing-session IDs, file paths in settings, comments, files not in the manifest, ZIP dates | The document's content and layout settings; images inside are cleaned like the formats above |
 | EPUB | Author, contributors, publisher, dates, descriptions, other identifiers, calibre and Apple Books extras, program names and `<meta>` tags in pages, files not in the package, ZIP dates. The book's identifier is replaced by one computed from the cleaned book | Title, language, the cover, layout and accessibility settings, the content; images inside are cleaned like the formats above |
 | HEIC, AVIF | EXIF (rebuilt with only the orientation), XMP, data after the image | Image data, previews, depth and HDR gain maps (see below) |
+| MKV, WebM | Title, date, tags (names, comments, locations, encoder names), track names, chapter titles (blanked; the chapters stay), the muxing and writing app (blanked), file names and IDs of the recording, attachments other than fonts (cover art, other files), data after the end | Picture, sound and subtitles; fonts that styled subtitles need |
 | MP4, MOV, M4A | Location, device make and model, software and encoder names, titles, names, comments, cover art and other tags (QuickTime user data, Apple and iTunes metadata, XMP), dates in the headers (set to zero), timecodes and GPS or sensor tracks (zeroed), leftover data in free space, data after the end | Picture and sound |
 | MP3 | ID3v2 and ID3v1 tags (title, artist, album, dates, comments, lyrics, cover art, loudness levels and every other tag), APE and Lyrics3 tags | The sound, byte for byte, and the first frame that holds the length and seek table (with the encoder's name) |
 | FLAC | Vorbis comments (title, artist, dates, comments, loudness levels and every other tag, and the encoder's name), pictures, application data, padding, ID3 and APE tags added before or after | The sound, byte for byte, the stream description, seek table and cue sheet |
@@ -150,6 +151,12 @@ MP4, QuickTime (`.mov`), M4A and HEIC/AVIF files are cleaned in place: nothing i
 - **Previews, depth maps and HDR gain maps** in HEIC and AVIF photos are kept: they show only what the photo shows, and removing them would break how the photo displays. They're listed as low risk.
 - **Music** loses its tags too: title, artist, album and cover art are removed along with everything else.
 - 3GP videos, camera raw files (`.cr3`) and other formats that share this structure aren't cleaned.
+
+MKV and WebM files are cleaned the same way: metadata becomes empty space of the same size, and text the format requires (the app names, chapter titles) is blanked, so pictures and sound don't move. Recordings written without a final size, as browsers (screen and webcam recordings) and OBS write them, are cleaned too.
+
+- **Attachments:** fonts stay, since styled subtitles need them to look right; cover art and any other attached file are removed.
+- **Chapters** stay so you can still jump between them, but their titles are emptied.
+- **Subtitles** aren't checked, as in MP4: they're reported when a video has them.
 
 MP3, FLAC, Ogg and WAV files keep exactly their sound: only the tags are removed, so it plays exactly as before. In Ogg files the tags sit in a header every file needs, so it's replaced with an empty one; the pages of sound get new page numbers and checksums, but the sound in them isn't touched. MetaScrub checks that everything between the tags is sound (for FLAC and Ogg, through checksums); a file with other data among its frames or pages is refused, since that data could hold anything, and so is an MP3 with less than three frames of sound. Ogg files with more than one stream (several tracks in one file, or one after another) and Ogg files holding FLAC, Speex or video aren't cleaned. WAV files over 4 GB (RF64) and WAV files with object audio (ADM, as in Dolby Atmos masters) are refused.
 
@@ -229,8 +236,8 @@ MetaScrub removes **hidden metadata**. It does not:
 - Remove invisible watermarks or steganography, or defeat camera sensor fingerprinting.
 - Guarantee anonymity.
 - Securely delete originals. With `--in-place`, the original bytes may still be recoverable from the disk, and other hard links to the file keep the original.
-- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, GIF, BMP, TIFF, HEIC and AVIF images, DNG raw photos, MP4, MOV, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV files, Office, OpenDocument and PDF documents, EPUB e-books, and ZIP, TAR and gzip archives.
-- Check subtitles, chapter titles or what's in the sound itself, or clean MKV, WebM, AVI or 3GP videos.
+- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, GIF, BMP, TIFF, HEIC and AVIF images, DNG raw photos, MP4, MOV, MKV, WebM, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV files, Office, OpenDocument and PDF documents, EPUB e-books, and ZIP, TAR and gzip archives.
+- Check subtitles, MP4 chapter titles or what's in the sound itself, or clean AVI or 3GP videos.
 - Clean 7z or RAR archives, ZIP files compressed with methods other than Deflate (such as LZMA or Zstandard), or TAR archives with sparse files or device files. These are refused and reported.
 - Clean encrypted or digitally signed PDFs. They're skipped or refused and reported.
 - Clean old-format (`.doc`, `.xls`, `.ppt`) or password-protected Office files, Excel workbooks with change history (shared workbooks), or documents linked to files outside them (linked images or objects). These are skipped or refused and reported.

@@ -253,6 +253,8 @@ pub fn format(format: FormatId) -> &'static str {
         FormatId::Bmp => "BMP image",
         FormatId::Tiff => "TIFF image",
         FormatId::Dng => "DNG raw photo",
+        FormatId::Mkv => "Matroska video",
+        FormatId::Webm => "WebM video",
         FormatId::Odt => "OpenDocument text",
         FormatId::Ods => "OpenDocument spreadsheet",
         FormatId::Odp => "OpenDocument presentation",

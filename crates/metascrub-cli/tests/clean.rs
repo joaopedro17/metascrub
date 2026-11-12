@@ -835,7 +835,20 @@ fn exiftool_media_leftovers(path: &Path) -> Vec<String> {
         "[IFD1]",
         "[Composite]GPS",
     ];
-    const TAGS: &[&str] = &["VendorID", "Encoder", "Software", "Make", "Model", "Artist"];
+    const TAGS: &[&str] = &[
+        "VendorID",
+        "Encoder",
+        "Software",
+        "Make",
+        "Model",
+        "Artist",
+        "Title",
+        "Comment",
+        "TrackName",
+    ];
+    // Matroska: required text that must be blank, and attachments other
+    // than fonts (which are kept).
+    const BLANK: &[&str] = &["MuxingApp", "WritingApp", "ChapterString"];
     let output = Command::new("exiftool")
         .args(["-G1", "-a", "-u", "-s", "-q"])
         .arg(path)
@@ -850,7 +863,9 @@ fn exiftool_media_leftovers(path: &Path) -> Vec<String> {
             let name = tag.rsplit(']').next().unwrap_or_default();
             let named = GROUPS.iter().any(|g| tag.starts_with(g))
                 || TAGS.contains(&name)
-                || (name == "CompressorName" && !value.is_empty());
+                || ((name == "CompressorName" || BLANK.contains(&name)) && !value.is_empty())
+                || (name == "AttachedFileName"
+                    && ![".ttf", ".otf"].iter().any(|ext| value.ends_with(ext)));
             let dated = tag.contains("Date")
                 && !tag.starts_with("[System]")
                 && value != "0000:00:00 00:00:00";

@@ -276,6 +276,9 @@ pub enum FormatId {
     Tiff,
     /// Adobe's raw photo format, built on TIFF.
     Dng,
+    /// Matroska video or audio (`.mkv`, `.mka`).
+    Mkv,
+    Webm,
     Pdf,
     /// Word document (also `.docm`, `.dotx`, `.dotm`).
     Docx,

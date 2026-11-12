@@ -11,6 +11,7 @@ mod gzip;
 mod icc;
 mod iptc;
 mod jpeg;
+mod matroska;
 mod media;
 mod odf;
 mod office;
@@ -111,6 +112,9 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
         Some(b"II*\0" | b"MM\0*" | b"II+\0" | b"MM\0+")
     ) {
         Some(FormatId::Tiff)
+    } else if head.starts_with(&[0x1A, 0x45, 0xDF, 0xA3]) {
+        // The document type, further in, says which (`detect` reads it).
+        Some(FormatId::Mkv)
     } else if head.starts_with(b"OggS") {
         Some(FormatId::Ogg)
     } else if head.starts_with(b"fLaC") {
@@ -144,6 +148,11 @@ pub fn detect(head: &[u8], input: &mut dyn ReadSeek) -> Result<Option<FormatId>,
             format => Some(format),
         },
         Some(FormatId::Ogg) => audio::is_ogg(input)?.then_some(FormatId::Ogg),
+        Some(FormatId::Mkv) => {
+            let mut block = Vec::with_capacity(4096);
+            (&mut *input).take(4096).read_to_end(&mut block)?;
+            matroska::identify(&block)
+        }
         // A damaged TIFF is still a TIFF: cleaning says what's wrong.
         Some(FormatId::Tiff) if tiff::is_dng(input).unwrap_or(false) => Some(FormatId::Dng),
         Some(other) => Some(other),
@@ -171,6 +180,7 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         FormatId::Gif => Some(&gif::Gif),
         FormatId::Bmp => Some(&bmp::Bmp),
         FormatId::Tiff | FormatId::Dng => Some(&tiff::Tiff),
+        FormatId::Mkv | FormatId::Webm => Some(&matroska::Matroska),
         FormatId::Docx | FormatId::Xlsx | FormatId::Pptx => Some(&office::Office),
         FormatId::Odt | FormatId::Ods | FormatId::Odp | FormatId::Odg => Some(&odf::Odf),
         FormatId::Epub => Some(&epub::Epub),
@@ -199,6 +209,8 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::Bmp => &["bmp", "dib"],
         FormatId::Tiff => &["tif", "tiff"],
         FormatId::Dng => &["dng"],
+        FormatId::Mkv => &["mkv", "mka", "mk3d", "mks"],
+        FormatId::Webm => &["webm"],
         FormatId::Docx => &["docx", "docm", "dotx", "dotm"],
         FormatId::Xlsx => &["xlsx", "xlsm", "xltx", "xltm", "xlam"],
         FormatId::Pptx => &["pptx", "pptm", "potx", "potm", "ppsx", "ppsm", "ppam"],

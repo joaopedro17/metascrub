@@ -82,3 +82,10 @@ path = "fuzz_targets/tiff.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "matroska"
+path = "fuzz_targets/matroska.rs"
+test = false
+doc = false
+bench = false
