@@ -285,6 +285,8 @@ pub enum FormatId {
     Odp,
     /// OpenDocument drawing (`.odg`, `.otg`).
     Odg,
+    /// EPUB e-book, version 2 or 3.
+    Epub,
     /// A ZIP archive (not an Office or OpenDocument file, an app or an e-book).
     Zip,
     Tar,

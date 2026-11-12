@@ -27,7 +27,7 @@ fn metascrub(args: &[&std::ffi::OsStr]) -> Output {
 
 fn clean_all_into(out: &Path) -> Vec<PathBuf> {
     let mut fixtures = Vec::new();
-    for dir in ["jpeg", "png", "webp", "office", "pdf", "audio"] {
+    for dir in ["jpeg", "png", "webp", "office", "pdf", "audio", "ebook"] {
         for entry in fs::read_dir(fixture(dir)).unwrap() {
             fixtures.push(entry.unwrap().path());
         }
@@ -87,6 +87,16 @@ fn allowed_extras(name: &str) -> &'static [&'static str] {
         // Compressed sound's length in samples (`fact`).
         "compressed.wav" => &["[RIFF]NumberOfSamples"],
         _ if name.ends_with(".webp") => &["[RIFF]"],
+        // What EPUB requires: title, language, the new identifier, the
+        // neutral modification date, the cover, and the list of files.
+        _ if name.ends_with(".epub") => &[
+            "[XML-dc]Title",
+            "[XML-dc]Language",
+            "[XML-dc]Identifier",
+            "[XML]Meta",
+            "[XML]Manifest",
+            "[XML]Spine",
+        ],
         _ => &[],
     }
 }
@@ -232,6 +242,48 @@ fn cleaned_office_files_still_open() {
             assert!(size > 1000, "{} didn't open: {status:?}", path.display());
         }
     }
+}
+
+/// Cleaned e-books must still be valid EPUB: `epubcheck` finds no errors,
+/// with book information removed (the default) and kept. Skipped when
+/// epubcheck isn't installed, unless METASCRUB_REQUIRE_EPUBCHECK is set (as
+/// in CI on Linux).
+#[test]
+fn cleaned_ebooks_are_valid() {
+    let required = std::env::var_os("METASCRUB_REQUIRE_EPUBCHECK").is_some_and(|v| !v.is_empty());
+    if Command::new("epubcheck").arg("--version").output().is_err() {
+        assert!(!required, "epubcheck is required but couldn't run");
+        eprintln!("epubcheck not installed; skipping");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let originals = [fixture("ebook/book.epub"), fixture("ebook/legacy.epub")];
+    let mut checked = 0;
+    for (mode, extra) in [("removed", None), ("kept", Some("--keep=book-info"))] {
+        let out = dir.path().join(mode);
+        let mut args = vec![
+            "clean".as_ref(),
+            "-q".as_ref(),
+            "-o".as_ref(),
+            out.as_os_str(),
+        ];
+        args.extend(extra.map(std::ffi::OsStr::new));
+        args.extend(originals.iter().map(|p| p.as_os_str()));
+        assert_eq!(metascrub(&args).status.code(), Some(0), "{mode}");
+        for entry in fs::read_dir(&out).unwrap() {
+            let path = entry.unwrap().path();
+            let output = Command::new("epubcheck").arg(&path).output().unwrap();
+            assert!(
+                output.status.success(),
+                "{} ({mode}) isn't valid:\n{}{}",
+                path.display(),
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+            checked += 1;
+        }
+    }
+    assert_eq!(checked, 4);
 }
 
 /// Cleaned PDFs must be valid (`qpdf --check`) and every page must still

@@ -130,8 +130,8 @@ pub(crate) fn kind(path: &Path) -> &'static str {
         "mp4" | "mov" | "m4v" | "qt" | "avi" | "mkv" | "webm" | "3gp" => "video",
         "m4a" | "m4b" | "mp3" | "aac" | "wav" | "flac" | "ogg" | "opus" => "audio",
         "pdf" | "doc" | "docx" | "docm" | "dotx" | "xls" | "xlsx" | "xlsm" | "ppt" | "pptx"
-        | "pptm" | "odt" | "ods" | "odp" | "odg" | "ott" | "ots" | "otp" | "otg" | "rtf"
-        | "txt" | "md" | "csv" => "document",
+        | "pptm" | "odt" | "ods" | "odp" | "odg" | "ott" | "ots" | "otp" | "otg" | "epub"
+        | "rtf" | "txt" | "md" | "csv" => "document",
         _ => "file",
     }
 }

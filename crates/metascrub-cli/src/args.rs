@@ -160,6 +160,8 @@ pub enum KeepItem {
     Comments,
     /// Files attached to PDF documents (cleaned too when MetaScrub can read them).
     Attachments,
+    /// The author, publisher and ISBN of e-books.
+    BookInfo,
 }
 
 #[derive(Debug, Args)]

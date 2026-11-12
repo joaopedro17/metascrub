@@ -22,7 +22,8 @@ fn factor(format: FormatId) -> u64 {
         | FormatId::Odt
         | FormatId::Ods
         | FormatId::Odp
-        | FormatId::Odg => 4,
+        | FormatId::Odg
+        | FormatId::Epub => 4,
         FormatId::Jpeg | FormatId::Png | FormatId::Webp => 2,
         _ => 0,
     }

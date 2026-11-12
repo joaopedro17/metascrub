@@ -142,7 +142,7 @@ pub(super) fn check_name(name: &str) -> Result<(), FormatError> {
 /// Writes `entries` in the given order, all dated 1980-01-01, with no
 /// comments, extra fields or operating-system details, so the same content
 /// always gives the same bytes. A `mimetype` entry is stored uncompressed,
-/// as OpenDocument requires of its first entry.
+/// as OpenDocument and EPUB require of their first entry.
 pub(crate) fn write(entries: &[Entry], out: &mut dyn Write) -> Result<(), FormatError> {
     let options = SimpleFileOptions::default()
         .compression_method(CompressionMethod::Deflated)

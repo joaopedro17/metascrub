@@ -3,6 +3,7 @@
 mod archive;
 mod audio;
 mod bytes;
+mod epub;
 mod exif;
 mod gzip;
 mod icc;
@@ -115,7 +116,7 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
 }
 
 /// Like [`sniff`], but looks inside ZIP files to recognize Word, Excel,
-/// PowerPoint and OpenDocument files (and apps and e-books, which aren't archives), at
+/// PowerPoint, OpenDocument and EPUB files (and apps, which aren't archives), at
 /// every brand of videos and photos, and further into the file for TAR
 /// archives. Leaves `input` at the start.
 pub fn detect(head: &[u8], input: &mut dyn ReadSeek) -> Result<Option<FormatId>, FormatError> {
@@ -124,6 +125,7 @@ pub fn detect(head: &[u8], input: &mut dyn ReadSeek) -> Result<Option<FormatId>,
         Some(FormatId::Zip) => match office::identify(input)? {
             FormatId::Zip => match zip_archive::mimetype(input)?.as_deref() {
                 Some(mimetype) if odf::format(mimetype).is_some() => odf::format(mimetype),
+                Some(epub::MIMETYPE) => Some(FormatId::Epub),
                 _ if zip_archive::is_package(input)? => None,
                 _ => Some(FormatId::Zip),
             },
@@ -150,6 +152,7 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         FormatId::Webp => Some(&webp::Webp),
         FormatId::Docx | FormatId::Xlsx | FormatId::Pptx => Some(&office::Office),
         FormatId::Odt | FormatId::Ods | FormatId::Odp | FormatId::Odg => Some(&odf::Odf),
+        FormatId::Epub => Some(&epub::Epub),
         FormatId::Pdf => Some(&pdf::Pdf),
         FormatId::Zip => Some(&zip_archive::Zip),
         FormatId::Tar => Some(&tar_archive::Tar),
@@ -178,6 +181,7 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::Ods => &["ods", "ots"],
         FormatId::Odp => &["odp", "otp"],
         FormatId::Odg => &["odg", "otg"],
+        FormatId::Epub => &["epub"],
         FormatId::Pdf => &["pdf"],
         FormatId::Zip => &["zip"],
         FormatId::Tar => &["tar"],

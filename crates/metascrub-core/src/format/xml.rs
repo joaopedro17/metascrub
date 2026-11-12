@@ -1,4 +1,4 @@
-//! A small XML tree for rewriting Office and OpenDocument parts.
+//! A small XML tree for rewriting Office, OpenDocument and EPUB parts.
 //! Whatever isn't changed is written back exactly as it was read.
 
 use std::borrow::Cow;

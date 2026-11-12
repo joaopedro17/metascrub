@@ -253,6 +253,7 @@ pub fn format(format: FormatId) -> &'static str {
         FormatId::Ods => "OpenDocument spreadsheet",
         FormatId::Odp => "OpenDocument presentation",
         FormatId::Odg => "OpenDocument drawing",
+        FormatId::Epub => "EPUB e-book",
         FormatId::Wav => "WAV audio",
         FormatId::Heic => "HEIC image",
         FormatId::Avif => "AVIF image",

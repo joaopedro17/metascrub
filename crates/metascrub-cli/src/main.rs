@@ -140,6 +140,7 @@ fn options(keep: &KeepArgs, tracked_changes: TrackedChanges) -> Options {
         strip_orientation: keep.strip_orientation,
         keep_comments: keep.keep.contains(&KeepItem::Comments),
         keep_attachments: keep.keep.contains(&KeepItem::Attachments),
+        keep_book_info: keep.keep.contains(&KeepItem::BookInfo),
         tracked_changes,
     }
 }
