@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/metascrub-core", "crates/metascrub-cli", "tools/make-fixtures"]
+members = ["crates/metascrub-core", "crates/metascrub-cli", "tools/make-fixtures", "tools/make-manifests"]
 exclude = ["fuzz"]
 
 [workspace.package]
@@ -9,6 +9,7 @@ edition = "2024"
 rust-version = "1.99"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/joaopedro17/metascrub"
+homepage = "https://github.com/joaopedro17/metascrub"
 authors = ["The MetaScrub Contributors"]
 
 # Exact versions on purpose: several crates we depend on are young and
