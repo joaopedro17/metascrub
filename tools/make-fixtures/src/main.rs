@@ -11,6 +11,7 @@ mod archive;
 mod audio;
 mod bitmap;
 mod ebook;
+mod matroska;
 mod media;
 mod office;
 mod opendocument;
@@ -382,6 +383,7 @@ fn main() {
 
     // Videos, music and HEIC/AVIF photos
     media::write(&media_dir, &jpeg_dir, &png_dir);
+    matroska::write(&media_dir, &jpeg_dir.join("clean.jpg"));
     audio::write_all(&audio_dir, &jpeg_dir);
 
     // Other
