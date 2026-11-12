@@ -1,12 +1,18 @@
 [package]
-name = "metascrub-cli"
-description = "MetaScrub command-line tool: remove hidden metadata from your files."
+name = "metascrub"
+description = "Remove hidden metadata (location, names, dates, devices) from photos, videos, audio, documents and archives."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
+homepage.workspace = true
+readme = "../../README.md"
+keywords = ["metadata", "exif", "privacy", "gps", "cli"]
+categories = ["command-line-utilities", "multimedia"]
+# Golden tests read the fixtures, which aren't published.
+exclude = ["tests/"]
 
 [[bin]]
 name = "metascrub"

@@ -3,6 +3,10 @@
 //! The core never prints and never talks to the user directly. It returns
 //! structured results ([`model`]) that a user interface (the CLI today, a GUI
 //! later) turns into text.
+//!
+//! It's published only because the `metascrub` command needs it. Its API
+//! isn't stable: any release may change it, so depend on the command
+//! (and its JSON output) rather than on this library.
 
 mod budget;
 pub mod format;

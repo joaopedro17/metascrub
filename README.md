@@ -8,6 +8,17 @@ MetaScrub is a cross-platform command-line tool that inspects and removes hidden
 
 ## Install
 
+| System | Command |
+|---|---|
+| macOS, Linux ([Homebrew](https://brew.sh)) | `brew install joaopedro17/metascrub/metascrub` |
+| Windows ([Scoop](https://scoop.sh)) | `scoop bucket add metascrub https://github.com/joaopedro17/scoop-metascrub`, then `scoop install metascrub` |
+| Arch Linux ([AUR](https://aur.archlinux.org/packages/metascrub-bin)) | `yay -S metascrub-bin`, or with any AUR helper |
+| Any system with [Rust](https://rustup.rs) | `cargo install metascrub --locked` (builds it from source) |
+
+Homebrew, Scoop and the AUR install the same files as the releases page, below; Homebrew and the AUR also install the manual pages and tab completion.
+
+### Download
+
 Download the archive for your system from the [releases page](https://github.com/joaopedro17/metascrub/releases), extract it and put `metascrub` (`metascrub.exe` on Windows) somewhere on your `PATH`. Each release lists SHA-256 checksums in `SHA256SUMS`.
 
 To check that a download was built by this project's GitHub workflow from its source, and not changed since, use the [GitHub CLI](https://cli.github.com):
@@ -22,12 +33,6 @@ The binaries aren't signed with an Apple or Microsoft certificate, so the first 
 
 - **macOS:** `xattr -d com.apple.quarantine metascrub`, or allow it in System Settings → Privacy & Security.
 - **Windows:** SmartScreen may warn about an unknown publisher; choose *More info* → *Run anyway*.
-
-Or build it with Rust:
-
-```bash
-cargo install --git https://github.com/joaopedro17/metascrub --tag v1.1.1 --locked metascrub-cli
-```
 
 ### Tab completion and manual pages
 

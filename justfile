@@ -34,7 +34,7 @@ deny:
 # heif-enc with the x265 and aom plugins
 fixtures $METASCRUB_BLESS="1":
     cargo run -q -p make-fixtures
-    cargo test -q -p metascrub-cli --test golden
+    cargo test -q -p metascrub --test golden
 
 # Fuzz a target (inspect, jpeg, png, webp, bitmap, tiff, matroska, clean, media, audio, attributes), seeded with the fixtures; needs nightly and cargo-fuzz, Linux or macOS
 [working-directory: 'fuzz']
@@ -42,6 +42,12 @@ fuzz target seconds="180":
     mkdir -p corpus/{{target}}
     cargo +nightly fuzz run {{target}} corpus/{{target}} ../fixtures/generated/jpeg ../fixtures/generated/png ../fixtures/generated/webp ../fixtures/generated/gif ../fixtures/generated/bmp ../fixtures/generated/tiff ../fixtures/generated/office ../fixtures/generated/pdf ../fixtures/generated/archive ../fixtures/generated/media ../fixtures/generated/audio ../fixtures/generated/ebook -- -max_total_time={{seconds}}
 
+# Fill in the package manager files (packaging/) for a published release,
+# into target/manifests/<version>
+manifests version:
+    curl -fsSL --create-dirs -o target/manifests/{{version}}/SHA256SUMS https://github.com/joaopedro17/metascrub/releases/download/v{{version}}/SHA256SUMS
+    cargo run -q -p make-manifests -- {{version}} target/manifests/{{version}}/SHA256SUMS target/manifests/{{version}}
+
 # Run MetaScrub, e.g. `just run inspect photo.jpg`
 run *args:
-    cargo run -q -p metascrub-cli -- {{args}}
+    cargo run -q -p metascrub -- {{args}}

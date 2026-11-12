@@ -6,6 +6,7 @@ What changed in each release of MetaScrub, newest first. From 1.0, versions foll
 
 ### Added
 
+- **Package managers.** Install with Homebrew (`brew install joaopedro17/metascrub/metascrub`, macOS and Linux), Scoop (Windows), the AUR (`metascrub-bin`) or `cargo install metascrub`. Homebrew, Scoop and the AUR use the release downloads.
 - **MP3 files.** ID3v2 (2.2 to 2.4, at the start or with a footer at the end), ID3v1 and "TAG+", APE and Lyrics3 tags are removed: titles, artists, dates, comments, lyrics, cover art, loudness levels and every other tag. The sound is kept byte for byte, with the first frame that holds the length and seek table. An MP3 with other data among its frames, or with less than three frames of sound, is refused.
 - **FLAC files.** Vorbis comments (every tag, and the encoder's name), pictures, application data, padding, and ID3 or APE tags added before or after are removed. The sound is kept byte for byte, with the stream description, seek table and cue sheet. Every frame's checksum is verified, so a file with other data among its frames is refused.
 - **Ogg Vorbis and Opus files.** The comment header (every tag, cover art, loudness levels and the encoder's name) is replaced with an empty one, and ID3 or APE tags added after are removed. The sound is kept byte for byte; the pages that carry it get new page numbers and checksums. Opus's volume adjustment is kept, since players apply it. Every page's checksum is verified, so a file with other data among its pages, or with more than one stream, is refused.

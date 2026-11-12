@@ -1,6 +1,6 @@
 //! Runs the real binary on the fixtures and compares its output with the
 //! expected files in `tests/golden/`. After an intended change, regenerate them:
-//! `METASCRUB_BLESS=1 cargo test -p metascrub-cli --test golden`
+//! `METASCRUB_BLESS=1 cargo test -p metascrub --test golden`
 
 #![allow(clippy::unwrap_used)] // In tests, a panic is a test failure.
 

@@ -1,0 +1,35 @@
+{
+    "version": "{{version}}",
+    "description": "Remove hidden metadata from photos, videos, audio, documents and archives.",
+    "homepage": "https://github.com/joaopedro17/metascrub",
+    "license": "MIT|Apache-2.0",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/joaopedro17/metascrub/releases/download/v{{version}}/metascrub-v{{version}}-x86_64-pc-windows-msvc.zip",
+            "hash": "{{sha256 x86_64-pc-windows-msvc}}",
+            "extract_dir": "metascrub-v{{version}}-x86_64-pc-windows-msvc"
+        },
+        "arm64": {
+            "url": "https://github.com/joaopedro17/metascrub/releases/download/v{{version}}/metascrub-v{{version}}-aarch64-pc-windows-msvc.zip",
+            "hash": "{{sha256 aarch64-pc-windows-msvc}}",
+            "extract_dir": "metascrub-v{{version}}-aarch64-pc-windows-msvc"
+        }
+    },
+    "bin": "metascrub.exe",
+    "checkver": "github",
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/joaopedro17/metascrub/releases/download/v$version/metascrub-v$version-x86_64-pc-windows-msvc.zip",
+                "extract_dir": "metascrub-v$version-x86_64-pc-windows-msvc"
+            },
+            "arm64": {
+                "url": "https://github.com/joaopedro17/metascrub/releases/download/v$version/metascrub-v$version-aarch64-pc-windows-msvc.zip",
+                "extract_dir": "metascrub-v$version-aarch64-pc-windows-msvc"
+            }
+        },
+        "hash": {
+            "url": "$baseurl/SHA256SUMS"
+        }
+    }
+}
