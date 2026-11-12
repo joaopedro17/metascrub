@@ -270,6 +270,9 @@ pub enum FormatId {
     Jpeg,
     Png,
     Webp,
+    Gif,
+    /// Windows bitmap (`.bmp`, `.dib`).
+    Bmp,
     Pdf,
     /// Word document (also `.docm`, `.dotx`, `.dotm`).
     Docx,

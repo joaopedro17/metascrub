@@ -2,9 +2,11 @@
 
 mod archive;
 mod audio;
+mod bmp;
 mod bytes;
 mod epub;
 mod exif;
+mod gif;
 mod gzip;
 mod icc;
 mod iptc;
@@ -89,6 +91,8 @@ pub fn sniff(head: &[u8]) -> Option<FormatId> {
         Some(FormatId::Compound)
     } else if head.starts_with(&[0xFF, 0xD8, 0xFF]) {
         Some(FormatId::Jpeg)
+    } else if head.starts_with(b"GIF87a") || head.starts_with(b"GIF89a") {
+        Some(FormatId::Gif)
     } else if head.starts_with(png::SIGNATURE) {
         Some(FormatId::Png)
     } else if head.get(0..4) == Some(b"RIFF") && head.get(8..12) == Some(b"WEBP") {
@@ -137,7 +141,11 @@ pub fn detect(head: &[u8], input: &mut dyn ReadSeek) -> Result<Option<FormatId>,
         None => {
             let mut block = Vec::with_capacity(512);
             (&mut *input).take(512).read_to_end(&mut block)?;
-            tar_archive::is_tar(&block).then_some(FormatId::Tar)
+            if bmp::is_bmp(&block) {
+                Some(FormatId::Bmp)
+            } else {
+                tar_archive::is_tar(&block).then_some(FormatId::Tar)
+            }
         }
     };
     input.seek(SeekFrom::Start(0))?;
@@ -150,6 +158,8 @@ pub fn handler(format: FormatId) -> Option<&'static dyn FormatHandler> {
         FormatId::Jpeg => Some(&jpeg::Jpeg),
         FormatId::Png => Some(&png::Png),
         FormatId::Webp => Some(&webp::Webp),
+        FormatId::Gif => Some(&gif::Gif),
+        FormatId::Bmp => Some(&bmp::Bmp),
         FormatId::Docx | FormatId::Xlsx | FormatId::Pptx => Some(&office::Office),
         FormatId::Odt | FormatId::Ods | FormatId::Odp | FormatId::Odg => Some(&odf::Odf),
         FormatId::Epub => Some(&epub::Epub),
@@ -174,6 +184,8 @@ pub fn extensions(format: FormatId) -> &'static [&'static str] {
         FormatId::Jpeg => &["jpg", "jpeg", "jpe", "jfif"],
         FormatId::Png => &["png"],
         FormatId::Webp => &["webp"],
+        FormatId::Gif => &["gif"],
+        FormatId::Bmp => &["bmp", "dib"],
         FormatId::Docx => &["docx", "docm", "dotx", "dotm"],
         FormatId::Xlsx => &["xlsx", "xlsm", "xltx", "xltm", "xlam"],
         FormatId::Pptx => &["pptx", "pptm", "potx", "potm", "ppsx", "ppsm", "ppam"],

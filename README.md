@@ -4,7 +4,7 @@
 
 MetaScrub is a cross-platform command-line tool that inspects and removes hidden metadata (location, device, author, dates, download sources) from files and folders, so you can share them without leaking personal information.
 
-**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, HEIC and AVIF images, MP4 and QuickTime videos, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV audio, Word, Excel, PowerPoint, OpenDocument (LibreOffice) and PDF documents, EPUB e-books, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
+**Status:** early development. `inspect`, `clean` and `verify` work for JPEG, PNG, WebP, GIF, BMP, HEIC and AVIF images, MP4 and QuickTime videos, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV audio, Word, Excel, PowerPoint, OpenDocument (LibreOffice) and PDF documents, EPUB e-books, ZIP, TAR and `.tar.gz` archives, and whole folders (`-r`).
 
 ## Install
 
@@ -70,6 +70,8 @@ Reports hide metadata values so they're safe to share; `--show-values` shows the
 | JPEG | EXIF (GPS, camera, serial numbers, dates, names), thumbnails, XMP, IPTC and Photoshop data, comments, MPF secondary images, data after the image (such as Motion Photo videos), unknown segments | Image data, JFIF and Adobe color information |
 | PNG | Text chunks, EXIF, XMP, timestamps, unknown chunks, data after the image | Image data, transparency, gamma and color chunks, HDR chunks, APNG animation |
 | WebP | EXIF, XMP, unknown chunks, data after the image | Image data, transparency, animation |
+| GIF | Comments, XMP, programs' own extensions, data after the image | Image data, animation (looping and frame timing) |
+| BMP | A linked color profile (a file path), unused bytes (reserved fields, gaps before the pixels, data after them) | Image data and the header; an embedded color profile follows the rule below |
 | PDF | Document information (author, title, dates, software), XMP, the document ID (replaced by one computed from the cleaned file), page thumbnails, application data, comments, attachments, earlier versions left by incremental saves, unused objects, data after the end | Pages and their content; photos inside are cleaned like JPEG |
 | Word, Excel, PowerPoint | Document properties (author, company, dates, custom properties), thumbnail, revision and document IDs, template and folder paths, printer settings, people lists, sensitivity labels, comments, unknown parts, ZIP dates | The document's content; images inside are cleaned like the formats above |
 | OpenDocument (ODT, ODS, ODP, ODG) | Document properties (`meta.xml`: author, dates, editing time, template path, custom properties), thumbnail, view and printer settings, editing-session IDs, file paths in settings, comments, files not in the manifest, ZIP dates | The document's content and layout settings; images inside are cleaned like the formats above |
@@ -214,7 +216,7 @@ MetaScrub removes **hidden metadata**. It does not:
 - Remove invisible watermarks or steganography, or defeat camera sensor fingerprinting.
 - Guarantee anonymity.
 - Securely delete originals. With `--in-place`, the original bytes may still be recoverable from the disk, and other hard links to the file keep the original.
-- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, HEIC and AVIF images, MP4, MOV, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV files, Office, OpenDocument and PDF documents, EPUB e-books, and ZIP, TAR and gzip archives.
+- Clean files it can't read: they're copied or skipped, never silently passed off as clean. This version reads JPEG, PNG, WebP, GIF, BMP, HEIC and AVIF images, MP4, MOV, M4A, MP3, FLAC, Ogg Vorbis, Opus and WAV files, Office, OpenDocument and PDF documents, EPUB e-books, and ZIP, TAR and gzip archives.
 - Check subtitles, chapter titles or what's in the sound itself, or clean MKV, WebM, AVI or 3GP videos.
 - Clean 7z or RAR archives, ZIP files compressed with methods other than Deflate (such as LZMA or Zstandard), or TAR archives with sparse files or device files. These are refused and reported.
 - Clean encrypted or digitally signed PDFs. They're skipped or refused and reported.

@@ -249,6 +249,8 @@ pub fn format(format: FormatId) -> &'static str {
         FormatId::Mp3 => "MP3 audio",
         FormatId::Flac => "FLAC audio",
         FormatId::Ogg => "Ogg audio",
+        FormatId::Gif => "GIF image",
+        FormatId::Bmp => "BMP image",
         FormatId::Odt => "OpenDocument text",
         FormatId::Ods => "OpenDocument spreadsheet",
         FormatId::Odp => "OpenDocument presentation",
