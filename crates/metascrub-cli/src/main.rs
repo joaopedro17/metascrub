@@ -141,6 +141,7 @@ fn options(keep: &KeepArgs, tracked_changes: TrackedChanges) -> Options {
         keep_comments: keep.keep.contains(&KeepItem::Comments),
         keep_attachments: keep.keep.contains(&KeepItem::Attachments),
         keep_book_info: keep.keep.contains(&KeepItem::BookInfo),
+        keep_location: keep.keep.contains(&KeepItem::Location),
         tracked_changes,
     }
 }

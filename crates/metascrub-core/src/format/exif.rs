@@ -21,20 +21,51 @@ pub(super) fn inspect(data: &[u8], location: &Location) -> Vec<Finding> {
     };
 
     let mut findings = Vec::new();
-    let mut gps_fields = Vec::new();
-    let mut has_thumbnail = false;
     let mut thumbnail_len = None;
-    let mut technical = 0;
-    let mut unknown = 0;
-
+    let mut has_thumbnail = false;
+    let mut fields = Vec::new();
     for field in parsed.fields() {
         if field.ifd_num == In::THUMBNAIL {
             has_thumbnail = true;
             if field.tag == Tag::JPEGInterchangeFormatLength {
                 thumbnail_len = field.value.get_uint(0);
             }
-            continue;
+        } else {
+            fields.push(field);
         }
+    }
+    findings.extend(field_findings(&fields, location));
+    // The thumbnail goes before the counts, which are last and at `location` itself.
+    let counts = findings
+        .iter()
+        .rev()
+        .take_while(|f| f.location == *location)
+        .count();
+    let at = findings.len() - counts;
+    if has_thumbnail {
+        let mut finding = Finding::new(
+            FindingKind::Thumbnail,
+            location.child("Thumbnail"),
+            Disposition::Remove,
+        );
+        if let Some(length) = thumbnail_len {
+            finding = finding.with_value(Value::Bytes(length.into()));
+        }
+        findings.insert(at, finding);
+    }
+    findings
+}
+
+/// Reports fields that are all removed, except a rotation that's kept: one
+/// finding per field worth naming, GPS fields together, and counts for the
+/// rest.
+pub(super) fn field_findings(fields: &[&Field], location: &Location) -> Vec<Finding> {
+    let mut findings = Vec::new();
+    let mut gps_fields = Vec::new();
+    let mut technical = 0;
+    let mut unknown = 0;
+
+    for &field in fields {
         if field.tag.context() == Context::Gps {
             gps_fields.push(field);
             continue;
@@ -58,17 +89,6 @@ pub(super) fn inspect(data: &[u8], location: &Location) -> Vec<Finding> {
         }
         findings.push(finding);
     }
-    if has_thumbnail {
-        let mut finding = Finding::new(
-            FindingKind::Thumbnail,
-            location.child("Thumbnail"),
-            Disposition::Remove,
-        );
-        if let Some(length) = thumbnail_len {
-            finding = finding.with_value(Value::Bytes(length.into()));
-        }
-        findings.push(finding);
-    }
     for (kind, count) in [
         (FindingKind::TechnicalInfo, technical),
         (FindingKind::UnknownMetadata, unknown),
@@ -83,7 +103,7 @@ pub(super) fn inspect(data: &[u8], location: &Location) -> Vec<Finding> {
     findings
 }
 
-fn classify(tag: Tag) -> Option<(&'static str, FindingKind)> {
+pub(super) fn classify(tag: Tag) -> Option<(&'static str, FindingKind)> {
     use FindingKind::*;
     let kind = match tag {
         Tag::Artist | Tag::Copyright | Tag::CameraOwnerName => PersonName,
@@ -146,7 +166,12 @@ fn is_structural(tag: Tag) -> bool {
     )
 }
 
-fn field_finding(field: &Field, name: &str, kind: FindingKind, location: &Location) -> Finding {
+pub(super) fn field_finding(
+    field: &Field,
+    name: &str,
+    kind: FindingKind,
+    location: &Location,
+) -> Finding {
     let name = if name.is_empty() {
         field.tag.to_string()
     } else {

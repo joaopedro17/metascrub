@@ -20,6 +20,7 @@ just fuzz jpeg 600
 | `png` | Each PNG chunk reader; the input is wrapped in a chunk with a valid checksum |
 | `webp` | Each WebP chunk reader and the cleaner; the input is wrapped in a well-formed extended WebP |
 | `bitmap` | The GIF and BMP cleaners: inspect must agree with clean, the output must have nothing left, and cleaning it again must change nothing |
+| `tiff` | The TIFF and DNG cleaner, with the same checks, and the output never longer than the input |
 | `clean` | Every cleaner: the output must pass verification, and cleaning it again must change nothing |
 
 Crashing inputs are saved in `artifacts/<target>/`.

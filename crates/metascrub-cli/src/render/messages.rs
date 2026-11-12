@@ -251,6 +251,8 @@ pub fn format(format: FormatId) -> &'static str {
         FormatId::Ogg => "Ogg audio",
         FormatId::Gif => "GIF image",
         FormatId::Bmp => "BMP image",
+        FormatId::Tiff => "TIFF image",
+        FormatId::Dng => "DNG raw photo",
         FormatId::Odt => "OpenDocument text",
         FormatId::Ods => "OpenDocument spreadsheet",
         FormatId::Odp => "OpenDocument presentation",

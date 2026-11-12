@@ -162,6 +162,8 @@ pub enum KeepItem {
     Attachments,
     /// The author, publisher and ISBN of e-books.
     BookInfo,
+    /// Where maps and aerial pictures lie on Earth (GeoTIFF). Photo GPS is always removed.
+    Location,
 }
 
 #[derive(Debug, Args)]
