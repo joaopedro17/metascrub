@@ -127,9 +127,18 @@ fn analyze(data: &[u8], options: &Options) -> Result<Analysis, FormatError> {
         .checked_mul(entry)
         .and_then(|p| p.checked_add(header + header_len + masks))
         .ok_or_else(too_large)?;
+    // OS/2 2.x numbers its compressions differently: 3 is Huffman and 4 is
+    // RLE24, where Windows uses 3 for bit masks and 4 and 5 for a whole JPEG
+    // or PNG, whose own metadata we can't reach.
+    let os2 = header_len == 64;
+    if !os2 && matches!(compression, 4 | 5) {
+        return Err(FormatError::Unsupported(
+            "a BMP holding a JPEG or PNG picture".into(),
+        ));
+    }
     let pixel_len = match compression {
         // Uncompressed rows, each padded to 4 bytes.
-        0 | 3 | 6 => width
+        0 | 3 | 6 if !(os2 && compression == 3) => width
             .unsigned_abs()
             .checked_mul(bits.unsigned_abs())
             .map(|row_bits| row_bits.div_ceil(32) * 4)
@@ -358,6 +367,28 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn os2_huffman_pixels_are_kept_whole() {
+        // 3 means Huffman in an OS/2 2.x header, not bit masks: the pixels
+        // run as long as the header says, past an uncompressed row's size.
+        let pixels = [0x5Au8; 40];
+        let mut header = vec![0u8; 64];
+        header[..4].copy_from_slice(&64u32.to_le_bytes());
+        header[4..8].copy_from_slice(&2u32.to_le_bytes());
+        header[8..12].copy_from_slice(&2u32.to_le_bytes());
+        header[12..14].copy_from_slice(&1u16.to_le_bytes());
+        header[14..16].copy_from_slice(&1u16.to_le_bytes());
+        header[16..20].copy_from_slice(&3u32.to_le_bytes());
+        header[20..24].copy_from_slice(&(pixels.len() as u32).to_le_bytes());
+        let pixels_at = FILE_HEADER_LEN + 64 + 8;
+        let mut data = b"BM".to_vec();
+        data.extend_from_slice(&((pixels_at + pixels.len()) as u32).to_le_bytes());
+        data.extend_from_slice(&[0; 4]);
+        data.extend_from_slice(&(pixels_at as u32).to_le_bytes());
+        let data = [data, header, vec![0; 8], pixels.to_vec()].concat();
+        assert_eq!(clean(&data), (data.clone(), Vec::new()));
+    }
+
+    #[test]
     fn hidden_bytes_are_zeroed_and_bad_files_refused() {
         let mut data = picture(None, b"");
         data[6] = b'x';
@@ -370,6 +401,14 @@ pub(crate) mod tests {
             Bmp.clean(&mut Cursor::new(&cut), &mut Vec::new(), &Options::default())
                 .is_err()
         );
+        for compression in [4u32, 5] {
+            let mut embedded = picture(None, b"");
+            embedded[30..34].copy_from_slice(&compression.to_le_bytes());
+            assert!(matches!(
+                Bmp.inspect(&mut Cursor::new(&embedded), &Options::default()),
+                Err(FormatError::Unsupported(_))
+            ));
+        }
         assert!(is_bmp(&picture(None, b"")));
         assert!(!is_bmp(b"BMW owners club meeting notes"));
     }
