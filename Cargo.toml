@@ -4,7 +4,7 @@ members = ["crates/metascrub-core", "crates/metascrub-cli", "tools/make-fixtures
 exclude = ["fuzz"]
 
 [workspace.package]
-version = "1.1.1"
+version = "1.2.0"
 edition = "2024"
 rust-version = "1.99"
 license = "MIT OR Apache-2.0"
@@ -15,7 +15,7 @@ authors = ["The MetaScrub Contributors"]
 # Exact versions on purpose: several crates we depend on are young and
 # maintained by individuals, so upgrades are reviewed one at a time.
 [workspace.dependencies]
-metascrub-core = { path = "crates/metascrub-core", version = "=1.1.1" }
+metascrub-core = { path = "crates/metascrub-core", version = "=1.2.0" }
 anstream = "=1.0.0"
 anstyle = "=1.0.14"
 clap = { version = "=4.6.7", features = ["derive"] }
