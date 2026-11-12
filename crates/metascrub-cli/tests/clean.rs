@@ -87,13 +87,17 @@ fn allowed_extras(name: &str) -> &'static [&'static str] {
             "[File]ProfileDataOffset",
             "[File]ProfileSize",
         ],
-        // The gain map's settings and where it is (the ISO 21496-1 segment
-        // is one exiftool doesn't know yet, hence the warning).
+        // The gain map, its settings and where it is. Newer exiftool names
+        // the list `GContainer`, reads the ISO 21496-1 segment (its name)
+        // and shows the gain map itself; older ones warn about the segment.
         "ultra-hdr.jpg" => &[
             "[XMP-hdrgm]",
             "[XMP-Container]",
+            "[XMP-GContainer]",
             "[MPF0]",
             "[MPImage",
+            "[Google]GainMapImage",
+            "[APP2]UniformResourceName",
             "[ExifTool]Warning",
         ],
         "rotated.tif" => &["[IFD0]Orientation"],
