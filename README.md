@@ -67,7 +67,7 @@ Reports hide metadata values so they're safe to share; `--show-values` shows the
 
 | Format | Removed | Kept |
 |---|---|---|
-| JPEG | EXIF (GPS, camera, serial numbers, dates, names), thumbnails, XMP, IPTC and Photoshop data, comments, MPF secondary images, data after the image (such as Motion Photo videos), unknown segments | Image data, JFIF and Adobe color information |
+| JPEG | EXIF (GPS, camera, serial numbers, dates, names), thumbnails, XMP, IPTC and Photoshop data, comments, MPF secondary images, data after the image (such as Motion Photo videos), unknown segments | Image data, JFIF and Adobe color information, the HDR gain map of Ultra HDR photos (see below) |
 | PNG | Text chunks, EXIF, XMP, timestamps, unknown chunks, data after the image | Image data, transparency, gamma and color chunks, HDR chunks, APNG animation |
 | WebP | EXIF, XMP, unknown chunks, data after the image | Image data, transparency, animation |
 | GIF | Comments, XMP, programs' own extensions, data after the image | Image data, animation (looping and frame timing) |
@@ -85,6 +85,8 @@ Reports hide metadata values so they're safe to share; `--show-values` shows the
 | Ogg Vorbis, Opus | The comment header (title, artist, dates, comments, cover art, loudness levels and every other tag, and the encoder's name, left empty), ID3 and APE tags added after | The sound, byte for byte, the codec's other headers, and Opus's volume adjustment |
 | WAV | Tags (`LIST INFO`), names and notes on cue points, Broadcast WAV metadata (description, originator, reference, dates, time of day, UMID, loudness, coding history), iXML, XMP, ID3, the sampler's maker and model and SMPTE time (set to zero), any other chunk, data after the end | The sound, byte for byte, its format, cue points, sampler loops and instrument settings |
 | ZIP, TAR, gzip | Dates, owner names and IDs, permissions (reset to 644, or 755 for folders and programs), comments, extra fields and PAX records (including saved download addresses), gzip's original file name, junk files | Every file inside, cleaned like the formats above; files MetaScrub can't read are kept as they are |
+
+**Ultra HDR photos** (from recent Android phones, and JPEGs with an ISO 21496-1 gain map from editors such as Lightroom) keep their gain map, the second image that brightens the photo on HDR screens. The gain map is cleaned like any JPEG and keeps only its HDR settings; the main image keeps only the HDR version and the list that says where the gain map is, rewritten for the cleaned file. A Motion Photo video is still removed. The gain map shows nothing the photo doesn't, so it's listed as low risk.
 
 By default, two things that affect how the image looks are kept:
 
@@ -234,7 +236,6 @@ MetaScrub removes **hidden metadata**. It does not:
 - Clean old-format (`.doc`, `.xls`, `.ppt`) or password-protected Office files, Excel workbooks with change history (shared workbooks), or documents linked to files outside them (linked images or objects). These are skipped or refused and reported.
 - Clean OpenDocument files with tracked changes, signed or password-protected ones, flat OpenDocument files (`.fodt`), e-books with DRM or several renditions. These are refused or skipped and reported.
 - Remove what documents contain as content: text, hidden text, speaker notes, cached values from linked workbooks, form values, scripts, or what's inside macros and embedded files it can't read.
-- Keep HDR in "Ultra HDR" photos: their gain map is a hidden image and is removed, so the photo shows in standard range.
 - Set every date the file system keeps. On Linux, a file's change time (ctime) and creation time can't be set by normal programs.
 - Remove `com.apple.provenance` on macOS: the system adds it to files written by downloaded apps (MetaScrub included) and doesn't allow removing it. It's an ID, not a description of you or the file, so it isn't reported either.
 - Rename folders, or files with names you chose yourself, even if they reveal something. Names of files inside archives are never changed.

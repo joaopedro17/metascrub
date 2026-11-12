@@ -6,9 +6,9 @@ use std::io::{self, Write};
 use super::bytes::Cursor;
 use super::{
     FormatError, FormatHandler, ReadSeek, apply_options, drop_all, exif, icc, iptc, is_kept,
-    kept_orientation, read_image, xmp,
+    kept_orientation, read_image, ultra_hdr, xmp,
 };
-use crate::model::{Disposition, Finding, FindingKind, Location, Value};
+use crate::model::{Disposition, Finding, FindingKind, KeepReason, Location, Risk, Value};
 use crate::options::Options;
 
 const SOI: u8 = 0xD8;
@@ -28,7 +28,8 @@ const EXIF: &[u8] = b"Exif\0\0";
 const XMP: &[u8] = b"http://ns.adobe.com/xap/1.0/\0";
 const XMP_EXTENSION: &[u8] = b"http://ns.adobe.com/xmp/extension/\0";
 const ICC: &[u8] = b"ICC_PROFILE\0";
-const MPF: &[u8] = b"MPF\0";
+const MPF: &[u8] = ultra_hdr::MPF;
+const ISO_GAIN_MAP: &[u8] = ultra_hdr::ISO;
 const PHOTOSHOP: &[u8] = b"Photoshop 3.0\0";
 const ADOBE: &[u8] = b"Adobe";
 
@@ -45,7 +46,7 @@ impl FormatHandler for Jpeg {
         options: &Options,
     ) -> Result<Vec<Finding>, FormatError> {
         let data = read_image(input)?;
-        Ok(inspect_segments(&parse(&data)?, options))
+        Ok(analyze(&data, options)?.findings())
     }
 
     fn clean(
@@ -55,16 +56,144 @@ impl FormatHandler for Jpeg {
         options: &Options,
     ) -> Result<Vec<Finding>, FormatError> {
         let data = read_image(input)?;
-        let parsed = parse(&data)?;
-        let findings = inspect_segments(&parsed, options);
-        write_clean(&parsed, &findings, output)?;
-        Ok(findings)
+        let analysis = analyze(&data, options)?;
+        match &analysis.gain_map {
+            None => {
+                write_clean(
+                    &analysis.parsed,
+                    &analysis.primary,
+                    Role::Plain,
+                    None,
+                    output,
+                )?;
+            }
+            Some(gain_map) => {
+                let mut gain = Vec::new();
+                let packet = (!gain_map.settings.is_empty())
+                    .then(|| xmp::gain_map_packet(&gain_map.settings, None));
+                write_clean(
+                    &gain_map.parsed,
+                    &analysis.gain,
+                    Role::GainMap,
+                    packet.as_deref(),
+                    &mut gain,
+                )?;
+                let packet = gain_map
+                    .primary_settings
+                    .as_ref()
+                    .map(|settings| xmp::gain_map_packet(settings, Some(gain.len())));
+                let mut primary = Vec::new();
+                let mpf_at = write_clean(
+                    &analysis.parsed,
+                    &analysis.primary,
+                    Role::Primary,
+                    packet.as_deref(),
+                    &mut primary,
+                )?;
+                if let Some(at) = mpf_at {
+                    let mpf = ultra_hdr::mpf(at, primary.len(), gain.len());
+                    if let Some(slot) = primary.get_mut(at..at + mpf.len()) {
+                        slot.copy_from_slice(&mpf);
+                    }
+                }
+                output.write_all(&primary)?;
+                output.write_all(&gain)?;
+            }
+        }
+        Ok(analysis.findings())
     }
+}
+
+/// What a JPEG is in the file being cleaned.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Role {
+    Plain,
+    /// The main image of an Ultra HDR photo, whose gain map is kept.
+    Primary,
+    /// The gain map: an image of its own, cleaned the same way, keeping only
+    /// its settings.
+    GainMap,
+}
+
+struct Analysis<'a> {
+    parsed: Parsed<'a>,
+    primary: Vec<Finding>,
+    gain_map: Option<ultra_hdr::GainMap<'a>>,
+    /// The gain map's findings, without the "HDR gain map" prefix.
+    gain: Vec<Finding>,
+    /// The kept gain map, and anything else after the main image.
+    after: Vec<Finding>,
+}
+
+impl Analysis<'_> {
+    fn findings(&self) -> Vec<Finding> {
+        let gain = self.gain.iter().map(|f| f.clone().within("HDR gain map"));
+        self.primary
+            .iter()
+            .cloned()
+            .chain(gain)
+            .chain(self.after.iter().cloned())
+            .collect()
+    }
+}
+
+fn analyze<'a>(data: &'a [u8], options: &Options) -> Result<Analysis<'a>, FormatError> {
+    let parsed = parse(data)?;
+    let Some(gain_map) = ultra_hdr::find(data, &parsed) else {
+        let primary = inspect_segments(&parsed, options, Role::Plain);
+        return Ok(Analysis {
+            parsed,
+            primary,
+            gain_map: None,
+            gain: Vec::new(),
+            after: Vec::new(),
+        });
+    };
+    let primary = inspect_segments(&parsed, options, Role::Primary);
+    let gain = inspect_segments(&gain_map.parsed, options, Role::GainMap);
+    let mut kept = Finding::new(
+        FindingKind::HiddenImage,
+        Location::new(["HDR gain map"]),
+        Disposition::Keep(KeepReason::PartOfImage),
+    )
+    .with_value(Value::Bytes(gain_map.range.len() as u64));
+    kept.risk = Risk::Low;
+    let mut after = vec![kept];
+    // Other images and data around the gain map (such as a Motion Photo video).
+    let primary_end = data.len() - parsed.trailing.len();
+    let rest = [
+        data.get(primary_end..gain_map.range.start)
+            .unwrap_or_default(),
+        data.get(gain_map.range.end..).unwrap_or_default(),
+    ];
+    let rest_len: usize = rest.iter().map(|r| r.len()).sum();
+    if rest
+        .iter()
+        .any(|r| r.iter().any(|&b| b != 0x00 && b != 0xFF))
+    {
+        after.push(
+            Finding::new(
+                FindingKind::HiddenImage,
+                Location::new(["MPF"]),
+                Disposition::Remove,
+            )
+            .with_value(Value::Bytes(rest_len as u64)),
+        );
+    }
+    Ok(Analysis {
+        parsed,
+        primary,
+        gain_map: Some(gain_map),
+        gain,
+        after,
+    })
 }
 
 #[derive(Debug)]
 pub(super) struct Segment<'a> {
     pub(super) marker: u8,
+    /// Where the payload starts in the parsed data.
+    pub(super) at: usize,
     /// Payload after the 2-byte length.
     pub(super) data: &'a [u8],
     /// Compressed image data following a start-of-scan segment.
@@ -109,13 +238,19 @@ pub(super) fn parse(data: &[u8]) -> Result<Parsed<'_>, FormatError> {
                 let payload = length
                     .checked_sub(2)
                     .ok_or_else(|| FormatError::malformed("invalid JPEG segment length"))?;
+                let at = data.len() - cursor.remaining().len();
                 let data = cursor.take(payload)?;
                 let scan = if marker == SOS {
                     scan_data(&mut cursor)?
                 } else {
                     &[]
                 };
-                segments.push(Segment { marker, data, scan });
+                segments.push(Segment {
+                    marker,
+                    at,
+                    data,
+                    scan,
+                });
             }
         }
     }
@@ -134,7 +269,9 @@ fn scan_data<'a>(cursor: &mut Cursor<'a>) -> Result<&'a [u8], FormatError> {
     cursor.take(end)
 }
 
-fn inspect_segments(parsed: &Parsed<'_>, options: &Options) -> Vec<Finding> {
+fn inspect_segments(parsed: &Parsed<'_>, options: &Options, role: Role) -> Vec<Finding> {
+    let ultra = role != Role::Plain;
+    let skip: &'static [&'static str] = if ultra { xmp::ULTRA_HDR } else { &[] };
     let mut findings = Vec::new();
     let mut icc_chunks: Vec<(u8, &[u8])> = Vec::new();
     let mut extended_xmp: Vec<(u32, &[u8])> = Vec::new();
@@ -170,8 +307,9 @@ fn inspect_segments(parsed: &Parsed<'_>, options: &Options) -> Vec<Finding> {
             ),
             APP1 if data.starts_with(EXIF) => {
                 let mut exif = exif::inspect(after(EXIF), &Location::new(["EXIF"]));
-                // Only the first EXIF block can be rebuilt; any other is dropped.
-                if seen_exif {
+                // Only the first EXIF block can be rebuilt; any other is
+                // dropped, and so is a gain map's.
+                if seen_exif || role == Role::GainMap {
                     drop_all(&mut exif);
                 } else {
                     apply_options(&mut exif, options);
@@ -180,7 +318,11 @@ fn inspect_segments(parsed: &Parsed<'_>, options: &Options) -> Vec<Finding> {
                 findings.extend(exif);
             }
             APP1 if data.starts_with(XMP) => {
-                findings.extend(xmp::inspect(after(XMP), &Location::new(["XMP"])));
+                findings.extend(xmp::inspect_except(
+                    after(XMP),
+                    &Location::new(["XMP"]),
+                    skip,
+                ));
             }
             APP1 if data.starts_with(XMP_EXTENSION) => {
                 // 32-byte GUID, 4-byte full length, 4-byte offset, then the chunk.
@@ -199,6 +341,8 @@ fn inspect_segments(parsed: &Parsed<'_>, options: &Options) -> Vec<Finding> {
                 }
             }
             APP2 if data.starts_with(MPF) => has_mpf = true,
+            // The gain map's settings in ISO 21496-1 form: numbers only.
+            APP2 if ultra && data.starts_with(ISO_GAIN_MAP) => {}
             APP13 if data.starts_with(PHOTOSHOP) => {
                 let mut photoshop =
                     iptc::inspect_photoshop(after(PHOTOSHOP), &Location::new(["Photoshop"]));
@@ -234,7 +378,11 @@ fn inspect_segments(parsed: &Parsed<'_>, options: &Options) -> Vec<Finding> {
             .into_iter()
             .flat_map(|(_, c)| c.iter().copied())
             .collect();
-        findings.extend(xmp::inspect(&packet, &Location::new(["XMP", "Extended"])));
+        findings.extend(xmp::inspect_except(
+            &packet,
+            &Location::new(["XMP", "Extended"]),
+            skip,
+        ));
     }
     if !icc_chunks.is_empty() {
         icc_chunks.sort_by_key(|(sequence, _)| *sequence);
@@ -243,8 +391,16 @@ fn inspect_segments(parsed: &Parsed<'_>, options: &Options) -> Vec<Finding> {
             .flat_map(|(_, c)| c.iter().copied())
             .collect();
         let mut icc = [icc::inspect(&profile, Location::new(["ICC"]))];
-        apply_options(&mut icc, options);
+        if role == Role::GainMap {
+            drop_all(&mut icc);
+        } else {
+            apply_options(&mut icc, options);
+        }
         findings.extend(icc);
+    }
+    // What follows the main image is reported with the gain map.
+    if role == Role::Primary {
+        return findings;
     }
 
     let trailing = parsed.trailing;
@@ -274,12 +430,41 @@ fn inspect_segments(parsed: &Parsed<'_>, options: &Options) -> Vec<Finding> {
     findings
 }
 
+/// Counts what's written, to know where the MPF segment lands.
+struct Counter<'a> {
+    out: &'a mut dyn Write,
+    written: usize,
+}
+
+impl Write for Counter<'_> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let n = self.out.write(buf)?;
+        self.written += n;
+        Ok(n)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.out.flush()
+    }
+}
+
 /// Writes only what's needed to display the image, plus what the findings
-/// say is kept. Everything after the end-of-image marker is dropped.
-fn write_clean(parsed: &Parsed<'_>, findings: &[Finding], out: &mut dyn Write) -> io::Result<()> {
+/// say is kept. Everything after the end-of-image marker is dropped. For
+/// an Ultra HDR photo, `xmp` replaces the first XMP packet, and the main
+/// image gets a blank MPF segment; returns where its `MPF\0` is, to fill in.
+fn write_clean(
+    parsed: &Parsed<'_>,
+    findings: &[Finding],
+    role: Role,
+    xmp: Option<&[u8]>,
+    out: &mut dyn Write,
+) -> io::Result<Option<usize>> {
+    let out = &mut Counter { out, written: 0 };
     let keep_icc = is_kept(findings, FindingKind::ColorProfile, &Location::new(["ICC"]));
     let orientation = kept_orientation(findings, &Location::new(["EXIF", "Orientation"]));
     let mut exif_written = false;
+    let mut xmp = xmp;
+    let mut mpf_at = None;
 
     out.write_all(&[0xFF, SOI])?;
     for segment in &parsed.segments {
@@ -297,6 +482,18 @@ fn write_clean(parsed: &Parsed<'_>, findings: &[Finding], out: &mut dyn Write) -
             },
             APP14 if data.starts_with(ADOBE) => write_segment(out, APP14, data)?,
             APP2 if data.starts_with(ICC) && keep_icc => write_segment(out, APP2, data)?,
+            APP1 if data.starts_with(XMP) && xmp.is_some() => {
+                if let Some(packet) = xmp.take() {
+                    write_segment(out, APP1, &[XMP, packet].concat())?;
+                }
+            }
+            APP2 if role != Role::Plain && data.starts_with(ISO_GAIN_MAP) => {
+                write_segment(out, APP2, data)?;
+            }
+            APP2 if role == Role::Primary && data.starts_with(MPF) && mpf_at.is_none() => {
+                mpf_at = Some(out.written + 4);
+                write_segment(out, APP2, &[0; ultra_hdr::MPF_LEN])?;
+            }
             APP1 if data.starts_with(EXIF) && !exif_written => {
                 exif_written = true;
                 if let Some(orientation) = orientation {
@@ -311,7 +508,8 @@ fn write_clean(parsed: &Parsed<'_>, findings: &[Finding], out: &mut dyn Write) -
             }
         }
     }
-    out.write_all(&[0xFF, EOI])
+    out.write_all(&[0xFF, EOI])?;
+    Ok(mpf_at)
 }
 
 fn write_segment(out: &mut dyn Write, marker: u8, payload: &[u8]) -> io::Result<()> {
@@ -354,7 +552,7 @@ mod tests {
     }
 
     fn findings(data: &[u8]) -> Vec<Finding> {
-        inspect_segments(&parse(data).unwrap(), &Options::default())
+        inspect_segments(&parse(data).unwrap(), &Options::default(), Role::Plain)
     }
 
     fn kinds(data: &[u8]) -> Vec<FindingKind> {
@@ -576,6 +774,117 @@ mod tests {
     }
 
     fn findings_with(data: &[u8], options: &Options) -> Vec<Finding> {
-        inspect_segments(&parse(data).unwrap(), options)
+        inspect_segments(&parse(data).unwrap(), options, Role::Plain)
+    }
+
+    /// An Ultra HDR photo: a main image whose XMP has the version, an
+    /// author and the directory, then a gain map with its settings and an
+    /// editor's name, then `after`.
+    fn ultra_hdr(after: &[u8]) -> Vec<u8> {
+        let gain_xmp = br#"<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description xmlns:hdrgm="http://ns.adobe.com/hdr-gain-map/1.0/" xmlns:xmp="http://ns.adobe.com/xap/1.0/" hdrgm:Version="1.0" hdrgm:GainMapMax="2.5" xmp:CreatorTool="Editor 3"/></rdf:RDF></x:xmpmeta>"#;
+        let gain = jpeg(
+            &[
+                segment(APP1, &[XMP, gain_xmp].concat()),
+                segment(APP2, &[ISO_GAIN_MAP, &[0, 0, 0, 0, 1, 2, 3, 4]].concat()),
+                segment(COM, b"gain map by Jane"),
+            ],
+            b"",
+        );
+        let primary_xmp = format!(
+            r#"<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description xmlns:hdrgm="http://ns.adobe.com/hdr-gain-map/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:Container="http://ns.google.com/photos/1.0/container/" xmlns:Item="http://ns.google.com/photos/1.0/container/item/" hdrgm:Version="1.0"><dc:creator><rdf:Seq><rdf:li>Jane Doe</rdf:li></rdf:Seq></dc:creator><Container:Directory><rdf:Seq><rdf:li rdf:parseType="Resource"><Container:Item Item:Semantic="Primary" Item:Mime="image/jpeg"/></rdf:li><rdf:li rdf:parseType="Resource"><Container:Item Item:Semantic="GainMap" Item:Mime="image/jpeg" Item:Length="{}"/></rdf:li></rdf:Seq></Container:Directory></rdf:Description></rdf:RDF></x:xmpmeta>"#,
+            gain.len()
+        );
+        let xmp = segment(APP1, &[XMP, primary_xmp.as_bytes()].concat());
+        // The MPF segment's `MPF\0` comes after SOI, the XMP and its own header.
+        let at = 2 + xmp.len() + 4;
+        let mut primary = jpeg(
+            &[
+                xmp.clone(),
+                segment(APP2, &[0; ultra_hdr::MPF_LEN]),
+                segment(APP2, &[ISO_GAIN_MAP, &[0, 0, 0, 0]].concat()),
+            ],
+            b"",
+        );
+        let mpf = ultra_hdr::mpf(at, primary.len(), gain.len());
+        primary[at..at + mpf.len()].copy_from_slice(&mpf);
+        [primary, gain, after.to_vec()].concat()
+    }
+
+    fn run(data: &[u8]) -> (Vec<u8>, Vec<Finding>) {
+        let options = Options::default();
+        let mut out = Vec::new();
+        let findings = Jpeg
+            .clean(&mut io::Cursor::new(data), &mut out, &options)
+            .unwrap();
+        let inspected = Jpeg.inspect(&mut io::Cursor::new(data), &options).unwrap();
+        assert_eq!(inspected, findings);
+        (out, findings)
+    }
+
+    #[test]
+    fn ultra_hdr_keeps_its_gain_map() {
+        let data = ultra_hdr(b"\0\0\0\x18ftypmp42 motion photo video");
+        let (out, findings) = run(&data);
+        let summary: Vec<_> = findings
+            .iter()
+            .map(|f| (f.location.to_string(), f.kind, f.disposition))
+            .collect();
+        assert_eq!(
+            summary,
+            [
+                (
+                    "XMP > dc:creator".into(),
+                    FindingKind::PersonName,
+                    Disposition::Remove
+                ),
+                (
+                    "HDR gain map > XMP > xmp:CreatorTool".into(),
+                    FindingKind::Software,
+                    Disposition::Remove
+                ),
+                (
+                    "HDR gain map > Comment".into(),
+                    FindingKind::Comment,
+                    Disposition::Remove
+                ),
+                (
+                    "HDR gain map".into(),
+                    FindingKind::HiddenImage,
+                    Disposition::Keep(KeepReason::PartOfImage)
+                ),
+                ("MPF".into(), FindingKind::HiddenImage, Disposition::Remove),
+            ]
+        );
+        for gone in [&b"Jane"[..], b"Editor", b"motion photo"] {
+            assert!(!out.windows(gone.len()).any(|w| w == gone));
+        }
+        // The cleaned file still has its gain map, found through the new MPF.
+        let parsed = parse(&out).unwrap();
+        let gain_map = ultra_hdr::find(&out, &parsed).expect("gain map");
+        assert_eq!(gain_map.range.end, out.len());
+        assert_eq!(gain_map.settings.len(), 2);
+        let text = String::from_utf8_lossy(&out);
+        assert!(text.contains(&format!("Item:Length=\"{}\"", gain_map.range.len())));
+        // Nothing left to remove, and a second cleaning changes nothing.
+        let (again, findings) = run(&out);
+        assert_eq!(again, out);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(
+            findings[0].disposition,
+            Disposition::Keep(KeepReason::PartOfImage)
+        );
+    }
+
+    #[test]
+    fn a_gain_map_that_cant_be_found_goes() {
+        let mut data = ultra_hdr(b"");
+        // Point the MPF entry past the end of the file.
+        let at = data.windows(4).position(|w| w == MPF).unwrap() + 4 + 50 + 16 + 8;
+        data[at..at + 4].copy_from_slice(&u32::MAX.to_be_bytes());
+        let (out, findings) = run(&data);
+        assert!(findings.iter().any(|f| f.kind == FindingKind::HiddenImage
+            && f.disposition == Disposition::Remove));
+        assert!(!out.windows(ISO_GAIN_MAP.len()).any(|w| w == ISO_GAIN_MAP));
+        assert!(parse(&out).unwrap().trailing.is_empty());
     }
 }
